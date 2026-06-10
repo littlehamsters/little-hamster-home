@@ -2484,8 +2484,9 @@ function renderBanner(){
   const md=getMD();
   const ccCommon=md.cc.reduce((s,c)=>s+(f(c.total)-f(c.p1)-f(c.p2)-f(c.other||0)),0);
   const exp1=getExpenseDisplayTotal('p1'),exp2=getExpenseDisplayTotal('p2');
-  const rem1=inc1-getExpenseTotal('p1')-md.cc.reduce((s,c)=>s+f(c.p1),0)-ccCommon/2;
-  const rem2=inc2-getExpenseTotal('p2')-md.cc.reduce((s,c)=>s+f(c.p2),0)-ccCommon/2;
+  // คงเหลือ = รายรับ − รายจ่ายที่แสดง (รวม ค่ากิน÷2 + น้ำไฟ÷2 + บัตร + ออม/ลงทุน) ให้ตรงกับการ์ดสรุปด้านล่าง
+  const rem1=inc1-exp1;
+  const rem2=inc2-exp2;
   const rem=rem1+rem2;
   const isGood=rem>=0;
   const ms=document.getElementById('month-status');
@@ -3968,15 +3969,17 @@ localStorage.setItem = function(key, value){
   if(SYNC_KEYS.indexOf(key) !== -1) fbDebounce();
 };
 
-function fbInitAllApps(){
-  try{ _bpLoad(); }catch(e){}
-  _moReady=false; _svReady=false; loadDash();
-}
-function fbRefreshApps(){
+function fbApplyRemote(){
+  // budget: โหลด + render ใหม่ (เดิมโหลดอย่างเดียว ไม่ render)
+  try{ _bpLoad(); _bpRender(); }catch(e){}
+  // กองเงินออม: โหลด + render ใหม่ (เดิมไม่ถูกโหลด/แสดงเลย)
+  try{ _svLoad(); _svRender(); }catch(e){}
+  // ผ่อนบ้าน: ให้โหลดใหม่ตอนเปิดหน้า
   _moReady=false; _svReady=false;
-  try{ _bpLoad(); }catch(e){}
   loadDash();
 }
+function fbInitAllApps(){ fbApplyRemote(); }
+function fbRefreshApps(){ fbApplyRemote(); }
 
 function fbShowHousehold(){
   var id=localStorage.getItem(FB_HH_KEY)||(_fbUser?_fbUser.uid:'—');

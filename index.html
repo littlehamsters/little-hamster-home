@@ -90,15 +90,20 @@
 
 
   /* ── Firebase login + sync ────────────────────────── */
-  #fb-screen{position:fixed;inset:0;background:#FFF8E8;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Sarabun',sans-serif}
-  .fb-card{background:#FFFDF5;border:1.5px solid #E8D9BE;border-radius:24px;padding:2.4rem 2rem;width:min(420px,92vw);text-align:center;box-shadow:0 8px 40px rgba(94,75,60,.13)}
-  .fb-icon{font-size:50px;margin-bottom:12px}
-  .fb-title{font-size:21px;font-weight:700;color:#5E4B3C;margin-bottom:5px}
-  .fb-sub{font-size:13px;color:#8A7060;margin-bottom:1.5rem;line-height:1.6}
-  .fb-google-btn{width:100%;height:46px;border-radius:999px;border:1.5px solid #E8D9BE;background:#fff;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.18s;color:#5E4B3C;margin-bottom:10px}
-  .fb-google-btn:hover{background:#FFF8E8;border-color:#A8C686}
-  .fb-google-btn:disabled{opacity:.5;cursor:not-allowed}
-  .fb-err{color:#B85040;font-size:12px;margin-top:6px;min-height:18px;line-height:1.4}
+  #fb-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Sarabun',sans-serif;padding:20px;
+    background:#FFF8E8;
+    background-image:radial-gradient(circle at 12% 8%, rgba(184,227,233,.30), transparent 38%),
+                     radial-gradient(circle at 88% 4%, rgba(246,209,134,.28), transparent 34%),
+                     radial-gradient(circle at 50% 112%, rgba(168,198,134,.22), transparent 45%);}
+  .fb-card{background:#FFFDF5;border:1.5px solid #E8D9BE;border-radius:26px;padding:2.6rem 2rem;width:min(380px,92vw);text-align:center;box-shadow:0 14px 40px rgba(94,75,60,.14)}
+  .fb-icon{font-size:54px;margin-bottom:12px;line-height:1}
+  .fb-title{font-size:22px;font-weight:700;color:#5E4B3C;margin-bottom:6px}
+  .fb-sub{font-size:13.5px;color:#8A7060;margin-bottom:1.7rem;line-height:1.6}
+  .fb-google-btn{width:100%;height:48px;border-radius:999px;border:none;background:#B8E3E9;color:#1F5A63;font-family:'Sarabun',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s,filter .15s,box-shadow .15s;box-shadow:0 3px 0 #6FB8C2;margin-bottom:10px}
+  .fb-google-btn:hover{filter:brightness(1.03)}
+  .fb-google-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #6FB8C2}
+  .fb-google-btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:0 3px 0 #6FB8C2}
+  .fb-err{color:#B85040;font-size:12px;margin-top:8px;min-height:18px;line-height:1.4}
   .fb-divider{border:none;border-top:1px solid #E8D9BE;margin:16px 0}
   .fb-toggle{font-size:12px;color:#8A7060;background:none;border:none;font-family:inherit;cursor:pointer;text-decoration:underline;padding:4px 0}
   .fb-cfg{display:none;text-align:left;margin-top:10px}
@@ -4395,10 +4400,10 @@ loadDash();
 const ST_MONTHS=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 const ST_KEY="salaryTaxPlanner_v2";
 const ST_OLD="salaryTaxPlanner_v1";
-const fmt=n=>Math.round(n||0).toLocaleString("en-US");
+const fmt=n=>(+(n||0)).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
 const num=v=>{const x=parseFloat(String(v==null?"":v).replace(/,/g,""));return isNaN(x)?0:x;};
-const fmt2=n=>num(n).toLocaleString("en-US",{maximumFractionDigits:2});
-const fmtIn=v=>{const n=num(v);return n===0?"":n.toLocaleString("en-US",{maximumFractionDigits:2});};
+const fmt2=n=>num(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtIn=v=>{const n=num(v);return n===0?"":n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});};
 const uid=()=>"p"+Math.random().toString(36).slice(2,8);
 const blank=()=>ST_MONTHS.map(()=>({salary:0,ot:0,bonus:0,sso:0,wht:0,pvdPct:0}));
 const DED_IDS=["stDSpouse","stDChild","stDChild2","stDParent","stDMaternity","stDLife","stDHealth","stDParentHealth","stDRMF","stDPension","stDESG","stDHome","stDEreceipt","stDDonate","stDDonateEdu"];

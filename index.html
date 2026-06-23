@@ -4012,6 +4012,7 @@ var SYNC_KEYS   = ['bp3_months','bp3_cfg','bp3_theme','mortgage_real_v5','saving
 
 var _fbAuth=null, _fbDb=null, _fbUser=null, _fbUnsub=null, _fbTimer=null;
 var _fbIgnoreNext = false;
+var _fbSyncing = false;
 
 /* ── Boot ──────────────────────────────────────────────────────── */
 (function fbBoot(){
@@ -4066,22 +4067,25 @@ function fbSignOut(){
   if(_fbAuth) _fbAuth.signOut();
 }
 
+var FIXED_HOUSEHOLD_ID = 'littlehome_foam_keng_2024';
+
 function fbDocRef(){
-  var id = localStorage.getItem(FB_HH_KEY);
-  if(!id){ id=_fbUser.uid; localStorage.setItem(FB_HH_KEY,id); }
-  return _fbDb.collection('households').doc(id);
+  localStorage.setItem(FB_HH_KEY, FIXED_HOUSEHOLD_ID);
+  return _fbDb.collection('households').doc(FIXED_HOUSEHOLD_ID);
 }
 
 function fbStartSync(){
   fbSetSync('busy','กำลังโหลด...');
   fbDocRef().get().then(function(snap){
-    if(snap.exists){ var d=snap.data(); SYNC_KEYS.forEach(function(k){ if(d[k]) localStorage.setItem(k,d[k]); }); }
+    if(snap.exists){ var d=snap.data(); _fbSyncing=true; SYNC_KEYS.forEach(function(k){ if(d[k]) _origLS(k,d[k]); }); _fbSyncing=false; }
     fbInitAllApps();
     fbSetSync('ok','ซิงค์แล้ว');
     _fbUnsub = fbDocRef().onSnapshot(function(snap){
       if(!snap.exists||snap.metadata.hasPendingWrites||_fbIgnoreNext) return;
       var d=snap.data(); var chg=false;
-      SYNC_KEYS.forEach(function(k){ if(d[k]&&d[k]!==localStorage.getItem(k)){ localStorage.setItem(k,d[k]); chg=true; } });
+      _fbSyncing=true;
+      SYNC_KEYS.forEach(function(k){ if(d[k]&&d[k]!==localStorage.getItem(k)){ _origLS(k,d[k]); chg=true; } });
+      _fbSyncing=false;
       if(chg){ fbSetSync('ok','ซิงค์แล้ว'); fbRefreshApps(); }
     }, function(){ fbSetSync('err','ออฟไลน์'); });
   }).catch(function(){ fbSetSync('err','โหลดไม่ได้'); fbInitAllApps(); });
@@ -4107,7 +4111,7 @@ function fbDebounce(){
 var _origLS = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value){
   _origLS(key, value);
-  if(SYNC_KEYS.indexOf(key) !== -1) fbDebounce();
+  if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1) fbDebounce();
 };
 
 function fbApplyRemote(){

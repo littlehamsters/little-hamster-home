@@ -4223,7 +4223,47 @@ function unifiedRestore(file){
 }
 
 var _moReady=false,_svReady=false,_stReady=false;function showModule(n){document.querySelectorAll(".m-app").forEach(function(e){e.style.display="none";});document.getElementById("m-"+n).style.display="block";document.querySelectorAll(".nav-btn").forEach(function(b){b.classList.remove("active");});var _nb=document.getElementById("nav-"+n);if(_nb)_nb.classList.add("active");if(n==="mortgage"){if(!_moReady){_moReady=true;_moLoad();}setTimeout(function(){window.dispatchEvent(new Event("resize"));},80);}if(n==="savings"){if(!_svReady){_svReady=true;_svLoad();_svRender();}setTimeout(function(){window.dispatchEvent(new Event("resize"));},80);}if(n==="salary"){if(!_stReady){_stReady=true;window.stInit();}}if(n==="home"){loadDash();}window.scrollTo(0,0);}
-function loadDash(){var C=314.159;try{var mo=JSON.parse(localStorage.getItem("mortgage_real_v5")||"null");if(mo&&mo.data&&mo.data.length){var loan=mo.loanAmt||7590000,last=mo.data[mo.data.length-1];var rem=last.balance||0,paid=loan-rem,pct=paid/loan*100;var fb=function(v){return Math.round(v).toLocaleString("th-TH");};document.getElementById("mo-pct").textContent=pct.toFixed(1)+"%";var rf=document.getElementById("mo-ring");rf.style.strokeDasharray=C.toFixed(2);rf.style.strokeDashoffset=(C*(1-pct/100)).toFixed(2);document.getElementById("mo-rem").textContent=fb(rem)+" ฿";document.getElementById("mo-paid").textContent=fb(paid)+" ฿";}else{document.getElementById("mo-pct").textContent="ยังไม่มีข้อมูล";}}catch(e){console.error(e);}try{var sv=JSON.parse(localStorage.getItem("savings_jars_v1")||"null");if(sv&&sv.funds&&sv.funds.length){var act=sv.funds.filter(function(f){return!f.closed;});var tot=act.reduce(function(s,f){return s+(f.tx||[]).reduce(function(a,t){return a+(t.type==="in"?t.amt:-t.amt);},0);},0);var ts=[];sv.funds.forEach(function(f){(f.tx||[]).forEach(function(t){ts.push(t.ts||0);});});var ld=ts.length?new Date(Math.max.apply(null,ts)).toLocaleDateString("th-TH",{day:"numeric",month:"short"}):"-";document.getElementById("sv-total").textContent=Math.round(tot).toLocaleString("th-TH")+" ฿";document.getElementById("sv-funds").textContent=act.length+" กอง";document.getElementById("sv-last").textContent=ld;}else{document.getElementById("sv-total").textContent="ยังไม่มีข้อมูล";}}catch(e){console.error(e);}try{var bp=JSON.parse(localStorage.getItem("bp3_months")||"null");var d=new Date();var mkey=d.getFullYear()+"-"+String(d.getMonth()).padStart(2,"0");var mnames=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];document.getElementById("bp-month").textContent=mnames[d.getMonth()]+" "+(d.getFullYear()+543);if(bp&&bp[mkey]){var mon=bp[mkey];var nExp=0;try{["p1","p2"].forEach(function(p){if(mon.expenses&&mon.expenses[p]){nExp+=Object.keys(mon.expenses[p].fixed||{}).length;nExp+=(mon.expenses[p].extras||[]).length;}});}catch(ex){}document.getElementById("bp-status").textContent="มีข้อมูลแล้ว ✓";document.getElementById("bp-status").className="chip-val green";document.getElementById("bp-count").textContent=nExp+" รายการ";}else{document.getElementById("bp-status").textContent="ยังไม่มีข้อมูล";document.getElementById("bp-count").textContent="-";}}catch(e){console.error(e);}}
+function loadDash(){var C=314.159;try{var mo=JSON.parse(localStorage.getItem("mortgage_real_v5")||"null");if(mo&&mo.data&&mo.data.length){var loan=mo.loanAmt||7590000,last=mo.data[mo.data.length-1];var rem=last.balance||0,paid=loan-rem,pct=paid/loan*100;var fb=function(v){return Math.round(v).toLocaleString("th-TH");};document.getElementById("mo-pct").textContent=pct.toFixed(1)+"%";var rf=document.getElementById("mo-ring");rf.style.strokeDasharray=C.toFixed(2);rf.style.strokeDashoffset=(C*(1-pct/100)).toFixed(2);document.getElementById("mo-rem").textContent=fb(rem)+" ฿";document.getElementById("mo-paid").textContent=fb(paid)+" ฿";}else{document.getElementById("mo-pct").textContent="ยังไม่มีข้อมูล";}}catch(e){console.error(e);}try{var sv=JSON.parse(localStorage.getItem("savings_jars_v1")||"null");if(sv&&sv.funds&&sv.funds.length){var act=sv.funds.filter(function(f){return!f.closed;});var tot=act.reduce(function(s,f){return s+(f.tx||[]).reduce(function(a,t){return a+(t.type==="in"?t.amt:-t.amt);},0);},0);var ts=[];sv.funds.forEach(function(f){(f.tx||[]).forEach(function(t){ts.push(t.ts||0);});});var ld=ts.length?new Date(Math.max.apply(null,ts)).toLocaleDateString("th-TH",{day:"numeric",month:"short"}):"-";document.getElementById("sv-total").textContent=Math.round(tot).toLocaleString("th-TH")+" ฿";document.getElementById("sv-funds").textContent=act.length+" กอง";document.getElementById("sv-last").textContent=ld;}else{document.getElementById("sv-total").textContent="ยังไม่มีข้อมูล";}}catch(e){console.error(e);}try{var bp=JSON.parse(localStorage.getItem("bp3_months")||"null");var d=new Date();var mkey=d.getFullYear()+"-"+String(d.getMonth()).padStart(2,"0");var mnames=["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];document.getElementById("bp-month").textContent=mnames[d.getMonth()]+" "+(d.getFullYear()+543);if(bp&&bp[mkey]){var mon=bp[mkey];var nExp=0;try{["p1","p2"].forEach(function(p){if(mon.expenses&&mon.expenses[p]){nExp+=Object.keys(mon.expenses[p].fixed||{}).length;nExp+=(mon.expenses[p].extras||[]).length;}});}catch(ex){}document.getElementById("bp-status").textContent="มีข้อมูลแล้ว ✓";document.getElementById("bp-status").className="chip-val green";document.getElementById("bp-count").textContent=nExp+" รายการ";}else{document.getElementById("bp-status").textContent="ยังไม่มีข้อมูล";document.getElementById("bp-count").textContent="-";}}catch(e){console.error(e);}
+try{
+  var st=JSON.parse(localStorage.getItem("salaryTaxPlanner_v2")||"null");
+  var stFmt=function(v){return Math.round(v).toLocaleString("th-TH");};
+  function stCalcTax(net){
+    var brackets=[[0,150000,0],[150000,300000,.05],[300000,500000,.10],[500000,750000,.15],[750000,1000000,.20],[1000000,2000000,.25],[2000000,5000000,.30],[5000000,Infinity,.35]];
+    var tax=0;
+    for(var i=0;i<brackets.length;i++){var b=brackets[i];if(net<=b[0])break;tax+=(Math.min(net,b[1])-b[0])*b[2];}
+    return Math.max(0,tax);
+  }
+  if(st&&st.people&&st.people.length){
+    var totIncome=0,totTax=0,totWHT=0;
+    st.people.forEach(function(p){
+      var income=(p.income||[]).reduce(function(s,m){return s+(m.salary||0)+(m.ot||0)+(m.bonus||0);},0);
+      var sso=Math.min((p.income||[]).reduce(function(s,m){return s+(m.sso||0);},0),9000);
+      var pvd=(p.income||[]).reduce(function(s,m){return s+((m.salary||0)*(m.pvdPct||0)/100);},0);
+      var ded=p.ded||{};
+      var expense=Math.min(income*0.5,100000);
+      var personal=60000;
+      var totalDed=expense+personal+sso+pvd
+        +(Number(ded.spouse)||0)+(Number(ded.child)||0)*30000+(Number(ded.child2)||0)*30000
+        +(Number(ded.parent)||0)*30000+(Number(ded.maternity)||0)+(Number(ded.life)||0)
+        +(Number(ded.health)||0)+(Number(ded.parentHealth)||0)+(Number(ded.rmf)||0)
+        +(Number(ded.pension)||0)+(Number(ded.esg)||0)+(Number(ded.home)||0)
+        +(Number(ded.ereceipt)||0)+(Number(ded.donate)||0)+(Number(ded.donateEdu)||0)*2;
+      var net=Math.max(0,income-totalDed);
+      var tax=stCalcTax(net);
+      var wht=(p.income||[]).reduce(function(s,m){return s+(m.wht||0);},0);
+      totIncome+=income; totTax+=tax; totWHT+=wht;
+    });
+    var diff=totWHT-totTax;
+    var diffEl=document.getElementById("st-home-diff");
+    document.getElementById("st-home-tax").textContent=stFmt(totTax)+" ฿";
+    document.getElementById("st-home-income").textContent=stFmt(totIncome)+" ฿";
+    if(diffEl){
+      diffEl.textContent=(diff>=0?"+":"")+stFmt(diff)+" ฿";
+      diffEl.className="chip-val "+(diff>=0?"green":"");
+      diffEl.style.color=diff>=0?"":"#B85040";
+    }
+  }else{document.getElementById("st-home-tax").textContent="ยังไม่มีข้อมูล";}
+}catch(e){console.error(e);}}
 loadDash();
 </script>
 

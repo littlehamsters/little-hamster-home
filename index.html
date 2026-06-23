@@ -361,9 +361,15 @@
   #m-savings .jar .water {
     position:absolute;left:0;right:0;bottom:0;
     background:linear-gradient(180deg,var(--matcha-water),var(--matcha));
-    opacity:.22;transition:height .7s cubic-bezier(.22,1,.36,1);z-index:0;
+    opacity:0;transition:height .7s cubic-bezier(.22,1,.36,1);z-index:0;
   }
-  #m-savings .jar.done .water {opacity:.32;background:linear-gradient(180deg,var(--gold),#b9923a)}
+  #m-savings .jar-prog-wrap {margin-top:10px;margin-bottom:2px}
+  #m-savings .jar-prog-track {height:8px;background:var(--paper-2);border-radius:999px;overflow:hidden}
+  #m-savings .jar-prog-fill {height:100%;border-radius:999px;transition:width .7s cubic-bezier(.22,1,.36,1)}
+  #m-savings .jar-prog-fill.tone-ok   {background:linear-gradient(90deg,var(--matcha),var(--matcha-water))}
+  #m-savings .jar-prog-fill.tone-done {background:linear-gradient(90deg,#c2a14d,#e8c96a)}
+  #m-savings .jar-prog-fill.tone-warn {background:linear-gradient(90deg,#c09040,#e8c060)}
+  #m-savings .jar-prog-cap {display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:5px}
   #m-savings .jar-inner {position:relative;z-index:1;padding:18px 18px 16px;display:flex;flex-direction:column;height:100%}
   #m-savings .jar-top {display:flex;align-items:center;gap:10px;margin-bottom:2px}
   #m-savings .jar-emoji {font-size:24px;line-height:1}
@@ -1915,8 +1921,17 @@ function jarCard(f){
     : `<button class="btn btn-primary" onclick="openTx('${f.id}','in')">ฝาก</button>
        <button class="btn" onclick="openTx('${f.id}','out')">ถอน</button>
        <button class="btn" onclick="openHist('${f.id}')">ประวัติ</button>`;
+  // progress bar
+  let progBar='';
+  if(has){
+    const fillTone=done?'tone-done':(p>=80?'tone-warn':'tone-ok');
+    progBar=`<div class="jar-prog-wrap">
+      <div class="jar-prog-track"><div class="jar-prog-fill ${fillTone}" style="width:${p.toFixed(1)}%"></div></div>
+      <div class="jar-prog-cap"><span>${_svFmt(bal)} บาท</span><span>${p.toFixed(0)}% · เป้า ${_svFmt(f.goal)}</span></div>
+    </div>`;
+  }
   return `<div class="${cls.join(' ')}">
-      <div class="water" style="height:${has?p:Math.min(100,p)}%"></div>
+      <div class="water" style="height:0%"></div>
       <div class="jar-inner">
         <div class="jar-top">
           <span class="jar-emoji">${f.emoji}</span>
@@ -1926,6 +1941,7 @@ function jarCard(f){
         </div>
         ${tags?`<div class="jar-tags">${tags}</div>`:''}
         <div class="jar-bal">${_svFmt(bal)} <small>บาท</small></div>
+        ${progBar}
         ${f.desc?`<div class="jar-desc">${escapeHtml(f.desc)}</div>`:''}
         <div class="jar-goal">${has?`เป้าหมาย ${_svFmt(f.goal)} บาท`:'ยังไม่ตั้งเป้าหมาย'}</div>
         <div>${pill}</div>

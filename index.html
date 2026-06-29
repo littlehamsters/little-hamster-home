@@ -4120,7 +4120,7 @@ function fbSaveToCloud(){
 
 function fbDebounce(){
   if(_fbTimer) clearTimeout(_fbTimer);
-  _fbTimer = setTimeout(fbSaveToCloud, 2500);
+  _fbTimer = setTimeout(fbSaveToCloud, 300);
 }
 
 /* ── Intercept localStorage writes → trigger cloud save ────────── */

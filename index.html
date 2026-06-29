@@ -4748,6 +4748,7 @@ window.stReloadFromStorage=function(){
 // Called by loadDash() to get accurate household tax summary
 window.stGetHomeSummary=function(){
   try{
+    if(!state.people||!state.people.length){load();seed();}
     if(!state.people||!state.people.length)return null;
     let totIncome=0,totTax=0,totWHT=0;
     state.people.forEach(p=>{const r=compute(p);totIncome+=r.income;totTax+=r.tax;totWHT+=r.tWHT;});

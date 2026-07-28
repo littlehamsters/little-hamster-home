@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const URL = process.env.SMOKE_URL || 'http://localhost:5173/';
+const URL = process.env.SMOKE_URL || 'http://localhost:8090/';
 const browser = await chromium.launch();
 const page = await browser.newPage();
 

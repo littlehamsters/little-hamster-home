@@ -3,23 +3,29 @@
 Headless (Playwright) checks that the app boots and every module renders
 without JS errors — the safety net for the modular refactor.
 
+The app always runs on **port 8090** (dev and preview both — see
+`vite.config.js`, `strictPort`). The smoke tests default to
+`http://localhost:8090/`.
+
 ## Run
 
 ```bash
-# 1. start a server in one terminal
-npm run dev                 # http://localhost:5173
+# 1. start the server in one terminal (always :8090)
+npm run dev                 # http://localhost:8090
 
-# 2. in another terminal, point the tests at it
-SMOKE_URL=http://localhost:5173/ npm run test:smoke
+# 2. in another terminal
+npm run test:smoke
 ```
 
-Default URL is `http://localhost:5173/` (dev). To test the production
-bundle instead:
+To test the production bundle instead:
 
 ```bash
-npm run build && npm run preview   # e.g. http://localhost:4173
-SMOKE_URL=http://localhost:4173/ npm run test:smoke
+npm run build && npm run preview   # also :8090
+npm run test:smoke
 ```
+
+Override the target with `SMOKE_URL` if ever needed:
+`SMOKE_URL=http://localhost:8090/ npm run test:smoke`.
 
 ## What they check
 
@@ -28,3 +34,5 @@ SMOKE_URL=http://localhost:4173/ npm run test:smoke
   `showModule()` without throwing.
 - **smoke-render.mjs** — seeds sample data and confirms the render pipelines
   populate the DOM (mortgage table, savings jars, budget, salary, dashboard).
+- **smoke-backup.mjs** — `SYNC_KEYS` completeness, backup v2 format, and
+  restore of both v2 (new) and v1 (legacy) files.

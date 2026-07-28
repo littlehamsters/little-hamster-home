@@ -5,7 +5,7 @@ const errors = [];
 page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (/error|uncaught|not defined|cannot read/i.test(m.text())) errors.push('[console] '+m.text()); });
 
-await page.goto(process.env.SMOKE_URL || 'http://localhost:5173/', { waitUntil: 'load' });
+await page.goto(process.env.SMOKE_URL || 'http://localhost:8090/', { waitUntil: 'load' });
 await page.waitForTimeout(1500);
 
 const out = await page.evaluate(() => {

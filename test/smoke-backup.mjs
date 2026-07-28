@@ -3,7 +3,7 @@ const browser = await chromium.launch();
 const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', e => errors.push('PAGEERROR: ' + e.message));
-await page.goto(process.env.SMOKE_URL || 'http://localhost:5173/', { waitUntil: 'load' });
+await page.goto(process.env.SMOKE_URL || 'http://localhost:8090/', { waitUntil: 'load' });
 await page.waitForTimeout(1200);
 
 const res = await page.evaluate(async () => {

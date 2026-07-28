@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:smoke": "node test/smoke.mjs && node test/smoke-render.mjs"
+    "test:smoke": "node test/smoke.mjs && node test/smoke-render.mjs && node test/smoke-backup.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

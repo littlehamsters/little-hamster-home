@@ -2,9 +2,11 @@
 /* ═══════════════════════════════════════════════════════════════════
    🐹 Firebase Integration — Auth + Firestore real-time sync
    ═══════════════════════════════════════════════════════════════════ */
+import { SYNC_KEYS } from '../modules/registry.js';
+import { applyRemote } from './app.js';
+
 var FB_CFG_KEY  = 'fb_config_v1';
 var FB_HH_KEY   = 'fb_household_id';
-var SYNC_KEYS   = ['bp3_months','bp3_cfg','bp3_theme','mortgage_real_v5','savings_jars_v1','salaryTaxPlanner_v2'];
 
 var _fbAuth=null, _fbDb=null, _fbUser=null, _fbUnsub=null, _fbTimer=null;
 var _fbIgnoreNext = false;
@@ -110,14 +112,7 @@ localStorage.setItem = function(key, value){
   if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1) fbDebounce();
 };
 
-function fbApplyRemote(){
-  try{ _bpLoad(); _bpRender(); }catch(e){}
-  try{ _svLoad(); _svRender(); }catch(e){}
-  _moReady=false; _svReady=false; _stReady=false;
-  // salary: reload from storage if already initialised
-  try{ if(typeof window.stReloadFromStorage==='function') window.stReloadFromStorage(); }catch(e){}
-  loadDash();
-}
+function fbApplyRemote(){ applyRemote(); }
 function fbInitAllApps(){ fbApplyRemote(); }
 function fbRefreshApps(){ fbApplyRemote(); }
 

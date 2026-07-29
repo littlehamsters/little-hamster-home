@@ -513,4 +513,4 @@ document.getElementById('fName').addEventListener('keydown',e=>{if(e.key==='Ente
 document.getElementById('txAmt').addEventListener('keydown',e=>{if(e.key==='Enter')saveTx();});
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { _svLoad, applyTheme, _svSave, balance, dateStr, shortDate, daysLeft, monthsLabel, monthNet, planMonthly, fundStatus, jarCard, _svRender, setCatFilter, escapeHtml });
+Object.assign(window, { _svLoad, applyTheme, _svSave, balance, dateStr, shortDate, daysLeft, monthsLabel, monthNet, planMonthly, fundStatus, jarCard, _svRender, setCatFilter, escapeHtml, openFund, buildEmoji, pickEmoji, buildCat, pickCat, fillOwnerSelect, reopenFund, saveFund, openTx, todayISO, openAssets, renderAssets, _svOpenSettings, ownerStats, renderPeople, addPerson, removePerson, setSeg, txRow, renderHist, openHist, renderHistFull, delTx, saveTx, backup, openRestore, applyImport, restoreFromFile, _svClose });

@@ -51,7 +51,7 @@ const res = await page.evaluate(async () => {
   return out;
 });
 
-const EXPECT_KEYS = ['bp3_cfg','bp3_months','bp3_theme','mortgage_real_v5','salaryTaxPlanner_v2','savings_jars_v1'];
+const EXPECT_KEYS = ['bp3_cfg','bp3_months','bp3_theme','car_v1','mortgage_real_v5','salaryTaxPlanner_v2','savings_jars_v1'];
 const ok = (c) => c ? '✓' : '✗';
 console.log('=== BACKUP (v2 generic) ===');
 console.log('  version 2:', ok(res.backupVersion===2), res.backupVersion);

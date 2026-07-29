@@ -1,0 +1,100 @@
+/* Car module — namespaced under #m-car, hamster theme */
+#m-car {
+  --bg:#FFF8E8; --surf:#FFFDF5; --surf2:#F5EED8;
+  --line:#E8D9BE; --line2:#DFD0A8;
+  --txt:#5E4B3C; --txt2:#8A7060; --txt3:#B8A898;
+  --green:#6E9A4C; --green-bg:#EEF5E2; --green-line:#C4DAA8;
+  --blue:#4A8A98;  --blue-bg:#E2F5F8;  --blue-line:#B8E3E9;
+  --amber:#B88020; --amber-bg:#FDF3D0; --amber-line:#E8C870;
+  --red:#B85040;   --red-bg:#FAE8E4;   --red-line:#E8B8A8;
+  --r:14px; --sh:0 2px 12px rgba(94,75,60,.08);
+}
+#m-car.m-app { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding:28px 18px 64px; line-height:1.55; }
+#m-car .wrap { max-width:960px; margin:0 auto; }
+#m-car .car-header { margin-bottom:20px; }
+#m-car .car-header h1 { font-size:21px; font-weight:700; letter-spacing:-.01em; }
+#m-car .car-header .sub { font-size:13px; color:var(--txt2); margin-top:2px; }
+
+/* selector chips */
+#m-car .car-selbar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+#m-car .car-chip { display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt2); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.16s; }
+#m-car .car-chip:hover { border-color:var(--green-line); color:var(--green); }
+#m-car .car-chip.active { background:var(--green); border-color:var(--green); color:#fff; box-shadow:0 2px 10px rgba(110,154,76,.35); }
+#m-car .cc-plate { font-size:11px; font-weight:700; padding:1px 6px; border-radius:6px; background:rgba(0,0,0,.08); }
+
+/* add-car inline */
+#m-car .car-add-inline { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+#m-car .car-add-inline input { height:38px; padding:0 12px; border-radius:10px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:13px; flex:1; min-width:120px; }
+#m-car .car-add-inline input:focus { outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg); }
+
+/* buttons */
+#m-car .car-btn { height:34px; padding:0 14px; border-radius:999px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt2); font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition:.16s; white-space:nowrap; }
+#m-car .car-btn:hover { background:var(--surf2); color:var(--txt); }
+#m-car .car-btn.primary { background:var(--green); border-color:var(--green); color:#fff; box-shadow:0 2px 8px rgba(110,154,76,.35); }
+#m-car .car-btn.primary:hover { background:#5c8340; color:#fff; }
+#m-car .car-btn.danger { color:var(--red); border-color:var(--red-line); background:var(--red-bg); }
+#m-car .car-btn.danger:hover { background:var(--red); color:#fff; }
+
+/* selected car head */
+#m-car .car-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+#m-car .car-title { font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px; }
+#m-car .car-head-act { display:flex; gap:8px; }
+
+/* metrics */
+#m-car .car-metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+#m-car .car-metric { background:var(--surf); border:1.5px solid var(--line); border-radius:var(--r); padding:13px 15px; box-shadow:var(--sh); }
+#m-car .car-metric.big { background:var(--green-bg); border-color:var(--green-line); }
+#m-car .car-metric .cm-lbl { font-size:11px; font-weight:600; color:var(--txt2); margin-bottom:5px; }
+#m-car .car-metric .cm-val { font-size:18px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+#m-car .car-metric.big .cm-val { color:var(--green); font-size:20px; }
+@media(max-width:640px){ #m-car .car-metrics { grid-template-columns:1fr 1fr; } }
+
+/* sections */
+#m-car .car-section { background:var(--surf); border:1.5px solid var(--line); border-radius:var(--r); padding:16px 18px; margin-bottom:16px; box-shadow:var(--sh); }
+#m-car .car-sec-title { font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#m-car .cst-sub { font-size:11px; font-weight:500; color:var(--txt3); }
+
+/* renewals */
+#m-car .car-renew-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+@media(max-width:640px){ #m-car .car-renew-grid { grid-template-columns:1fr 1fr; } }
+#m-car .car-renew { border-radius:12px; border:1.5px solid var(--line); background:var(--surf2); padding:12px; }
+#m-car .car-renew.soon { border-color:var(--amber-line); background:var(--amber-bg); }
+#m-car .car-renew.over { border-color:var(--red-line); background:var(--red-bg); }
+#m-car .car-renew.ok  { border-color:var(--green-line); background:var(--green-bg); }
+#m-car .cr-top { display:flex; align-items:center; gap:6px; font-weight:700; font-size:13px; margin-bottom:8px; }
+#m-car .cr-field { display:block; font-size:10.5px; font-weight:600; color:var(--txt2); margin-bottom:6px; }
+#m-car .cr-field input { display:block; width:100%; height:32px; margin-top:3px; padding:0 8px; border-radius:8px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:12.5px; }
+#m-car .cr-field input:focus { outline:none; border-color:var(--green); }
+#m-car .cr-note { font-size:11px; font-weight:700; margin-top:2px; }
+#m-car .cr-note.soon { color:var(--amber); }
+#m-car .cr-note.over { color:var(--red); }
+#m-car .cr-note.ok { color:var(--green); }
+
+/* add-row (fuel / service) */
+#m-car .car-add-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+#m-car .car-add-row input { height:36px; padding:0 10px; border-radius:9px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:12.5px; }
+#m-car .car-add-row input[type=text] { flex:1; min-width:140px; }
+#m-car .car-add-row input[type=number] { width:100px; }
+#m-car .car-add-row input[type=date] { width:140px; }
+#m-car .car-add-row input:focus { outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg); }
+
+/* tables */
+#m-car .car-table-wrap { overflow-x:auto; }
+#m-car .car-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+#m-car .car-table th { text-align:right; padding:7px 9px; font-size:11px; font-weight:700; color:var(--txt2); border-bottom:1.5px solid var(--line); white-space:nowrap; }
+#m-car .car-table th.l, #m-car .car-table td.l { text-align:left; }
+#m-car .car-table th:first-child, #m-car .car-table td:first-child { text-align:left; }
+#m-car .car-table td { padding:7px 9px; text-align:right; border-bottom:1px solid var(--surf2); font-variant-numeric:tabular-nums; white-space:nowrap; }
+#m-car .car-table td.num, #m-car .car-table th.num { text-align:right; }
+#m-car .car-table tbody tr:hover { background:var(--surf2); }
+#m-car .car-empty { text-align:center; color:var(--txt3); padding:16px; font-size:12px; }
+#m-car .car-del { border:none; background:transparent; color:var(--txt3); cursor:pointer; font-size:13px; padding:2px 6px; border-radius:5px; }
+#m-car .car-del:hover { background:var(--red-bg); color:var(--red); }
+
+/* empty state */
+#m-car .car-empty-state { text-align:center; padding:40px 20px; color:var(--txt3); }
+#m-car .car-empty-state .ces-ic { font-size:40px; margin-bottom:8px; }
+
+/* toast */
+#m-car .car-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(12px); background:var(--txt); color:var(--surf); padding:9px 18px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; transition:.22s; z-index:300; pointer-events:none; box-shadow:0 4px 18px rgba(0,0,0,.18); }
+#m-car .car-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }

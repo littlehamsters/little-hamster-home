@@ -475,6 +475,7 @@
       </div>
       <div class="cc-list" id="cc-list"></div>
       <div class="cc-sum" id="cc-sum"></div>
+      <div style="margin-top:8px"><button class="add-btn" style="background:var(--lilac);color:#fff" onclick="ccImportOpen()"><i class="ti ti-file-import"></i> นำเข้ารายการจากสลิป</button></div>
       <div class="add-new-row" style="margin-top:10px;flex-wrap:wrap">
         <div class="field"><label>บัตร</label><select id="cc-card"><option value="">-- เลือก --</option></select></div>
         <div class="field narrow"><label>ยอดรวม</label><input id="cc-total" type="text" inputmode="decimal" placeholder="0.00"
@@ -503,8 +504,9 @@
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
     <button onclick="toggleChart()" style="height:34px;padding:0 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:1.5px solid var(--line2);background:var(--card);color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;transition:.15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--card)'"><i class="ti ti-arrow-left" style="font-size:15px"></i> กลับหน้าหลัก</button>
-    <div style="display:flex;background:var(--card2);border-radius:20px;padding:3px;border:1.5px solid var(--line);gap:0">
+    <div style="display:flex;background:var(--card2);border-radius:20px;padding:3px;border:1.5px solid var(--line);gap:0;flex-wrap:wrap">
       <button class="ptab active-common" id="cp3" onclick="setChartTab('diff',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-plus-minus"></i> ผลต่าง Goal</button>
+      <button class="ptab" id="cp4" onclick="setChartTab('cc',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-credit-card"></i> บัตรเครดิตแยกหมวด</button>
     </div>
   </div>
 
@@ -584,7 +586,45 @@
     </div>
   </div>
 
-  
+  <div id="chart-sec-cc" style="display:none">
+    <div class="card">
+      <div class="card-head"><div class="card-head-left">
+        <div class="sicon" style="background:var(--lilac-bg);border:1.5px solid var(--lilac-line);font-size:17px;display:flex;align-items:center;justify-content:center">💳</div>
+        <div><div class="stitle">ค่าบัตรเครดิตแยกหมวด</div><div class="ssub" id="cc-cat-sub">เดือนนี้</div></div>
+      </div></div>
+      <div id="cc-cat-container"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="cc-import-modal">
+  <div class="modal">
+    <div class="modal-title">📥 นำเข้ารายการบัตร <button class="modal-close" onclick="ccImportClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div class="field"><label>บัตร</label><select id="cci-card"><option value="">-- เลือกบัตร --</option></select></div>
+    <div id="cci-photo" style="margin:10px 0">
+      <div class="cci-drop" style="border:2px dashed var(--line2);border-radius:12px;padding:14px;text-align:center;color:var(--ink2);font-size:13px;background:var(--card2)"
+        ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
+        ondragleave="this.style.borderColor='var(--line2)'"
+        ondrop="event.preventDefault();this.style.borderColor='var(--line2)';if(event.dataTransfer.files[0])ccImportPhoto({files:[event.dataTransfer.files[0]],value:''})">
+        📋 แคปหน้าจอสลิป แล้ว <b>วางที่นี่ (Ctrl / ⌘ + V)</b> หรือลากรูปมาวาง
+        <div style="margin-top:8px">
+          <button class="add-btn" style="background:var(--sky);color:#fff" onclick="document.getElementById('cci-file').click()"><i class="ti ti-photo"></i> เลือกรูปจากเครื่อง</button>
+          <input type="file" id="cci-file" accept="image/*" style="display:none" onchange="ccImportPhoto(this)">
+        </div>
+        <div class="cci-ocr-status" style="font-size:12px;color:var(--sky);margin-top:8px;font-weight:600"></div>
+      </div>
+    </div>
+    <div class="mlabel">รายการ (ติดป้ายเจ้าของ + หมวด)</div>
+    <div id="cci-rows"></div>
+    <pre id="cci-raw" style="display:none;white-space:pre-wrap;font-size:11px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:160px;overflow:auto;color:var(--ink2);margin:6px 0 0"></pre>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="add-btn" style="background:var(--card2);color:var(--ink)" onclick="ccImportAddRow()"><i class="ti ti-plus"></i> เพิ่มแถว</button>
+      <button class="add-btn" style="background:var(--lilac-bg);color:var(--lilac);border:1px solid var(--lilac-line)" onclick="ccAddCategory()"><i class="ti ti-tag"></i> เพิ่มหมวด</button>
+    </div>
+    <div id="cci-summary" style="margin-top:12px"></div>
+    <button class="msubmit dark" style="margin-top:12px" onclick="ccImportSave()">บันทึกเข้าบัตร</button>
+  </div>
 </div>
 
 <div class="modal-bg" id="settings-modal">

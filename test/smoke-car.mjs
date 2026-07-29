@@ -9,9 +9,9 @@ await page.waitForTimeout(1200);
 
 const out = await page.evaluate(() => {
   const r = {};
-  r.handlers = ['carOpenCarModal','carAddCar','carSaveCar','carSelect','carOpenFuelModal','carAddFuel',
-    'carOpenServiceModal','carAddService','carSetRenew','carOpenLicModal','carAddLicense','carSaveLicense',
-    'carDelLicense','carCloseModal','_carLoad','_carRender']
+  r.handlers = ['carOpenCarModal','carAddCar','carSaveCar','carSelect',
+    'carOpenServiceModal','carAddService','carSaveService','carDelService','carSetRenew',
+    'carOpenLicModal','carAddLicense','carSaveLicense','carDelLicense','carCloseModal','_carLoad','_carRender']
     .every(n => typeof window[n] === 'function');
 
   // empty: add buttons exist; popup opens with a form input
@@ -33,18 +33,16 @@ const out = await page.evaluate(() => {
     licenses:[ {id:'l1',name:'โฟม',due:plus(-3)}, {id:'l2',name:'เก่ง',due:plus(400)} ],
     cars:[{
       id:'car1', name:'Yaris', plate:'1กก1234',
-      fuel:[ {id:'f1',date:plus(-30),odo:10000,liters:30,total:1200},
-             {id:'f2',date:plus(-10),odo:10450,liters:31,total:1240} ],
       service:[ {id:'s1',date:plus(-20),odo:10200,item:'เปลี่ยนน้ำมันเครื่อง',cost:1500} ],
       renew:{ tax:{due:plus(15),cost:2000}, act:{due:plus(-5),cost:650}, ins:{due:plus(200),cost:12000} }
-    },{ id:'car2', name:'Vios', plate:'2ขข5678', fuel:[], service:[], renew:{} }]
+    },{ id:'car2', name:'Vios', plate:'2ขข5678', service:[], renew:{} }]
   }));
   window._carLoad(); window._carRender();
 
   // top summary metrics (mortgage-style)
-  const topMetrics = document.querySelectorAll('#m-car .car-metrics.top .car-metric');
+  const topMetrics = document.querySelectorAll('#m-car .car-strip-top .cs');
   r.topMetricCount = topMetrics.length;
-  r.summaryTotal = document.querySelector('#m-car .car-metrics.top .car-metric.big .cm-val')?.textContent;
+  r.summaryTotal = document.querySelector('#m-car .car-strip-top .cs-val.green')?.textContent;
 
   r.fleetCards = document.querySelectorAll('#m-car .car-ov').length;
   r.licCards = document.querySelectorAll('#m-car .car-lic').length;
@@ -59,20 +57,35 @@ const out = await page.evaluate(() => {
   r.hasYears = [...document.querySelectorAll('#m-car .car-lic .cr-note')]
     .some(e => /ปี/.test(e.textContent));
   r.sampleNote = noteTxt.slice(0, 90);
-  const tables = [...document.querySelectorAll('#m-car .car-table')];
-  r.fuelRows = tables[0].querySelectorAll('tbody tr').length;
-  r.kmL = tables[0].querySelectorAll('tbody tr:first-child td')[4]?.textContent;
+  // service table (fuel section removed): 1 existing row
+  const svTable = document.querySelector('#m-car .car-table');
+  r.svRows = svTable.querySelectorAll('tbody tr').length;
 
-  // POPUP FLOW: add a fuel record via the modal
-  window.carOpenFuelModal();
-  r.fuelPopup = !!document.getElementById('carFuelOdo');
-  document.getElementById('carFuelDate').value = plus(-1);
-  document.getElementById('carFuelOdo').value = '10900';
-  document.getElementById('carFuelLiters').value = '30';
-  document.getElementById('carFuelTotal').value = '1150';
-  window.carAddFuel();
-  r.fuelAddedRows = document.querySelectorAll('#m-car .car-table')[0].querySelectorAll('tbody tr').length;
+  // POPUP FLOW: add a service record via the modal → 1→2 rows
+  window.carOpenServiceModal();
+  r.svPopup = !!document.getElementById('carSvItem');
+  document.getElementById('carSvDate').value = '2026-05-20';
+  document.getElementById('carSvItem').value = 'เปลี่ยนยาง';
+  document.getElementById('carSvCost').value = '4000';
+  window.carAddService();
+  r.svAddedRows = document.querySelector('#m-car .car-table').querySelectorAll('tbody tr').length;
   r.popupClosedAfterAdd = !document.querySelector('#m-car .car-overlay.show');
+
+  // EDIT FLOW: each service row has ✎ (edit) + ✕ (delete)
+  const svActs = document.querySelectorAll('#m-car .car-table tbody tr .car-del');
+  r.svRowHasEditDel = svActs.length >= 2 &&
+    /carOpenServiceModal\(/.test(svActs[0].getAttribute('onclick')) &&
+    /carDelService\(/.test(svActs[1].getAttribute('onclick'));
+  // open edit on first service, change cost, save → value updates
+  const editBtn = [...document.querySelectorAll('#m-car .car-table tbody tr .car-del')]
+    .find(b => /carOpenServiceModal\('/.test(b.getAttribute('onclick')));
+  editBtn.click();
+  r.editPrefilled = !!document.getElementById('carSvItem')?.value;
+  document.getElementById('carSvCost').value = '9999';
+  const sid = editBtn.getAttribute('onclick').match(/carOpenServiceModal\('([^']+)'\)/)[1];
+  window.carSaveService(sid);
+  r.editApplied = [...document.querySelectorAll('#m-car .car-table tbody tr')]
+    .some(tr => /9,999/.test(tr.textContent));
 
   // dashboard
   window.showModule('home'); window.loadDash();
@@ -95,10 +108,10 @@ console.log('  license cards     :', ok(out.licCards===2), out.licCards, '| over
 console.log('  renew cards       :', ok(out.renewCards===3), out.renewCards);
 console.log('  countdown = months:', ok(out.usesMonths && !out.hasDays), '|', out.sampleNote);
 console.log('  >1yr shows ปี     :', ok(out.hasYears));
-console.log('  fuel rows / km/L  :', ok(out.fuelRows===2), out.fuelRows, '/', out.kmL);
+console.log('  service rows      :', ok(out.svRows===1), out.svRows);
 console.log('=== POPUP ADD FLOW ===');
-console.log('  fuel popup opens  :', ok(out.fuelPopup));
-console.log('  row added (2→3)   :', ok(out.fuelAddedRows===3), out.fuelAddedRows);
+console.log('  service popup opens:', ok(out.svPopup));
+console.log('  row added (1→2)   :', ok(out.svAddedRows===2), out.svAddedRows);
 console.log('  popup auto-closed :', ok(out.popupClosedAfterAdd));
 console.log('=== DASHBOARD CARD ===');
 console.log('  total:', out.dashTotal, '| count:', out.dashCount, ok(out.dashCount==='2 คัน'), '| next:', out.dashNext);

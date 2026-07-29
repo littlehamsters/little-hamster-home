@@ -1,5 +1,5 @@
-/* Car module — multi-car log: fuel + odometer, service, renewals (per car),
-   driver licenses (per person). Summary metrics on top; adds via popup. */
+/* Car module — multi-car log: service, renewals (per car), driver licenses
+   (per person). Summary metrics on top; adds via popup. */
 
 const CAR_KEY = 'car_v1';
 const RENEW_TYPES = [
@@ -94,7 +94,6 @@ function _carLoad() {
       id: c.id || _cUid(),
       name: c.name || 'รถของฉัน',
       plate: c.plate || '',
-      fuel: Array.isArray(c.fuel) ? c.fuel : [],
       service: Array.isArray(c.service) ? c.service : [],
       renew,
     };
@@ -116,11 +115,10 @@ function _carSave() {
 const _carSel = () => carState.cars.find((c) => c.id === carState.sel) || null;
 
 /* ── totals + nearest ────────────────────────────────────────────── */
-const _carFuelTotal = (c) => (c.fuel || []).reduce((s, f) => s + _cNum(f.total), 0);
 const _carServiceTotal = (c) => (c.service || []).reduce((s, r) => s + _cNum(r.cost), 0);
 const _carRenewTotal = (c) =>
   RENEW_TYPES.reduce((s, t) => s + _cNum((c.renew[t.k] || {}).cost), 0);
-const _carTotal = (c) => _carFuelTotal(c) + _carServiceTotal(c) + _carRenewTotal(c);
+const _carTotal = (c) => _carServiceTotal(c) + _carRenewTotal(c);
 
 function _carNextCarRenew() {
   let best = null;
@@ -206,7 +204,7 @@ function carAddCar() {
   const name = (_cNv('carNewName') || '').trim();
   const plate = (_cNv('carNewPlate') || '').trim();
   if (!name) return _cToast('ใส่ชื่อรถก่อนนะ 🐹');
-  const c = { id: _cUid(), name, plate, fuel: [], service: [], renew: {} };
+  const c = { id: _cUid(), name, plate, service: [], renew: {} };
   carState.cars.push(c);
   carState.sel = c.id;
   _carSave();
@@ -293,54 +291,19 @@ function carDelLicense(id) {
   _carRender();
 }
 
-/* ── fuel (popup) ────────────────────────────────────────────────── */
-function carOpenFuelModal() {
-  const c = _carSel();
-  if (!c) return;
-  _carModal(
-    '⛽ เพิ่มบันทึกน้ำมัน',
-    `<label class="cf">วันที่<input type="date" id="carFuelDate" value="${_cToday()}"></label>
-     <label class="cf">เลขไมล์ (กม.)<input type="number" id="carFuelOdo" inputmode="numeric" placeholder="เช่น 10450"></label>
-     <label class="cf">จำนวนลิตร<input type="number" id="carFuelLiters" inputmode="decimal" placeholder="เช่น 31"></label>
-     <label class="cf">ราคารวม (฿)<input type="number" id="carFuelTotal" inputmode="decimal" placeholder="เช่น 1200"></label>`,
-    '+ เพิ่ม',
-    'carAddFuel()'
-  );
-}
-function carAddFuel() {
-  const c = _carSel();
-  if (!c) return;
-  const date = _cNv('carFuelDate') || _cToday();
-  const odo = _cNum(_cNv('carFuelOdo'));
-  const liters = _cNum(_cNv('carFuelLiters'));
-  const total = _cNum(_cNv('carFuelTotal'));
-  if (!liters && !total) return _cToast('ใส่จำนวนลิตรหรือราคาก่อน');
-  c.fuel.push({ id: _cUid(), date, odo, liters, total });
-  _carSave();
-  carCloseModal();
-  _carRender();
-  _cToast('บันทึกน้ำมันแล้ว ✓');
-}
-function carDelFuel(fid) {
-  const c = _carSel();
-  if (!c) return;
-  c.fuel = c.fuel.filter((f) => f.id !== fid);
-  _carSave();
-  _carRender();
-}
-
 /* ── service (popup) ─────────────────────────────────────────────── */
-function carOpenServiceModal() {
+function carOpenServiceModal(id) {
   const c = _carSel();
   if (!c) return;
+  const s = id ? (c.service || []).find((x) => x.id === id) : null;
   _carModal(
-    '🔧 เพิ่มบันทึกซ่อม / บำรุง',
-    `<label class="cf">วันที่<input type="date" id="carSvDate" value="${_cToday()}"></label>
-     <label class="cf">เลขไมล์ (กม.)<input type="number" id="carSvOdo" inputmode="numeric" placeholder="เช่น 10200"></label>
-     <label class="cf">รายการ<input type="text" id="carSvItem" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง"></label>
-     <label class="cf">ราคา (฿)<input type="number" id="carSvCost" inputmode="decimal" placeholder="เช่น 1500"></label>`,
-    '+ เพิ่ม',
-    'carAddService()'
+    s ? '🔧 แก้ไขบันทึกซ่อม / บำรุง' : '🔧 เพิ่มบันทึกซ่อม / บำรุง',
+    `<label class="cf">วันที่<input type="date" id="carSvDate" value="${s ? _cEsc(s.date) : _cToday()}"></label>
+     <label class="cf">เลขไมล์ (กม.)<input type="number" id="carSvOdo" inputmode="numeric" value="${s && s.odo ? _cEsc(s.odo) : ''}" placeholder="เช่น 10200"></label>
+     <label class="cf">รายการ<input type="text" id="carSvItem" value="${s ? _cEsc(s.item) : ''}" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง"></label>
+     <label class="cf">ราคา (฿)<input type="number" id="carSvCost" inputmode="decimal" value="${s && s.cost ? _cEsc(s.cost) : ''}" placeholder="เช่น 1500"></label>`,
+    s ? 'บันทึก' : '+ เพิ่ม',
+    s ? `carSaveService('${id}')` : 'carAddService()'
   );
 }
 function carAddService() {
@@ -356,6 +319,22 @@ function carAddService() {
   carCloseModal();
   _carRender();
   _cToast('บันทึกค่าซ่อมแล้ว ✓');
+}
+function carSaveService(id) {
+  const c = _carSel();
+  if (!c) return;
+  const s = (c.service || []).find((x) => x.id === id);
+  if (!s) return;
+  const item = (_cNv('carSvItem') || '').trim();
+  if (!item) return _cToast('ใส่รายการซ่อม/บำรุงก่อน');
+  s.date = _cNv('carSvDate') || _cToday();
+  s.odo = _cNum(_cNv('carSvOdo'));
+  s.item = item;
+  s.cost = _cNum(_cNv('carSvCost'));
+  _carSave();
+  carCloseModal();
+  _carRender();
+  _cToast('บันทึกแล้ว ✓');
 }
 function carDelService(sid) {
   const c = _carSel();
@@ -377,34 +356,39 @@ function _carSummaryMetrics() {
   };
   const r = mv(nc),
     l = mv(nl);
-  return `<div class="car-metrics top">
-    <div class="car-metric"><div class="cm-lbl">🚗 รถทั้งหมด</div><div class="cm-val">${
-      carState.cars.length
-    } คัน</div></div>
-    <div class="car-metric big"><div class="cm-lbl">💰 ค่าใช้จ่ายรวมทุกคัน</div><div class="cm-val">${_cFmt(
-      total
-    )} ฿</div></div>
-    <div class="car-metric"><div class="cm-lbl">📄 ต่ออายุรถใกล้ครบ</div><div class="cm-val urg-${
-      r.cls
-    }" style="font-size:15px">${_cEsc(r.txt)}</div><div class="cm-sub urg-${r.cls}">${r.sub}</div></div>
-    <div class="car-metric"><div class="cm-lbl">🪪 ใบขับขี่ใกล้หมด</div><div class="cm-val urg-${
-      l.cls
-    }" style="font-size:15px">${_cEsc(l.txt)}</div><div class="cm-sub urg-${l.cls}">${l.sub}</div></div>
+  const yr = new Date().getFullYear() + 543;
+  const cell = (ic, tone, lbl, val, valCls, sub, subCls) =>
+    `<div class="cs">
+       <span class="stat-ic ${tone}">${ic}</span>
+       <div class="cs-tx">
+         <div class="cs-lbl">${lbl}</div>
+         <div class="cs-val ${valCls || ''}">${val}</div>
+         <div class="cs-sub ${subCls || ''}">${sub}</div>
+       </div>
+     </div>`;
+  return `<div class="car-strip car-strip-top">
+    ${cell('🚗', 'ic-green', 'รถทั้งหมด', carState.cars.length + ' คัน', '', 'กำลังใช้งาน')}
+    ${cell('💰', 'ic-gold', 'ค่าใช้จ่ายรวม', _cFmt(total) + ' ฿', 'green', 'ปี ' + yr)}
+    ${cell('🛡️', 'ic-blue', 'ต่ออายุใกล้ครบ', _cEsc(r.txt), 'sm urg-' + r.cls, r.sub, 'urg-' + r.cls)}
+    ${cell('🪪', 'ic-clay', 'ใบขับขี่ใกล้หมด', _cEsc(l.txt), 'sm urg-' + l.cls, l.sub, 'urg-' + l.cls)}
   </div>`;
 }
 
 /* ── render: licenses + fleet ────────────────────────────────────── */
 function _carLicenseSection() {
-  const cards = carState.licenses
+  const rows = carState.licenses
     .map((l) => {
       const u = _cUrg(l.due);
-      return `<div class="car-lic ${u.cls}">
-        <div class="cl-head"><span class="cl-name">👤 ${_cEsc(l.name)}</span>
-          <span class="cl-act">
-            <button class="car-del" onclick="carOpenLicModal('${l.id}')" title="แก้ไข">✎</button>
-            <button class="car-del" onclick="carDelLicense('${l.id}')" title="ลบ">✕</button></span></div>
-        <div class="cl-due">หมดอายุ: ${_cShortDate(l.due)}</div>
-        <div class="cr-note ${u.cls}">${u.note}</div>
+      return `<div class="car-row car-lic ${u.cls}">
+        <span class="row-ic">👤</span>
+        <div class="row-main">
+          <div class="row-name">${_cEsc(l.name)}</div>
+          <div class="row-sub">หมดอายุ ${_cShortDate(l.due)} · <span class="cr-note ${u.cls}">${u.note}</span></div>
+        </div>
+        <span class="row-act">
+          <button class="car-del" onclick="carOpenLicModal('${l.id}')" title="แก้ไข">✎</button>
+          <button class="car-del" onclick="carDelLicense('${l.id}')" title="ลบ">✕</button>
+        </span>
       </div>`;
     })
     .join('');
@@ -414,23 +398,27 @@ function _carLicenseSection() {
   return `<div class="car-card">
     <div class="car-card-head"><div class="car-card-title">🪪 ใบขับขี่ (รายคน)</div>
       <button class="car-btn primary sm" onclick="carOpenLicModal()">+ เพิ่มคน</button></div>
-    <div class="car-lic-grid">${cards}</div>${empty}
+    <div class="car-list">${rows}</div>${empty}
   </div>`;
 }
 function _carFleetSection() {
-  const cards = carState.cars
+  const rows = carState.cars
     .map((c) => {
       const nx = _carNextForCar(c);
       const u = nx ? _cUrg(nx.due) : { cls: 'none', note: 'ยังไม่ตั้งต่ออายุ' };
       const next = nx
         ? `<span class="cov-next ${u.cls}">${nx.label} · ${u.note}</span>`
         : '<span class="cov-next none">ยังไม่ตั้งต่ออายุ</span>';
-      return `<div class="car-ov ${c.id === carState.sel ? 'active' : ''}" onclick="carSelect('${c.id}')">
-        <div class="cov-name">🚗 ${_cEsc(c.name)}${
+      return `<div class="car-row car-ov ${c.id === carState.sel ? 'active' : ''}" onclick="carSelect('${c.id}')">
+        <span class="row-ic">🚗</span>
+        <div class="row-main">
+          <div class="row-name">${_cEsc(c.name)}${
         c.plate ? ` <span class="cc-plate">${_cEsc(c.plate)}</span>` : ''
       }</div>
+          <div class="row-sub">${next}</div>
+        </div>
         <div class="cov-total">${_cFmt(_carTotal(c))} ฿</div>
-        <div class="cov-line">${next}</div>
+        <span class="chev">›</span>
       </div>`;
     })
     .join('');
@@ -438,7 +426,7 @@ function _carFleetSection() {
   return `<div class="car-card">
     <div class="car-card-head"><div class="car-card-title">🚗 รถทั้งหมด <span class="cst-sub">(กดเพื่อดูรายละเอียด)</span></div>
       <button class="car-btn primary sm" onclick="carOpenCarModal()">+ เพิ่มรถ</button></div>
-    <div class="car-ov-grid">${cards}</div>${empty}
+    <div class="car-list">${rows}</div>${empty}
   </div>`;
 }
 
@@ -446,36 +434,16 @@ function _carFleetSection() {
 function _carRenewCard(c, t) {
   const r = c.renew[t.k] || {};
   const u = _cUrg(r.due);
-  return `<div class="car-renew ${u.cls}">
-    <div class="cr-top"><span class="cr-ic">${t.icon}</span><span class="cr-lbl">${t.label}</span></div>
-    <label class="cr-field">ครบกำหนด
+  return `<div class="car-row car-renew ${u.cls}">
+    <span class="row-ic">${t.icon}</span>
+    <span class="cr-lbl">${t.label}</span>
+    <label class="cr-inline">ครบกำหนด
       <input type="date" value="${_cEsc(r.due || '')}" onchange="carSetRenew('${t.k}','due',this.value)"></label>
-    <label class="cr-field">ค่าใช้จ่าย (฿)
+    <label class="cr-inline">฿
       <input type="number" inputmode="decimal" value="${r.cost ? _cEsc(r.cost) : ''}" placeholder="0"
         onchange="carSetRenew('${t.k}','cost',this.value)"></label>
-    <div class="cr-note ${u.cls}">${u.note}</div>
+    <span class="cr-note pill ${u.cls}">${u.note}</span>
   </div>`;
-}
-function _carFuelRows(c) {
-  const rows = (c.fuel || []).slice().sort((a, b) => (a.odo || 0) - (b.odo || 0));
-  if (!rows.length)
-    return '<tr><td colspan="6" class="car-empty">ยังไม่มีบันทึกน้ำมัน</td></tr>';
-  return rows
-    .map((f, i) => {
-      const prev = i > 0 ? rows[i - 1] : null;
-      const dist = prev && f.odo && prev.odo ? f.odo - prev.odo : 0;
-      const kmL = dist && f.liters ? dist / f.liters : 0;
-      return `<tr>
-        <td>${_cShortDate(f.date)}</td>
-        <td class="num">${f.odo ? _cFmt(f.odo) : '—'}</td>
-        <td class="num">${f.liters ? _cFmt1(f.liters) : '—'}</td>
-        <td class="num">${f.total ? _cFmt(f.total) : '—'}</td>
-        <td class="num">${kmL ? _cFmt1(kmL) : '—'}</td>
-        <td><button class="car-del" onclick="carDelFuel('${f.id}')" title="ลบ">✕</button></td>
-      </tr>`;
-    })
-    .reverse()
-    .join('');
 }
 function _carServiceRows(c) {
   const rows = (c.service || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -488,14 +456,16 @@ function _carServiceRows(c) {
       <td class="num">${s.odo ? _cFmt(s.odo) : '—'}</td>
       <td class="l">${_cEsc(s.item)}</td>
       <td class="num">${s.cost ? _cFmt(s.cost) : '—'}</td>
-      <td><button class="car-del" onclick="carDelService('${s.id}')" title="ลบ">✕</button></td>
+      <td class="row-act">
+        <button class="car-del" onclick="carOpenServiceModal('${s.id}')" title="แก้ไข">✎</button>
+        <button class="car-del" onclick="carDelService('${s.id}')" title="ลบ">✕</button>
+      </td>
     </tr>`
     )
     .join('');
 }
 function _carDetail(c) {
-  const fuelT = _carFuelTotal(c),
-    svT = _carServiceTotal(c),
+  const svT = _carServiceTotal(c),
     rnT = _carRenewTotal(c);
   return `
     <div class="car-detail-head">
@@ -507,24 +477,16 @@ function _carDetail(c) {
         <button class="car-btn danger sm" onclick="carDelCar('${c.id}')">🗑 ลบ</button>
       </div>
     </div>
-    <div class="car-metrics">
-      <div class="car-metric big"><div class="cm-lbl">ค่าใช้จ่ายรวม</div><div class="cm-val">${_cFmt(
-        fuelT + svT + rnT
-      )} ฿</div></div>
-      <div class="car-metric"><div class="cm-lbl">⛽ น้ำมัน</div><div class="cm-val">${_cFmt(fuelT)} ฿</div></div>
-      <div class="car-metric"><div class="cm-lbl">🔧 ซ่อม/บำรุง</div><div class="cm-val">${_cFmt(svT)} ฿</div></div>
-      <div class="car-metric"><div class="cm-lbl">📄 ต่ออายุ</div><div class="cm-val">${_cFmt(rnT)} ฿</div></div>
+    <div class="car-strip">
+      <div class="cs"><span class="stat-ic ic-green">💰</span><div class="cs-tx"><div class="cs-lbl">ค่าใช้จ่ายรวม</div><div class="cs-val green">${_cFmt(
+        svT + rnT
+      )} ฿</div><div class="cs-sub">ปี ${new Date().getFullYear() + 543}</div></div></div>
+      <div class="cs"><span class="stat-ic ic-blue">🔧</span><div class="cs-tx"><div class="cs-lbl">ซ่อม/บำรุง</div><div class="cs-val">${_cFmt(svT)} ฿</div><div class="cs-sub">${(c.service || []).length} ครั้ง</div></div></div>
+      <div class="cs"><span class="stat-ic ic-gold">📄</span><div class="cs-tx"><div class="cs-lbl">ต่ออายุ</div><div class="cs-val">${_cFmt(rnT)} ฿</div><div class="cs-sub">รวมทั้งหมด</div></div></div>
     </div>
     <div class="car-card">
       <div class="car-card-head"><div class="car-card-title">📄 ต่อภาษี / พ.ร.บ. / ประกัน</div></div>
-      <div class="car-renew-grid">${RENEW_TYPES.map((t) => _carRenewCard(c, t)).join('')}</div>
-    </div>
-    <div class="car-card">
-      <div class="car-card-head"><div class="car-card-title">⛽ บันทึกน้ำมัน <span class="cst-sub">(คำนวณ กม./ลิตร)</span></div>
-        <button class="car-btn primary sm" onclick="carOpenFuelModal()">+ เพิ่มน้ำมัน</button></div>
-      <div class="car-table-wrap"><table class="car-table">
-        <thead><tr><th>วันที่</th><th class="num">ไมล์</th><th class="num">ลิตร</th><th class="num">ราคา</th><th class="num">กม./ล.</th><th></th></tr></thead>
-        <tbody>${_carFuelRows(c)}</tbody></table></div>
+      <div class="car-list">${RENEW_TYPES.map((t) => _carRenewCard(c, t)).join('')}</div>
     </div>
     <div class="car-card">
       <div class="car-card-head"><div class="car-card-title">🔧 บันทึกซ่อม / บำรุงรักษา</div>
@@ -562,11 +524,9 @@ Object.assign(window, {
   carAddLicense,
   carSaveLicense,
   carDelLicense,
-  carOpenFuelModal,
-  carAddFuel,
-  carDelFuel,
   carOpenServiceModal,
   carAddService,
+  carSaveService,
   carDelService,
   carCloseModal,
   _carNextRenew,

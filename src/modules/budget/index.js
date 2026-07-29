@@ -15,36 +15,36 @@ export default {
     window._bpRender();
   },
 
-  // home card (#bp-month / #bp-status / #bp-count)
+  // home card — latest month: status (คงเหลือ/เกิน) + รายรับ + รายจ่าย
+  // (#bp-month label, #bp-status big value, #bp-income, #bp-expense)
   dashboard() {
     try {
-      var bp = JSON.parse(localStorage.getItem('bp3_months') || 'null');
-      var d = new Date();
-      var mkey =
-        d.getFullYear() + '-' + String(d.getMonth()).padStart(2, '0');
-      var mnames = [
-        'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-        'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-      ];
-      document.getElementById('bp-month').textContent =
-        mnames[d.getMonth()] + ' ' + (d.getFullYear() + 543);
-      if (bp && bp[mkey]) {
-        var mon = bp[mkey];
-        var nExp = 0;
-        try {
-          ['p1', 'p2'].forEach(function (p) {
-            if (mon.expenses && mon.expenses[p]) {
-              nExp += Object.keys(mon.expenses[p].fixed || {}).length;
-              nExp += (mon.expenses[p].extras || []).length;
-            }
-          });
-        } catch (ex) {}
-        document.getElementById('bp-status').textContent = 'มีข้อมูลแล้ว ✓';
-        document.getElementById('bp-status').className = 'chip-val green';
-        document.getElementById('bp-count').textContent = nExp + ' รายการ';
+      var monthEl = document.getElementById('bp-month');
+      var statusEl = document.getElementById('bp-status');
+      var incomeEl = document.getElementById('bp-income');
+      var expenseEl = document.getElementById('bp-expense');
+      if (!statusEl) return;
+      var fmt = function (v) {
+        return Math.round(v).toLocaleString('th-TH');
+      };
+      var s =
+        typeof window.bpGetHomeSummary === 'function'
+          ? window.bpGetHomeSummary()
+          : null;
+      statusEl.className = 'chip-val big';
+      if (s) {
+        monthEl.textContent = s.label;
+        statusEl.textContent =
+          (s.remain >= 0 ? 'เหลือ ' : 'เกิน ') + fmt(Math.abs(s.remain)) + ' ฿';
+        statusEl.style.color = s.good ? '#6E9A4C' : '#B85040';
+        incomeEl.textContent = fmt(s.income) + ' ฿';
+        expenseEl.textContent = fmt(s.expense) + ' ฿';
       } else {
-        document.getElementById('bp-status').textContent = 'ยังไม่มีข้อมูล';
-        document.getElementById('bp-count').textContent = '-';
+        monthEl.textContent = 'เดือนล่าสุด';
+        statusEl.textContent = 'ยังไม่มีข้อมูล';
+        statusEl.style.color = '';
+        incomeEl.textContent = '-';
+        expenseEl.textContent = '-';
       }
     } catch (e) {
       console.error(e);

@@ -1705,5 +1705,20 @@ document.getElementById('month-label').textContent=`${MONTHS_TH[curMonth]} ${cur
 _bpRender();
 document.getElementById('settings-modal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
 
+// Home dashboard summary for the latest month (income / expense / remaining status)
+function bpGetHomeSummary(){
+  try{
+    const keys=getAllMonthKeys();
+    if(!keys.length) return null;
+    const key=keys[keys.length-1]; // เดือนล่าสุด
+    const a=getMonthStats(key,'p1'), b=getMonthStats(key,'p2');
+    const income=a.inc+b.inc;
+    const outflow=(a.expense+a.cc+a.save+a.invest)+(b.expense+b.cc+b.save+b.invest);
+    const remain=a.remain+b.remain; // = income - outflow
+    return { label:getMonthLabel(key), income, expense:outflow, remain, good:remain>=0 };
+  }catch(e){ return null; }
+}
+window.bpGetHomeSummary=bpGetHomeSummary;
+
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
 Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, hamsterClick, _bpToast, numOnly, bindDecimalInputs });

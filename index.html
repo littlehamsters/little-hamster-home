@@ -508,14 +508,12 @@
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
     <button onclick="toggleChart()" style="height:34px;padding:0 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:1.5px solid var(--line2);background:var(--card);color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;transition:.15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--card)'"><i class="ti ti-arrow-left" style="font-size:15px"></i> กลับหน้าหลัก</button>
     <div style="display:flex;background:var(--card2);border-radius:20px;padding:3px;border:1.5px solid var(--line);gap:0">
-      <button class="ptab active-p1" id="cp1" onclick="setChartTab('overview',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-chart-bar"></i> ภาพรวม</button>
-      <button class="ptab" id="cp2" onclick="setChartTab('compare',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-git-compare"></i> เปรียบเทียบรายการ</button>
-      <button class="ptab" id="cp3" onclick="setChartTab('diff',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-plus-minus"></i> ผลต่าง Goal</button>
+      <button class="ptab active-common" id="cp3" onclick="setChartTab('diff',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-plus-minus"></i> ผลต่าง Goal</button>
     </div>
   </div>
 
 
-  <div id="chart-sec-overview">
+  <div id="chart-sec-overview" style="display:none">
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem">
       <button id="cfilt-p1" onclick="setChartPerson('p1',this)"
@@ -570,7 +568,7 @@
   </div>
 
 
-  <div id="chart-sec-diff" style="display:none">
+  <div id="chart-sec-diff">
     <div class="card">
       <div class="card-head"><div class="card-head-left">
         <div class="sicon" style="background:var(--teal-bg);border:1.5px solid var(--teal-line);font-size:17px;display:flex;align-items:center;justify-content:center">📊</div>

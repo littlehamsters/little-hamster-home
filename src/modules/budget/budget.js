@@ -1188,7 +1188,7 @@ let chartMain=null, chartDonut=null, chartInvest=null, chartStack=null;
 let chartCmpP1=null, chartCmpP2=null;
 let chartVisible=false;
 let chartPerson='p1';
-let chartTab='overview';
+let chartTab='diff';
 
 function toggleChart(){
   chartVisible=!chartVisible;
@@ -1200,18 +1200,12 @@ function toggleChart(){
   btn.style.background=chartVisible?'var(--sky)':'';
   btn.style.color=chartVisible?'#fff':'';
   if(chartVisible){
-    const n1=document.getElementById('cp1-name');if(n1)n1.textContent=cfg.p1;
-    const n2=document.getElementById('cp2-name');if(n2)n2.textContent=cfg.p2;
-    document.getElementById('chart-sec-overview').style.display='block';
+    // ภาพรวม / เปรียบเทียบรายการ tabs removed — default to ผลต่าง Goal
+    document.getElementById('chart-sec-overview').style.display='none';
     document.getElementById('chart-sec-compare').style.display='none';
-    if(document.getElementById('chart-sec-diff'))document.getElementById('chart-sec-diff').style.display='none';
-    chartTab='overview'; chartPerson='p1';
-    // init button colors
-    const b1=document.getElementById('cfilt-p1');
-    const b2=document.getElementById('cfilt-p2');
-    if(b1){b1.style.background='var(--sky)';b1.style.color='#fff';b1.style.borderColor='var(--sky-line)';}
-    if(b2){b2.style.background='var(--rose-bg)';b2.style.color='var(--rose)';b2.style.borderColor='var(--rose-line)';}
-    _bpRenderCharts();
+    if(document.getElementById('chart-sec-diff'))document.getElementById('chart-sec-diff').style.display='block';
+    chartTab='diff'; chartPerson='p1';
+    renderDiffTable();
   }
 }
 

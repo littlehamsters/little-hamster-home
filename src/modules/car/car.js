@@ -46,12 +46,17 @@ const _cDaysLeft = (iso) => {
   t.setHours(0, 0, 0, 0);
   return Math.round((d - t) / 86400000);
 };
+// countdown shown in months (not days)
+const _cMonths = (days) => {
+  const mo = Math.round(Math.abs(days) / 30.44);
+  return mo < 1 ? 'ไม่ถึง 1 เดือน' : mo + ' เดือน';
+};
 const _cUrg = (iso) => {
   const dl = _cDaysLeft(iso);
   if (dl === null) return { cls: 'none', note: 'ยังไม่ตั้ง', days: null };
-  if (dl < 0) return { cls: 'over', note: 'เลยมา ' + Math.abs(dl) + ' วัน', days: dl };
-  if (dl <= 30) return { cls: 'soon', note: 'อีก ' + dl + ' วัน', days: dl };
-  return { cls: 'ok', note: 'อีก ' + dl + ' วัน', days: dl };
+  if (dl < 0) return { cls: 'over', note: 'เลยมา ' + _cMonths(dl), days: dl };
+  if (dl <= 30) return { cls: 'soon', note: 'อีก ' + _cMonths(dl), days: dl };
+  return { cls: 'ok', note: 'อีก ' + _cMonths(dl), days: dl };
 };
 const _cNv = (id) => {
   const el = document.getElementById(id);
@@ -562,4 +567,5 @@ Object.assign(window, {
   carCloseModal,
   _carNextRenew,
   _carTotal,
+  _cMonths,
 });

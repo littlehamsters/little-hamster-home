@@ -50,6 +50,12 @@ const out = await page.evaluate(() => {
   r.licCards = document.querySelectorAll('#m-car .car-lic').length;
   r.licOverdue = !!document.querySelector('#m-car .car-lic.over');
   r.renewCards = document.querySelectorAll('#m-car .car-renew').length;
+  // countdown must be in months, never days
+  const noteTxt = [...document.querySelectorAll('#m-car .cr-note, #m-car .cov-next, #m-car .cm-sub')]
+    .map(e => e.textContent).join(' | ');
+  r.usesMonths = /เดือน/.test(noteTxt);
+  r.hasDays = /\d+\s*วัน/.test(noteTxt);
+  r.sampleNote = noteTxt.slice(0, 80);
   const tables = [...document.querySelectorAll('#m-car .car-table')];
   r.fuelRows = tables[0].querySelectorAll('tbody tr').length;
   r.kmL = tables[0].querySelectorAll('tbody tr:first-child td')[4]?.textContent;
@@ -84,6 +90,7 @@ console.log('  top summary metrics:', ok(out.topMetricCount===4), out.topMetricC
 console.log('  fleet overview    :', ok(out.fleetCards===2), out.fleetCards);
 console.log('  license cards     :', ok(out.licCards===2), out.licCards, '| overdue:', ok(out.licOverdue));
 console.log('  renew cards       :', ok(out.renewCards===3), out.renewCards);
+console.log('  countdown = months:', ok(out.usesMonths && !out.hasDays), '|', out.sampleNote);
 console.log('  fuel rows / km/L  :', ok(out.fuelRows===2), out.fuelRows, '/', out.kmL);
 console.log('=== POPUP ADD FLOW ===');
 console.log('  fuel popup opens  :', ok(out.fuelPopup));

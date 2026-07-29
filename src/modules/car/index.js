@@ -35,10 +35,11 @@ export default {
         countEl.textContent = raw.cars.length + ' คัน';
         var nx = window._carNextRenew();
         if (nx) {
-          var when =
-            nx.days < 0
-              ? 'เลย ' + Math.abs(nx.days) + ' วัน'
-              : 'อีก ' + nx.days + ' วัน';
+          var mo =
+            typeof window._cMonths === 'function'
+              ? window._cMonths(nx.days)
+              : Math.round(Math.abs(nx.days) / 30.44) + ' เดือน';
+          var when = (nx.days < 0 ? 'เลย ' : 'อีก ') + mo;
           nextEl.textContent = nx.label + ' · ' + when;
           nextEl.className =
             'chip-val ' + (nx.days < 0 ? '' : nx.days <= 30 ? 'yellow' : 'green');

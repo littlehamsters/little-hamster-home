@@ -43,10 +43,6 @@
     <div class="nav-brand"><span>🐹</span><span>Little Hamster Home</span></div>
     <button id="nav-home"     class="nav-btn active" onclick="showModule('home')"    >&#127968; หน้าหลัก</button>
     <div class="nav-util-sep"></div>
-    <button class="nav-btn nav-util" onclick="unifiedBackup()" title="สำรองข้อมูลทั้งหมด (ทั้ง 4 แอพ)">&#128190; สำรอง</button>
-    <button class="nav-btn nav-util" onclick="document.getElementById('u-restore').click()" title="นำเข้าข้อมูล (ทั้ง 4 แอพ)">&#128229; นำเข้า</button>
-    <input type="file" id="u-restore" accept=".json" style="display:none" onchange="unifiedRestore(this.files[0]);this.value=''">
-    <div class="nav-util-sep"></div>
     <div class="fb-user-chip" id="fb-chip"><img class="fb-avatar" id="fb-av" src="" alt=""><span id="fb-name">—</span></div>
     <button class="fb-logout" id="fb-logout" onclick="fbSignOut()">ออก</button>
     <div class="fb-sync" id="fb-sync"><div class="fb-dot" id="fb-dot"></div><span id="fb-sync-txt"></span></div>

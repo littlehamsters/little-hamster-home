@@ -9,22 +9,25 @@ await page.waitForTimeout(1200);
 
 const out = await page.evaluate(() => {
   const r = {};
-  // 1) handlers exposed
-  r.handlers = ['carAddCar','carSelect','carAddFuel','carAddService','carSetRenew','carDelCar',
-    'carAddLicense','carSetLicense','carDelLicense','_carLoad','_carRender']
+  r.handlers = ['carOpenCarModal','carAddCar','carSaveCar','carSelect','carOpenFuelModal','carAddFuel',
+    'carOpenServiceModal','carAddService','carSetRenew','carOpenLicModal','carAddLicense','carSaveLicense',
+    'carDelLicense','carCloseModal','_carLoad','_carRender']
     .every(n => typeof window[n] === 'function');
 
-  // 2) open module — empty state
+  // empty: add buttons exist; popup opens with a form input
   localStorage.removeItem('car_v1');
   window.showModule('car');
   r.moduleVisible = getComputedStyle(document.getElementById('m-car')).display;
-  // usable-when-empty: summary shows add-car + add-license forms even with no data
-  r.emptyUsable = !!document.getElementById('carNewName') && !!document.getElementById('carLicName');
+  r.addCarBtn = [...document.querySelectorAll('#m-car [onclick]')].some(b => /carOpenCarModal\(\)/.test(b.getAttribute('onclick')));
+  window.carOpenCarModal();
+  r.carPopupOpens = document.querySelector('#m-car .car-overlay.show') && !!document.getElementById('carNewName');
+  window.carCloseModal();
+  r.popupCloses = !document.querySelector('#m-car .car-overlay.show');
 
-  // 3) seed a car with fuel + service + renewals (near + overdue)
-  const today = new Date();
+  // seed data
   const iso = d => d.toISOString().slice(0,10);
-  const plus = n => { const x = new Date(today); x.setDate(x.getDate()+n); return iso(x); };
+  const t = new Date();
+  const plus = n => { const x = new Date(t); x.setDate(x.getDate()+n); return iso(x); };
   localStorage.setItem('car_v1', JSON.stringify({
     sel:'car1',
     licenses:[ {id:'l1',name:'โฟม',due:plus(-3)}, {id:'l2',name:'เก่ง',due:plus(400)} ],
@@ -34,26 +37,35 @@ const out = await page.evaluate(() => {
              {id:'f2',date:plus(-10),odo:10450,liters:31,total:1240} ],
       service:[ {id:'s1',date:plus(-20),odo:10200,item:'เปลี่ยนน้ำมันเครื่อง',cost:1500} ],
       renew:{ tax:{due:plus(15),cost:2000}, act:{due:plus(-5),cost:650}, ins:{due:plus(200),cost:12000} }
-    },{
-      id:'car2', name:'Vios', plate:'2ขข5678', fuel:[], service:[], renew:{}
-    }]
+    },{ id:'car2', name:'Vios', plate:'2ขข5678', fuel:[], service:[], renew:{} }]
   }));
   window._carLoad(); window._carRender();
 
-  const tables = [...document.querySelectorAll('#m-car .car-table')];
+  // top summary metrics (mortgage-style)
+  const topMetrics = document.querySelectorAll('#m-car .car-metrics.top .car-metric');
+  r.topMetricCount = topMetrics.length;
+  r.summaryTotal = document.querySelector('#m-car .car-metrics.top .car-metric.big .cm-val')?.textContent;
+
   r.fleetCards = document.querySelectorAll('#m-car .car-ov').length;
   r.licCards = document.querySelectorAll('#m-car .car-lic').length;
-  r.licOverdue = !!document.querySelector('#m-car .car-lic.over'); // โฟม overdue
-  r.metricTotal = document.querySelector('#m-car .car-metric.big .cm-val')?.textContent;
-  r.fuelRows = tables[0].querySelectorAll('tbody tr').length;
+  r.licOverdue = !!document.querySelector('#m-car .car-lic.over');
   r.renewCards = document.querySelectorAll('#m-car .car-renew').length;
-  r.overdue = !!document.querySelector('#m-car .car-renew.over'); // พรบ overdue
-  r.kmL = (() => { // 450km / 31L ≈ 14.5 on the newest fuel row (top after reverse)
-    const cells = tables[0].querySelectorAll('tbody tr:first-child td');
-    return cells.length ? cells[4].textContent : null;
-  })();
+  const tables = [...document.querySelectorAll('#m-car .car-table')];
+  r.fuelRows = tables[0].querySelectorAll('tbody tr').length;
+  r.kmL = tables[0].querySelectorAll('tbody tr:first-child td')[4]?.textContent;
 
-  // 4) dashboard card
+  // POPUP FLOW: add a fuel record via the modal
+  window.carOpenFuelModal();
+  r.fuelPopup = !!document.getElementById('carFuelOdo');
+  document.getElementById('carFuelDate').value = plus(-1);
+  document.getElementById('carFuelOdo').value = '10900';
+  document.getElementById('carFuelLiters').value = '30';
+  document.getElementById('carFuelTotal').value = '1150';
+  window.carAddFuel();
+  r.fuelAddedRows = document.querySelectorAll('#m-car .car-table')[0].querySelectorAll('tbody tr').length;
+  r.popupClosedAfterAdd = !document.querySelector('#m-car .car-overlay.show');
+
+  // dashboard
   window.showModule('home'); window.loadDash();
   r.dashTotal = document.getElementById('car-total')?.textContent;
   r.dashCount = document.getElementById('car-count')?.textContent;
@@ -63,19 +75,22 @@ const out = await page.evaluate(() => {
 
 const ok = c => c ? '✓' : '✗';
 console.log('=== CAR MODULE ===');
-console.log('  handlers exposed :', ok(out.handlers));
-console.log('  module visible   :', ok(out.moduleVisible==='block'), out.moduleVisible);
-console.log('  usable when empty:', ok(out.emptyUsable));
-console.log('  fleet overview   :', ok(out.fleetCards===2), out.fleetCards, 'cars');
-console.log('  license cards    :', ok(out.licCards===2), out.licCards, 'people');
-console.log('  license overdue  :', ok(out.licOverdue), '(โฟม)');
-console.log('  total metric     :', out.metricTotal, ok(!!out.metricTotal));
-console.log('  fuel rows        :', ok(out.fuelRows===2), out.fuelRows);
-console.log('  renew cards      :', ok(out.renewCards===3), out.renewCards, '(tax/พรบ/ประกัน)');
-console.log('  พรบ overdue flag :', ok(out.overdue));
-console.log('  km/L computed    :', out.kmL);
+console.log('  handlers exposed  :', ok(out.handlers));
+console.log('  module visible    :', ok(out.moduleVisible==='block'));
+console.log('  + เพิ่มรถ button   :', ok(out.addCarBtn));
+console.log('  car popup opens   :', ok(out.carPopupOpens));
+console.log('  popup closes      :', ok(out.popupCloses));
+console.log('  top summary metrics:', ok(out.topMetricCount===4), out.topMetricCount, '| total:', out.summaryTotal);
+console.log('  fleet overview    :', ok(out.fleetCards===2), out.fleetCards);
+console.log('  license cards     :', ok(out.licCards===2), out.licCards, '| overdue:', ok(out.licOverdue));
+console.log('  renew cards       :', ok(out.renewCards===3), out.renewCards);
+console.log('  fuel rows / km/L  :', ok(out.fuelRows===2), out.fuelRows, '/', out.kmL);
+console.log('=== POPUP ADD FLOW ===');
+console.log('  fuel popup opens  :', ok(out.fuelPopup));
+console.log('  row added (2→3)   :', ok(out.fuelAddedRows===3), out.fuelAddedRows);
+console.log('  popup auto-closed :', ok(out.popupClosedAfterAdd));
 console.log('=== DASHBOARD CARD ===');
-console.log('  total :', out.dashTotal, '| count:', out.dashCount, ok(out.dashCount==='2 คัน'), '| next:', out.dashNext);
+console.log('  total:', out.dashTotal, '| count:', out.dashCount, ok(out.dashCount==='2 คัน'), '| next:', out.dashNext);
 console.log('=== ERRORS ===');
 console.log(errors.length ? errors.join('\n') : '  none ✓');
 await browser.close();

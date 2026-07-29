@@ -33,8 +33,10 @@ export function ccCategoryTotals(txns) {
 }
 
 const MONTH = 'jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|ม\\.?ค|ก\\.?พ|มี\\.?ค|เม\\.?ย|พ\\.?ค|มิ\\.?ย|ก\\.?ค|ส\\.?ค|ก\\.?ย|ต\\.?ค|พ\\.?ย|ธ\\.?ค';
-const MONEY = /\d{1,3}(?:,\d{3})*\.\d{2}/g;
-const reDate = () => new RegExp('\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{2,4}|\\d{1,2}\\s?(?:' + MONTH + ')\\.?', 'gi');
+const MONEY = /-?\d{1,3}(?:,\d{3})*\.\d{2}/g; // optional leading minus = refund/credit
+// trailing year is taken only when NOT immediately followed by another month
+// (so "15 JUN 14 JUN" stays two dates, but "21 ก.ค. 69 22 ก.ค." keeps the year)
+const reDate = () => new RegExp('\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{2,4}|\\d{1,2}\\s?(?:' + MONTH + ')\\.?(?:\\s?\\d{2,4}(?!\\s?(?:' + MONTH + ')))?', 'gi');
 const SKIP = /subtotal|transaction amount|posting date|description|installment|statement|credit limit|available|minimum|ยอดรวม|ยอดชำระ|ยอดยกมา|ผ่อนชำระ|วันที่ทำรายการ|จำนวนเงิน/i;
 const CREDIT = /cashback|cash back|เงินคืน|คืนเงิน|refund|reversal|เครดิตเงินคืน|credit voucher/i;
 
@@ -46,6 +48,23 @@ export function merchKey(m) {
   const s = (m || '').toLowerCase().replace(reDate(), ' ');
   const t = s.match(/[a-zก-๙]{2,}/);
   return t ? t[0] : '';
+}
+
+// Reconstruct text lines from PDF positioned text items → feed to parseOCR.
+// items: [{ str, x, y }] (y = PDF y, larger = higher on page). Groups by y
+// (tolerance), orders each line left→right, top→bottom.
+export function pdfItemsToLines(items, yTol = 3) {
+  const rows = new Map();
+  (items || []).forEach((it) => {
+    if (!it || !String(it.str || '').trim()) return;
+    const key = Math.round((it.y || 0) / yTol);
+    if (!rows.has(key)) rows.set(key, []);
+    rows.get(key).push({ x: it.x || 0, str: it.str });
+  });
+  return [...rows.keys()]
+    .sort((a, b) => b - a) // top of page first
+    .map((k) => rows.get(k).sort((a, b) => a.x - b.x).map((p) => p.str).join(' ').replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
 }
 
 // baht/plus-prefixed amount (no decimals), e.g. "+ ฿868", "฿99", "+868"
@@ -72,14 +91,12 @@ export function parseOCR(text, idFn = _defaultId) {
     const dec = line.match(MONEY);
     const baht = dec ? null : line.match(BAHT);
     let raw = dec ? dec[dec.length - 1] : (baht ? amtFromBaht(baht[baht.length - 1]) : null);
-    let amt = raw ? parseFloat(raw.replace(/,/g, '')) : 0;
+    let amt = raw ? parseFloat(raw.replace(/,/g, '')) : 0; // sign kept from token (e.g. -1,210.00)
     if (amt) {
-      if (CREDIT.test(line) || /[\d,]+\.\d{2}\s*cr\b/i.test(line) || /[-(]\s*[\d,]+\.\d{2}\s*\)?\s*$/.test(line)) {
-        amt = -Math.abs(amt);
-      }
+      if (CREDIT.test(line) || /[\d,]+\.\d{2}\s*cr\b/i.test(line)) amt = -Math.abs(amt);
       const dm = line.match(reDate());
       let mer = line.replace(MONEY, ' ').replace(BAHT, ' ').replace(reDate(), ' ')
-        .replace(/[฿+]/g, ' ').replace(/\s{2,}/g, ' ').trim();
+        .replace(/thb/gi, ' ').replace(/บาท/g, ' ').replace(/[฿+]/g, ' ').replace(/\s{2,}/g, ' ').trim();
       if (!mer && pendingDesc) mer = pendingDesc;
       last = { id: idFn(), date: dm ? dm[0] : '', merchant: mer || '(รายการ)', amt: String(amt), owner: 'common', category: '', note: '' };
       out.push(last);

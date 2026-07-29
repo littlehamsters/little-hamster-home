@@ -2,7 +2,7 @@
 // Run: npm run test:unit   (node --test)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { num, deriveCC, ccCategoryTotals, parseOCR, merchKey, CC_CATEGORIES } from '../src/modules/budget/cc-utils.js';
+import { num, deriveCC, ccCategoryTotals, parseOCR, merchKey, CC_CATEGORIES, pdfItemsToLines } from '../src/modules/budget/cc-utils.js';
 
 test('num parses thai-formatted, keeps negatives', () => {
   assert.equal(num('1,413.66'), 1413.66);
@@ -107,6 +107,21 @@ test('parseOCR reads BNPL "ช้อปก่อนจ่ายทีหลั�
   assert.match(rows[0].date, /ก\.?ค/); // date pulled from the following line
 });
 
+test('parseOCR reads TTB format (2 Thai dates, THB suffix, negative refunds)', () => {
+  const rows = parseOCR([
+    '21 ก.ค. 69 22 ก.ค. 69 SAINT ETOILE-VILLAGE PHUTBANGKOK TH 60.00 THB',
+    '19 ก.ค. 69 21 ก.ค. 69 SHOPEE *SHOPEE BANGKOK TH -1,210.00 THB',
+    '16 ก.ค. 69 16 ก.ค. 69 TIPA GARDEN BANGKOK TH 20,000.00 THB',
+  ].join('\n'));
+  assert.equal(rows.length, 3);
+  assert.equal(Number(rows[0].amt), 60);
+  assert.equal(Number(rows[1].amt), -1210);       // refund → negative
+  assert.equal(Number(rows[2].amt), 20000);
+  assert.match(rows[0].merchant, /SAINT ETOILE/);
+  assert.ok(!/THB/i.test(rows[0].merchant));       // THB stripped
+  assert.ok(!/69/.test(rows[0].merchant));          // dates stripped
+});
+
 test('merchKey groups by brand, ignoring dates / order-ids / branch', () => {
   assert.equal(merchKey('15 JUN 14 JUN AMZ_SD5!'), 'amz');
   assert.equal(merchKey('AMZ_SD44'), 'amz');
@@ -114,6 +129,23 @@ test('merchKey groups by brand, ignoring dates / order-ids / branch', () => {
   assert.equal(merchKey('TOPS-PIN KLAO BANGKOK'), 'tops');
   assert.equal(merchKey('618 WATS'), 'wats');
   assert.equal(merchKey(''), '');
+});
+
+test('pdfItemsToLines rebuilds rows (top→down, left→right) → parseable', () => {
+  // PDF text fragments (out of order, y larger = higher on page)
+  const items = [
+    { str: '527.00', x: 400, y: 700 }, { str: 'TOPS-PIN KLAO', x: 120, y: 700 }, { str: '22/06/26', x: 20, y: 700 },
+    { str: '301.67', x: 400, y: 680 }, { str: 'OFFICE MATE', x: 120, y: 680 }, { str: '27/06/26', x: 20, y: 680 },
+    { str: '   ', x: 5, y: 680 }, // blank fragment ignored
+  ];
+  const lines = pdfItemsToLines(items);
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0], '22/06/26 TOPS-PIN KLAO 527.00'); // top row first, ordered by x
+  assert.equal(lines[1], '27/06/26 OFFICE MATE 301.67');
+  const rows = parseOCR(lines.join('\n'));
+  assert.equal(rows.length, 2);
+  assert.equal(Number(rows[0].amt), 527);
+  assert.match(rows[0].merchant, /TOPS-PIN KLAO/);
 });
 
 function round(v) { return Math.round(v * 100) / 100; }

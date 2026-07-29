@@ -1,5 +1,5 @@
 /* Budget module — monthly budget, credit cards */
-import { CC_CATEGORIES, deriveCC, ccCategoryTotals, parseOCR, merchKey } from './cc-utils.js';
+import { CC_CATEGORIES, deriveCC, ccCategoryTotals, parseOCR, merchKey, pdfItemsToLines } from './cc-utils.js';
 const CC_COLORS=['#6a52c4','#3a6890','#2e7878','#8a5e20','#5a7a62','#a0485c','#4a7a9a'];
 // CC statement-import: per-transaction owner options (categories come from cc-utils/cfg)
 const CC_OWNERS=[
@@ -676,6 +676,7 @@ function renderCC(){
       ${other?`<div class="cc-chip" style="background:var(--sage-bg);color:var(--sage);border-color:var(--sage-line)">อื่นๆ ${_bpFmt(other)}</div>`:''}
       <div class="cc-chip" style="background:var(--teal-bg);color:var(--teal);border-color:var(--teal-line)">กลาง ${_bpFmt(common)}</div>
       <div class="cc-total">${_bpFmt(c.total)}</div>
+      ${(c.txns&&c.txns.length)?`<button class="del-item-btn" style="background:var(--sky-bg);color:var(--sky);border-color:var(--sky-line)" onclick="ccViewOpen(${c.id})" title="ดูรายการ"><i class="ti ti-eye" style="font-size:13px"></i> ดู (${c.txns.length})</button>`:''}
       <button class="del-item-btn" onclick="delCC(${c.id})" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i> ลบ</button>
     </div>`;
   }).join('');
@@ -1789,6 +1790,8 @@ window.bpGetHomeSummary=bpGetHomeSummary;
 
 /* ── CC statement import — review table (Phase 1) ──────────────── */
 let _cciTxns = [];
+let _cciEditId = null; // when set, ccImportSave replaces this md.cc entry instead of adding
+let _cciViewId = null; // entry currently open in the view modal
 let _cciPasteBound = false;
 // paste a screenshot (Ctrl/⌘+V) while the import modal is open → OCR it
 function _cciPasteHandler(e) {
@@ -1824,19 +1827,100 @@ function ccAddCategory() {
   _bpToast('เพิ่มหมวด "' + name + '" แล้ว ✓');
 }
 function ccImportOpen() {
+  _cciEditId = null;
   _cciTxns = [_cciBlank()];
-  const sel = document.getElementById('cci-card');
-  sel.innerHTML = '<option value="">-- เลือกบัตร --</option>' +
-    cfg.ccCards.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+  _cciFillCardSelect('');
+  const t = document.getElementById('cci-title'); if (t) t.textContent = '📥 นำเข้ารายการบัตร';
   const status = document.querySelector('#cci-photo .cci-ocr-status');
   if (status) status.textContent = '';
+  const photo = document.getElementById('cci-photo'); if (photo) photo.style.display = '';
   if (!_cciPasteBound) { document.addEventListener('paste', _cciPasteHandler); _cciPasteBound = true; }
+  ccImportRenderRows();
+  ccImportSummary();
+  document.getElementById('cc-import-modal').classList.add('open');
+}
+function _cciFillCardSelect(sel) {
+  const el = document.getElementById('cci-card');
+  el.innerHTML = '<option value="">-- เลือกบัตร --</option>' +
+    cfg.ccCards.map((c) => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${c.name}</option>`).join('');
+  el.value = sel || '';
+}
+/* ── view a saved card entry (read-only) ── */
+function ccViewOpen(id) {
+  const c = getMD().cc.find((x) => x.id === id);
+  if (!c) return;
+  _cciViewId = id;
+  const card = getCC(c.cardId);
+  const ownLabel = (o) => (CC_OWNERS.find((x) => x.v === o) || {}).label?.() || o;
+  document.getElementById('ccv-title').textContent = '🧾 ' + card.name + (c.note ? ' (' + c.note + ')' : '');
+  const txns = c.txns || [];
+  const rows = txns.length ? txns.map((t) => `
+    <div class="ccv-row">
+      <div class="ccv-date">${_bpEsc(t.date) || '—'}</div>
+      <div class="ccv-merch">${_bpEsc(t.merchant) || '(รายการ)'}${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</div>
+      <div class="ccv-tags"><span class="cc-chip">${_bpEsc(ownLabel(t.owner))}</span><span class="cc-chip" style="color:var(--lilac);border-color:var(--lilac-line)">${_bpEsc(t.category || 'อื่นๆ')}</span></div>
+      <div class="ccv-amt ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</div>
+    </div>`).join('')
+    : '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการย่อย (บันทึกแบบสรุปยอด)</div>';
+  const common = f(c.total) - f(c.p1) - f(c.p2) - f(c.other);
+  document.getElementById('ccv-body').innerHTML = `
+    <div class="ccv-list">${rows}</div>
+    <div style="background:var(--card2);border-radius:12px;padding:11px 13px;font-size:12.5px;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:3px"><span>ยอดรวม</span><span>${_bpFmt(c.total)}</span></div>
+      <div style="display:flex;justify-content:space-between;color:var(--sky)"><span>${cfg.p1}</span><span>${_bpFmt(f(c.p1) + common / 2)}</span></div>
+      <div style="display:flex;justify-content:space-between;color:var(--rose)"><span>${cfg.p2}</span><span>${_bpFmt(f(c.p2) + common / 2)}</span></div>
+      <div style="display:flex;justify-content:space-between;color:var(--ink2)"><span>กองกลาง (หาร 2)</span><span>${_bpFmt(common)}</span></div>
+      ${f(c.other) ? `<div style="display:flex;justify-content:space-between;color:var(--ink3)"><span>อื่นๆ (ไม่นับ)</span><span>${_bpFmt(c.other)}</span></div>` : ''}
+    </div>`;
+  const editBtn = document.querySelector('#cc-view-modal .msubmit');
+  if (editBtn) editBtn.style.display = txns.length ? '' : 'none'; // only editable when we kept the line items
+  document.getElementById('cc-view-modal').classList.add('open');
+}
+function ccViewClose() { document.getElementById('cc-view-modal').classList.remove('open'); _cciViewId = null; }
+function ccViewEdit() {
+  const c = getMD().cc.find((x) => x.id === _cciViewId);
+  if (!c || !(c.txns && c.txns.length)) return;
+  ccViewClose();
+  _cciEditId = c.id;
+  _cciTxns = c.txns.map((t) => ({ id: _cciUid(), date: t.date || '', merchant: t.merchant || '', amt: String(t.amt), owner: t.owner || 'common', category: t.category || '', note: t.note || '' }));
+  _cciFillCardSelect(c.cardId);
+  const t = document.getElementById('cci-title'); if (t) t.textContent = '✏️ แก้ไขรายการบัตร';
+  const photo = document.getElementById('cci-photo'); if (photo) photo.style.display = 'none'; // editing existing rows, no re-import
+  const status = document.querySelector('#cci-photo .cci-ocr-status'); if (status) status.textContent = '';
   ccImportRenderRows();
   ccImportSummary();
   document.getElementById('cc-import-modal').classList.add('open');
 }
 /* ── Phase 2: OCR from statement image (Tesseract, client-side) ── */
 let _tessLoading = null;
+let _pdfLoading = null;
+function _cciLoadPdfjs() {
+  if (window.pdfjsLib) return Promise.resolve();
+  if (_pdfLoading) return _pdfLoading;
+  _pdfLoading = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); }
+      catch (e) { rej(e); }
+    };
+    s.onerror = () => rej(new Error('โหลด pdf.js ไม่ได้'));
+    document.head.appendChild(s);
+  });
+  return _pdfLoading;
+}
+// text-based PDF → reconstructed text lines (all pages)
+async function _cciPdfToLines(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+  const lines = [];
+  for (let pn = 1; pn <= pdf.numPages; pn++) {
+    const tc = await (await pdf.getPage(pn)).getTextContent();
+    const items = tc.items.map((it) => ({ str: it.str, x: it.transform[4], y: it.transform[5] }));
+    lines.push(...pdfItemsToLines(items));
+  }
+  return lines;
+}
 function _cciLoadTesseract() {
   if (window.Tesseract) return Promise.resolve();
   if (_tessLoading) return _tessLoading;
@@ -1872,41 +1956,52 @@ function _cciFileToCanvas(file) {
   });
 }
 async function ccImportPhoto(input) {
-  const file = input.files && input.files[0];
-  input.value = '';
-  if (!file) return;
+  const files = input && input.files ? [...input.files] : [];
+  if (input) input.value = '';
+  if (!files.length) return;
   const status = document.querySelector('#cci-photo .cci-ocr-status');
   const setSt = (m) => { if (status) status.textContent = m; };
   const raw = document.getElementById('cci-raw');
   if (raw) { raw.style.display = 'none'; raw.textContent = ''; }
-  let canvas;
-  try {
-    setSt('กำลังเตรียมรูป…');
-    canvas = await _cciFileToCanvas(file);
-  } catch (e) {
-    setSt('เปิดรูปนี้ไม่ได้ — ลองบันทึกเป็น PNG/JPG ก่อน (ไฟล์ HEIC จาก iPhone อาจไม่รองรับ)');
-    return;
-  }
-  try {
-    setSt('กำลังโหลด OCR…');
-    await _cciLoadTesseract();
-    setSt('กำลังอ่านรูป… (อาจใช้เวลาสักครู่)');
-    const { data } = await window.Tesseract.recognize(canvas, 'eng');
-    const text = (data && data.text) || '';
-    const parsed = _cciParseOCR(text);
-    if (parsed.length) {
-      _cciTxns = parsed;
-      ccImportRenderRows();
-      ccImportSummary();
-      setSt(`อ่านได้ ${parsed.length} รายการ — ตรวจ/แก้ป้ายก่อนบันทึก`);
-    } else if (text.trim()) {
-      setSt('อ่านตัวอักษรได้ แต่แยกรายการอัตโนมัติไม่ได้ — ดูข้อความด้านล่าง แล้วเพิ่ม/แก้แถวเอง');
-      if (raw) { raw.textContent = text.trim(); raw.style.display = 'block'; }
-    } else {
-      setSt('อ่านรูปไม่ออก — ลองรูปที่คมชัดขึ้น');
+
+  // drop the empty starter rows so results accumulate cleanly across files
+  _cciTxns = _cciTxns.filter((t) => f(t.amt) !== 0 || (t.merchant || '').trim());
+  let added = 0, lastText = '';
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const label = files.length > 1 ? `ไฟล์ ${i + 1}/${files.length} ` : '';
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    let text = '';
+    try {
+      if (isPdf) {
+        setSt(label + 'กำลังเปิด PDF…');
+        await _cciLoadPdfjs();
+        text = (await _cciPdfToLines(file)).join('\n');
+      } else {
+        setSt(label + 'กำลังเตรียมรูป…');
+        const canvas = await _cciFileToCanvas(file);
+        setSt(label + 'กำลังโหลด/อ่าน OCR…');
+        await _cciLoadTesseract();
+        const { data } = await window.Tesseract.recognize(canvas, 'eng');
+        text = (data && data.text) || '';
+      }
+      lastText = text;
+      const parsed = _cciParseOCR(text);
+      if (parsed.length) { _cciTxns = _cciTxns.concat(parsed); added += parsed.length; }
+    } catch (e) {
+      setSt(label + (isPdf ? 'อ่าน PDF ไม่ได้: ' : 'อ่านรูปไม่ได้: ') + e.message);
     }
-  } catch (e) {
-    setSt('OCR ผิดพลาด: ' + e.message);
+  }
+  if (!_cciTxns.length) _cciTxns = [_cciBlank()]; // keep at least one editable row
+  ccImportRenderRows();
+  ccImportSummary();
+  if (added) {
+    setSt(`อ่านได้ ${added} รายการ${files.length > 1 ? ` จาก ${files.length} รูป` : ''} — ตรวจ/แก้ป้ายก่อนบันทึก`);
+  } else if (lastText.trim()) {
+    setSt('อ่านตัวอักษรได้ แต่แยกรายการอัตโนมัติไม่ได้ — ดูข้อความด้านล่าง แล้วเพิ่ม/แก้แถวเอง');
+    if (raw) { raw.textContent = lastText.trim(); raw.style.display = 'block'; }
+  } else {
+    setSt('อ่านรูปไม่ออก — ลองรูปที่คมชัดขึ้น');
   }
 }
 function ccImportClose() { document.getElementById('cc-import-modal').classList.remove('open'); }
@@ -1972,10 +2067,18 @@ function ccImportSave() {
   }));
   if (!txns.length) { _bpToast('ใส่รายการที่มียอดอย่างน้อย 1 แถว'); return; }
   const d = deriveCC(txns);
-  getMD().cc.push({ id: Date.now(), cardId, note: '', txns, total: d.total, p1: d.p1, p2: d.p2, other: d.other });
+  const md = getMD();
+  if (_cciEditId != null) {
+    const c = md.cc.find((x) => x.id === _cciEditId);
+    if (c) { Object.assign(c, { cardId, txns, total: d.total, p1: d.p1, p2: d.p2, other: d.other }); }
+    _cciEditId = null;
+    persist(); _bpRender(); ccImportClose(); _bpToast('แก้ไขรายการบัตรแล้ว ✓');
+    return;
+  }
+  md.cc.push({ id: Date.now(), cardId, note: '', txns, total: d.total, p1: d.p1, p2: d.p2, other: d.other });
   persist(); _bpRender(); ccImportClose(); _bpToast('นำเข้ารายการบัตรแล้ว ✓');
 }
-Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, _cciParseOCR });
+Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccViewOpen, ccViewClose, ccViewEdit, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
 Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });

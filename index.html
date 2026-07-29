@@ -600,17 +600,17 @@
 
 <div class="modal-bg" id="cc-import-modal">
   <div class="modal">
-    <div class="modal-title">📥 นำเข้ารายการบัตร <button class="modal-close" onclick="ccImportClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div class="modal-title"><span id="cci-title">📥 นำเข้ารายการบัตร</span> <button class="modal-close" onclick="ccImportClose()"><i class="ti ti-x"></i> ปิด</button></div>
     <div class="field"><label>บัตร</label><select id="cci-card"><option value="">-- เลือกบัตร --</option></select></div>
     <div id="cci-photo" style="margin:10px 0">
       <div class="cci-drop" style="border:2px dashed var(--line2);border-radius:12px;padding:14px;text-align:center;color:var(--ink2);font-size:13px;background:var(--card2)"
         ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
         ondragleave="this.style.borderColor='var(--line2)'"
-        ondrop="event.preventDefault();this.style.borderColor='var(--line2)';if(event.dataTransfer.files[0])ccImportPhoto({files:[event.dataTransfer.files[0]],value:''})">
-        📋 แคปหน้าจอสลิป แล้ว <b>วางที่นี่ (Ctrl / ⌘ + V)</b> หรือลากรูปมาวาง
+        ondrop="event.preventDefault();this.style.borderColor='var(--line2)';if(event.dataTransfer.files.length)ccImportPhoto({files:event.dataTransfer.files,value:''})">
+        📋 แคปหน้าจอ <b>วาง (Ctrl / ⌘ + V)</b> · ลากไฟล์มาวาง · หรือเลือก<b>รูป/PDF</b> (หลายไฟล์ได้)
         <div style="margin-top:8px">
-          <button class="add-btn" style="background:var(--sky);color:#fff" onclick="document.getElementById('cci-file').click()"><i class="ti ti-photo"></i> เลือกรูปจากเครื่อง</button>
-          <input type="file" id="cci-file" accept="image/*" style="display:none" onchange="ccImportPhoto(this)">
+          <button class="add-btn" style="background:var(--sky);color:#fff" onclick="document.getElementById('cci-file').click()"><i class="ti ti-file-upload"></i> เลือกไฟล์ (รูป / PDF)</button>
+          <input type="file" id="cci-file" accept="image/*,application/pdf" multiple style="display:none" onchange="ccImportPhoto(this)">
         </div>
         <div class="cci-ocr-status" style="font-size:12px;color:var(--sky);margin-top:8px;font-weight:600"></div>
       </div>
@@ -624,6 +624,14 @@
     </div>
     <div id="cci-summary" style="margin-top:12px"></div>
     <button class="msubmit dark" style="margin-top:12px" onclick="ccImportSave()">บันทึกเข้าบัตร</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="cc-view-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="ccv-title">🧾 รายการในบัตร</span> <button class="modal-close" onclick="ccViewClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div id="ccv-body"></div>
+    <button class="msubmit dark" style="margin-top:12px" onclick="ccViewEdit()"><i class="ti ti-pencil"></i> แก้ไขรายการนี้</button>
   </div>
 </div>
 

@@ -90,6 +90,23 @@ test('parseOCR pairs an amount-only line with the previous description', () => {
   assert.equal(Number(rows[0].amt), 527);
 });
 
+test('parseOCR reads BNPL "ช้อปก่อนจ่ายทีหลัง" (+ ฿868, date on next line)', () => {
+  const rows = parseOCR([
+    'Wacaco - Exagram Compact coffee scale + ฿868',
+    '16 ก.ค. 2026',
+    'เคลียร์ แชมพู ขจัดรังแค 350-370 มล. x2 + ฿99',
+    '14 ก.ค. 2026',
+    'MEEM บล็อคซิลิโคน + ฿254',
+    '12 ก.ค. 2026',
+  ].join('\n'));
+  assert.equal(rows.length, 3);
+  assert.equal(Number(rows[0].amt), 868);
+  assert.equal(Number(rows[1].amt), 99);
+  assert.equal(Number(rows[2].amt), 254);
+  assert.match(rows[0].merchant, /Wacaco/);
+  assert.match(rows[0].date, /ก\.?ค/); // date pulled from the following line
+});
+
 test('merchKey groups by brand, ignoring dates / order-ids / branch', () => {
   assert.equal(merchKey('15 JUN 14 JUN AMZ_SD5!'), 'amz');
   assert.equal(merchKey('AMZ_SD44'), 'amz');

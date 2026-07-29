@@ -1246,14 +1246,32 @@ function renderCCCategory(){
     }else{const a=f(c.total);uncat+=a;grand+=a;}
   });
   if(grand<=0){box.innerHTML='<div style="text-align:center;color:var(--ink3);padding:20px;font-size:13px">เดือนนี้ยังไม่มีรายการบัตรเครดิต</div>';return;}
+  // ── per-person split (own + half of common; other excluded) ──
+  let sp1=0,sp2=0,sother=0,scommon=0;
+  (md.cc||[]).forEach(c=>{
+    sp1+=f(c.p1);sp2+=f(c.p2);sother+=f(c.other);
+    scommon+=(f(c.total)-f(c.p1)-f(c.p2)-f(c.other));
+  });
+  const person1=sp1+scommon/2, person2=sp2+scommon/2;
+  const personRow=(name,amt,col)=>`
+    <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 10px;border-radius:9px;background:var(--card2);margin-bottom:5px">
+      <span style="font-weight:600;color:${col}">${name}</span>
+      <span style="font-variant-numeric:tabular-nums;font-weight:700">${_bpFmt(amt)}</span>
+    </div>`;
   const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
   if(uncat>0)rows.push(['ไม่ระบุหมวด',uncat]);
   const colors={'กิน':'var(--sage)','ของใช้':'var(--amber)','เดินทาง':'var(--sky)','บันเทิง':'var(--lilac)','บิล/ค่าบริการ':'var(--teal)','อื่นๆ':'var(--rose)','ไม่ระบุหมวด':'var(--ink3)'};
   box.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid var(--line2)">
       <span style="font-size:13px;color:var(--ink2)">รวมค่าบัตรทั้งเดือน</span>
       <span style="font-size:22px;font-weight:700;color:var(--lilac)">${_bpFmt(grand)}</span>
-    </div>`+
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">แยกรายคน</div>
+    ${personRow('👤 '+cfg.p1,person1,'var(--sky)')}
+    ${personRow('👤 '+cfg.p2,person2,'var(--rose)')}
+    ${personRow('🤝 กองกลาง (รวมก่อนหาร)',scommon,'var(--ink2)')}
+    ${sother>0?personRow('— อื่นๆ (ไม่นับ)',sother,'var(--ink3)'):''}
+    <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px">แยกหมวด</div>`+
     rows.map(([cat,amt])=>{
       const pct=grand?Math.round(amt/grand*100):0;const col=colors[cat]||'var(--ink3)';
       return `<div style="margin-bottom:12px">

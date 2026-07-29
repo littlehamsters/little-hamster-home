@@ -48,26 +48,44 @@ export function merchKey(m) {
   return t ? t[0] : '';
 }
 
-// OCR text → transaction rows. Amount anywhere on the line, date optional,
-// amount-only lines pair with the previous description; credits become negative.
+// baht/plus-prefixed amount (no decimals), e.g. "+ ฿868", "฿99", "+868"
+const BAHT = /[+฿]\s*[^\d\n]{0,3}[\d,]+(?:\.\d{1,2})?/g;
+const amtFromBaht = (tok) => tok.replace(/[^\d.,]/g, '');
+// a line that is essentially just a date (BNPL puts the date on its own line)
+const isDateOnly = (line) => {
+  if (!reDate().test(line)) return false;
+  // remove dates + any leftover year digits + punctuation → nothing meaningful left
+  const rest = line.replace(reDate(), ' ').replace(/\b\d{2,4}\b/g, ' ').replace(/[^a-zก-๙]+/gi, '').trim();
+  return !rest;
+};
+// OCR text → transaction rows. Supports two layouts:
+//  - bank statement: date + description + amount(.dd) on one line
+//  - BNPL / ช้อปก่อนจ่ายทีหลัง: "name … + ฿868" then the date on the next line
 export function parseOCR(text, idFn = _defaultId) {
   const lines = (text || '').split('\n').map((l) => l.trim()).filter(Boolean);
   const out = [];
   let pendingDesc = '';
+  let last = null; // last created row (to attach a trailing date-only line)
   for (const line of lines) {
     if (SKIP.test(line)) { pendingDesc = ''; continue; }
-    const amts = line.match(MONEY);
-    if (amts && amts.length) {
-      let amt = parseFloat(amts[amts.length - 1].replace(/,/g, ''));
-      if (!amt) continue;
+    // amount: prefer decimal (bank), else ฿/+ integer (BNPL)
+    const dec = line.match(MONEY);
+    const baht = dec ? null : line.match(BAHT);
+    let raw = dec ? dec[dec.length - 1] : (baht ? amtFromBaht(baht[baht.length - 1]) : null);
+    let amt = raw ? parseFloat(raw.replace(/,/g, '')) : 0;
+    if (amt) {
       if (CREDIT.test(line) || /[\d,]+\.\d{2}\s*cr\b/i.test(line) || /[-(]\s*[\d,]+\.\d{2}\s*\)?\s*$/.test(line)) {
         amt = -Math.abs(amt);
       }
       const dm = line.match(reDate());
-      let mer = line.replace(MONEY, ' ').replace(reDate(), ' ').replace(/\s{2,}/g, ' ').trim();
+      let mer = line.replace(MONEY, ' ').replace(BAHT, ' ').replace(reDate(), ' ')
+        .replace(/[฿+]/g, ' ').replace(/\s{2,}/g, ' ').trim();
       if (!mer && pendingDesc) mer = pendingDesc;
-      out.push({ id: idFn(), date: dm ? dm[0] : '', merchant: mer || '(รายการ)', amt: String(amt), owner: 'common', category: '', note: '' });
+      last = { id: idFn(), date: dm ? dm[0] : '', merchant: mer || '(รายการ)', amt: String(amt), owner: 'common', category: '', note: '' };
+      out.push(last);
       pendingDesc = '';
+    } else if (isDateOnly(line) && last && !last.date) {
+      last.date = line.match(reDate())[0]; // BNPL: date on the line after the item
     } else if (/[a-zก-๙]{2,}/i.test(line)) {
       pendingDesc = line;
     }

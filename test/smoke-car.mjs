@@ -55,7 +55,10 @@ const out = await page.evaluate(() => {
     .map(e => e.textContent).join(' | ');
   r.usesMonths = /เดือน/.test(noteTxt);
   r.hasDays = /\d+\s*วัน/.test(noteTxt);
-  r.sampleNote = noteTxt.slice(0, 80);
+  // เก่ง's license is +400 days → ~13 months → "1 ปี 1 เดือน"
+  r.hasYears = [...document.querySelectorAll('#m-car .car-lic .cr-note')]
+    .some(e => /ปี/.test(e.textContent));
+  r.sampleNote = noteTxt.slice(0, 90);
   const tables = [...document.querySelectorAll('#m-car .car-table')];
   r.fuelRows = tables[0].querySelectorAll('tbody tr').length;
   r.kmL = tables[0].querySelectorAll('tbody tr:first-child td')[4]?.textContent;
@@ -91,6 +94,7 @@ console.log('  fleet overview    :', ok(out.fleetCards===2), out.fleetCards);
 console.log('  license cards     :', ok(out.licCards===2), out.licCards, '| overdue:', ok(out.licOverdue));
 console.log('  renew cards       :', ok(out.renewCards===3), out.renewCards);
 console.log('  countdown = months:', ok(out.usesMonths && !out.hasDays), '|', out.sampleNote);
+console.log('  >1yr shows ปี     :', ok(out.hasYears));
 console.log('  fuel rows / km/L  :', ok(out.fuelRows===2), out.fuelRows, '/', out.kmL);
 console.log('=== POPUP ADD FLOW ===');
 console.log('  fuel popup opens  :', ok(out.fuelPopup));

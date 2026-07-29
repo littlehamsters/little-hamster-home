@@ -46,10 +46,14 @@ const _cDaysLeft = (iso) => {
   t.setHours(0, 0, 0, 0);
   return Math.round((d - t) / 86400000);
 };
-// countdown shown in months (not days)
+// countdown shown in months; ≥ 1 year → "X ปี Y เดือน" (never days)
 const _cMonths = (days) => {
   const mo = Math.round(Math.abs(days) / 30.44);
-  return mo < 1 ? 'ไม่ถึง 1 เดือน' : mo + ' เดือน';
+  if (mo < 1) return 'ไม่ถึง 1 เดือน';
+  if (mo < 12) return mo + ' เดือน';
+  const y = Math.floor(mo / 12),
+    m = mo % 12;
+  return y + ' ปี' + (m > 0 ? ' ' + m + ' เดือน' : '');
 };
 const _cUrg = (iso) => {
   const dl = _cDaysLeft(iso);

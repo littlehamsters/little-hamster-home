@@ -140,6 +140,21 @@
 #m-car .cf input { display:block; width:100%; height:40px; margin-top:5px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:14px; }
 #m-car .cf input:focus { outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg); }
 #m-car .car-modal-foot { display:flex; gap:10px; justify-content:flex-end; padding:8px 18px 18px; }
+/* ── service detail-line editor (multi-item) ─────────────── */
+#m-car .cf-label { font-size:12px; font-weight:600; color:var(--txt2); margin:2px 0 7px; }
+#m-car .car-sv-row { display:grid; grid-template-columns:1fr 108px 30px; gap:7px; align-items:center; margin-bottom:8px; }
+#m-car .cf-in { height:38px; padding:0 11px; border-radius:9px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:13.5px; width:100%; box-sizing:border-box; }
+#m-car .cf-in:focus { outline:none; border-color:var(--green); box-shadow:0 0 0 3px var(--green-bg); }
+#m-car .car-sv-cost { text-align:right; font-variant-numeric:tabular-nums; }
+#m-car .car-sv-add { margin-top:2px; }
+#m-car .car-sv-total { text-align:right; font-size:13px; font-weight:800; color:var(--txt); margin:12px 0 4px; }
+/* ── bullets under a date in the table ───────────────────── */
+#m-car .car-table td.l { white-space:normal; }
+#m-car .car-sv-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3px; }
+#m-car .car-sv-list li { display:flex; justify-content:space-between; gap:10px; align-items:baseline; font-size:12.5px; }
+#m-car .car-sv-list li::before { content:'•'; color:var(--green); margin-right:5px; }
+#m-car .car-sv-name { flex:1; color:var(--txt); }
+#m-car .car-sv-price { color:var(--txt2); font-variant-numeric:tabular-nums; white-space:nowrap; }
 
 /* ── toast ────────────────────────────────────────────── */
 #m-car .car-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(12px); background:var(--txt); color:var(--surf); padding:9px 18px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; transition:.22s; z-index:500; pointer-events:none; box-shadow:0 4px 18px rgba(0,0,0,.18); }

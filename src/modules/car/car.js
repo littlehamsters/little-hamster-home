@@ -115,7 +115,12 @@ function _carSave() {
 const _carSel = () => carState.cars.find((c) => c.id === carState.sel) || null;
 
 /* ── totals + nearest ────────────────────────────────────────────── */
-const _carServiceTotal = (c) => (c.service || []).reduce((s, r) => s + _cNum(r.cost), 0);
+// a service record holds detail lines: items:[{item,cost}] (old records: single {item,cost})
+const _carSvLines = (s) => (Array.isArray(s.items) && s.items.length)
+  ? s.items
+  : (s.item ? [{ item: s.item, cost: _cNum(s.cost) }] : []);
+const _carSvRecTotal = (s) => _carSvLines(s).reduce((a, x) => a + _cNum(x.cost), 0);
+const _carServiceTotal = (c) => (c.service || []).reduce((s, r) => s + _carSvRecTotal(r), 0);
 const _carRenewTotal = (c) =>
   RENEW_TYPES.reduce((s, t) => s + _cNum((c.renew[t.k] || {}).cost), 0);
 const _carTotal = (c) => _carServiceTotal(c) + _carRenewTotal(c);
@@ -292,16 +297,51 @@ function carDelLicense(id) {
 }
 
 /* ── service (popup) ─────────────────────────────────────────────── */
+// one editable detail line in the service modal
+function _carSvDetailRow(item, cost) {
+  return `<div class="car-sv-row">
+    <input class="car-sv-item cf-in" type="text" value="${_cEsc(item || '')}" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง">
+    <input class="car-sv-cost cf-in" type="number" inputmode="decimal" value="${cost ? _cEsc(cost) : ''}" placeholder="ราคา ฿" oninput="carSvUpdTotal()">
+    <button type="button" class="car-del" onclick="this.closest('.car-sv-row').remove();carSvUpdTotal()" title="ลบรายการนี้">✕</button>
+  </div>`;
+}
+function carSvAddDetail() {
+  const box = document.getElementById('carSvItems');
+  if (!box) return;
+  box.insertAdjacentHTML('beforeend', _carSvDetailRow('', ''));
+  carSvUpdTotal();
+  box.lastElementChild?.querySelector('.car-sv-item')?.focus();
+}
+function carSvUpdTotal() {
+  const el = document.getElementById('carSvTotal');
+  if (!el) return;
+  const t = _carReadSvLines().reduce((a, x) => a + _cNum(x.cost), 0);
+  el.textContent = 'รวม ' + _cFmt(t) + ' ฿';
+}
+// read the detail-line editor → [{item,cost}] (only lines with a name)
+function _carReadSvLines() {
+  return [...document.querySelectorAll('#carSvItems .car-sv-row')]
+    .map((r) => ({
+      item: (r.querySelector('.car-sv-item')?.value || '').trim(),
+      cost: _cNum(r.querySelector('.car-sv-cost')?.value),
+    }))
+    .filter((x) => x.item);
+}
 function carOpenServiceModal(id) {
   const c = _carSel();
   if (!c) return;
   const s = id ? (c.service || []).find((x) => x.id === id) : null;
+  const lines = s ? _carSvLines(s) : [];
+  const rowsHtml = (lines.length ? lines : [{ item: '', cost: '' }])
+    .map((x) => _carSvDetailRow(x.item, x.cost)).join('');
   _carModal(
     s ? '🔧 แก้ไขบันทึกซ่อม / บำรุง' : '🔧 เพิ่มบันทึกซ่อม / บำรุง',
     `<label class="cf">วันที่<input type="date" id="carSvDate" value="${s ? _cEsc(s.date) : _cToday()}"></label>
      <label class="cf">เลขไมล์ (กม.)<input type="number" id="carSvOdo" inputmode="numeric" value="${s && s.odo ? _cEsc(s.odo) : ''}" placeholder="เช่น 10200"></label>
-     <label class="cf">รายการ<input type="text" id="carSvItem" value="${s ? _cEsc(s.item) : ''}" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง"></label>
-     <label class="cf">ราคา (฿)<input type="number" id="carSvCost" inputmode="decimal" value="${s && s.cost ? _cEsc(s.cost) : ''}" placeholder="เช่น 1500"></label>`,
+     <div class="cf-label">รายละเอียด (ระบุราคาแยกแต่ละรายการ)</div>
+     <div id="carSvItems">${rowsHtml}</div>
+     <button type="button" class="car-btn sm car-sv-add" onclick="carSvAddDetail()">+ เพิ่มรายละเอียด</button>
+     <div id="carSvTotal" class="car-sv-total">รวม ${_cFmt(_carSvRecTotal(s || {}))} ฿</div>`,
     s ? 'บันทึก' : '+ เพิ่ม',
     s ? `carSaveService('${id}')` : 'carAddService()'
   );
@@ -309,12 +349,9 @@ function carOpenServiceModal(id) {
 function carAddService() {
   const c = _carSel();
   if (!c) return;
-  const date = _cNv('carSvDate') || _cToday();
-  const odo = _cNum(_cNv('carSvOdo'));
-  const item = (_cNv('carSvItem') || '').trim();
-  const cost = _cNum(_cNv('carSvCost'));
-  if (!item) return _cToast('ใส่รายการซ่อม/บำรุงก่อน');
-  c.service.push({ id: _cUid(), date, odo, item, cost });
+  const items = _carReadSvLines();
+  if (!items.length) return _cToast('ใส่รายการซ่อม/บำรุงอย่างน้อย 1 รายการ');
+  c.service.push({ id: _cUid(), date: _cNv('carSvDate') || _cToday(), odo: _cNum(_cNv('carSvOdo')), items });
   _carSave();
   carCloseModal();
   _carRender();
@@ -325,12 +362,12 @@ function carSaveService(id) {
   if (!c) return;
   const s = (c.service || []).find((x) => x.id === id);
   if (!s) return;
-  const item = (_cNv('carSvItem') || '').trim();
-  if (!item) return _cToast('ใส่รายการซ่อม/บำรุงก่อน');
+  const items = _carReadSvLines();
+  if (!items.length) return _cToast('ใส่รายการซ่อม/บำรุงอย่างน้อย 1 รายการ');
   s.date = _cNv('carSvDate') || _cToday();
   s.odo = _cNum(_cNv('carSvOdo'));
-  s.item = item;
-  s.cost = _cNum(_cNv('carSvCost'));
+  s.items = items;
+  delete s.item; delete s.cost; // drop legacy single-item fields
   _carSave();
   carCloseModal();
   _carRender();
@@ -450,18 +487,24 @@ function _carServiceRows(c) {
   if (!rows.length)
     return '<tr><td colspan="5" class="car-empty">ยังไม่มีบันทึกซ่อม/บำรุง</td></tr>';
   return rows
-    .map(
-      (s) => `<tr>
+    .map((s) => {
+      const lines = _carSvLines(s);
+      const bullets = lines.length
+        ? `<ul class="car-sv-list">${lines.map((x) =>
+            `<li><span class="car-sv-name">${_cEsc(x.item)}</span>${
+              _cNum(x.cost) ? `<span class="car-sv-price">${_cFmt(x.cost)} ฿</span>` : ''}</li>`).join('')}</ul>`
+        : '—';
+      return `<tr>
       <td>${_cShortDate(s.date)}</td>
       <td class="num">${s.odo ? _cFmt(s.odo) : '—'}</td>
-      <td class="l">${_cEsc(s.item)}</td>
-      <td class="num">${s.cost ? _cFmt(s.cost) : '—'}</td>
+      <td class="l">${bullets}</td>
+      <td class="num">${_carSvRecTotal(s) ? _cFmt(_carSvRecTotal(s)) : '—'}</td>
       <td class="row-act">
         <button class="car-del" onclick="carOpenServiceModal('${s.id}')" title="แก้ไข">✎</button>
         <button class="car-del" onclick="carDelService('${s.id}')" title="ลบ">✕</button>
       </td>
-    </tr>`
-    )
+    </tr>`;
+    })
     .join('');
 }
 function _carDetail(c) {
@@ -528,6 +571,8 @@ Object.assign(window, {
   carAddService,
   carSaveService,
   carDelService,
+  carSvAddDetail,
+  carSvUpdTotal,
   carCloseModal,
   _carNextRenew,
   _carTotal,

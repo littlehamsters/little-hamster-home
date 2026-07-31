@@ -61,15 +61,24 @@ const out = await page.evaluate(() => {
   const svTable = document.querySelector('#m-car .car-table');
   r.svRows = svTable.querySelectorAll('tbody tr').length;
 
-  // POPUP FLOW: add a service record via the modal → 1→2 rows
+  // POPUP FLOW: add a service record (multi-item) via the modal → 1→2 rows
   window.carOpenServiceModal();
-  r.svPopup = !!document.getElementById('carSvItem');
+  r.svPopup = !!document.getElementById('carSvItems');
   document.getElementById('carSvDate').value = '2026-05-20';
-  document.getElementById('carSvItem').value = 'เปลี่ยนยาง';
-  document.getElementById('carSvCost').value = '4000';
+  const nrow0 = document.querySelectorAll('#carSvItems .car-sv-row')[0];
+  nrow0.querySelector('.car-sv-item').value = 'เปลี่ยนยาง';
+  nrow0.querySelector('.car-sv-cost').value = '4000';
+  window.carSvAddDetail(); // second detail line, separate price
+  const nrow1 = document.querySelectorAll('#carSvItems .car-sv-row')[1];
+  nrow1.querySelector('.car-sv-item').value = 'ตั้งศูนย์ถ่วงล้อ';
+  nrow1.querySelector('.car-sv-cost').value = '800';
   window.carAddService();
   r.svAddedRows = document.querySelector('#m-car .car-table').querySelectorAll('tbody tr').length;
   r.popupClosedAfterAdd = !document.querySelector('#m-car .car-overlay.show');
+  // the new record shows both detail lines as bullets, record total = 4,800
+  r.svBullets = document.querySelectorAll('#m-car .car-table .car-sv-list li').length;
+  r.svRecTotalShown = [...document.querySelectorAll('#m-car .car-table tbody tr')]
+    .some(tr => /4,800/.test(tr.textContent));
 
   // EDIT FLOW: each service row has ✎ (edit) + ✕ (delete)
   const svActs = document.querySelectorAll('#m-car .car-table tbody tr .car-del');
@@ -80,8 +89,8 @@ const out = await page.evaluate(() => {
   const editBtn = [...document.querySelectorAll('#m-car .car-table tbody tr .car-del')]
     .find(b => /carOpenServiceModal\('/.test(b.getAttribute('onclick')));
   editBtn.click();
-  r.editPrefilled = !!document.getElementById('carSvItem')?.value;
-  document.getElementById('carSvCost').value = '9999';
+  r.editPrefilled = !!document.querySelector('#carSvItems .car-sv-item')?.value;
+  document.querySelector('#carSvItems .car-sv-cost').value = '9999';
   const sid = editBtn.getAttribute('onclick').match(/carOpenServiceModal\('([^']+)'\)/)[1];
   window.carSaveService(sid);
   r.editApplied = [...document.querySelectorAll('#m-car .car-table tbody tr')]
@@ -112,6 +121,7 @@ console.log('  service rows      :', ok(out.svRows===1), out.svRows);
 console.log('=== POPUP ADD FLOW ===');
 console.log('  service popup opens:', ok(out.svPopup));
 console.log('  row added (1→2)   :', ok(out.svAddedRows===2), out.svAddedRows);
+console.log('  multi-item bullets:', ok(out.svBullets>=2), out.svBullets, '| rec total 4,800:', ok(out.svRecTotalShown));
 console.log('  popup auto-closed :', ok(out.popupClosedAfterAdd));
 console.log('  service ✎+✕ buttons:', ok(out.svRowHasEditDel));
 console.log('  edit prefilled    :', ok(out.editPrefilled));

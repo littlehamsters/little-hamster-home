@@ -615,7 +615,13 @@
         <div class="cci-ocr-status" style="font-size:12px;color:var(--sky);margin-top:8px;font-weight:600"></div>
       </div>
     </div>
-    <div class="mlabel">รายการ (ติดป้ายเจ้าของ + หมวด)</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 6px">
+      <div class="mlabel" style="margin:0">รายการ (ติดป้ายเจ้าของ + หมวด)</div>
+      <select id="cci-filter" onchange="ccImportSetFilter(this.value)" title="กรองตามเจ้าของ"
+        style="height:30px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit">
+        <option value="all">ทุกเจ้าของ</option>
+      </select>
+    </div>
     <div id="cci-rows"></div>
     <pre id="cci-raw" style="display:none;white-space:pre-wrap;font-size:11px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:160px;overflow:auto;color:var(--ink2);margin:6px 0 0"></pre>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
@@ -632,6 +638,13 @@
     <div class="modal-title"><span id="ccv-title">🧾 รายการในบัตร</span> <button class="modal-close" onclick="ccViewClose()"><i class="ti ti-x"></i> ปิด</button></div>
     <div id="ccv-body"></div>
     <button class="msubmit dark" style="margin-top:12px" onclick="ccViewEdit()"><i class="ti ti-pencil"></i> แก้ไขรายการนี้</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="cc-cat-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="ccc-title">หมวด</span> <button class="modal-close" onclick="ccCatPopupClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div id="ccc-body"></div>
   </div>
 </div>
 

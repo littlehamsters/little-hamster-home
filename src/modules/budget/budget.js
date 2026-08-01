@@ -1236,15 +1236,48 @@ function setChartTab(tab,btn){
   else _bpRenderCharts();
 }
 // Summary of this month's credit-card spending grouped by category (from tagged txns)
+let _ccCatItems={};       // cat -> [{card,date,merchant,amt,owner,note}]
+let _ccCatOrder=[];       // row order → resolve onclick index to category name
+let _ccCatTotals={};      // cat -> total (for the popup header)
+// open a popup listing every txn of a category for the selected month
+function ccCatPopup(i){
+  const cat=_ccCatOrder[i];if(cat==null)return;
+  const ownerLabel=(o)=>(CC_OWNERS.find(x=>x.v===o)||{}).label?.()||o;
+  const items=(_ccCatItems[cat]||[]).slice().sort((a,b)=>b.amt-a.amt);
+  document.getElementById('ccc-title').textContent=`${cat} · ${MONTHS_TH[curMonth]} ${curYear+543}`;
+  const rows=items.length?items.map(it=>`
+    <div class="cc-cat-txn">
+      <div class="cctx-main"><span class="cctx-merch">${_bpEsc(it.merchant||'(รายการ)')}</span>${it.note?`<span class="cctx-note"> · ${_bpEsc(it.note)}</span>`:''}</div>
+      <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(it.date)}</span>`:''}${it.owner?`<span class="cc-chip">${_bpEsc(ownerLabel(it.owner))}</span>`:''}</div>
+      <div class="cctx-amt ${it.amt<0?'cci-credit':''}">${_bpFmt(it.amt)}</div>
+    </div>`).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการ</div>';
+  document.getElementById('ccc-body').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+      <span style="font-size:12px;color:var(--ink2)">${items.length} รายการ</span>
+      <span style="font-size:18px;font-weight:700;color:var(--lilac)">${_bpFmt(_ccCatTotals[cat]||0)}</span>
+    </div>
+    <div class="cc-cat-detail" style="border:none;background:transparent;padding:0;max-height:56vh;overflow:auto">${rows}</div>`;
+  document.getElementById('cc-cat-modal').classList.add('open');
+}
+function ccCatPopupClose(){document.getElementById('cc-cat-modal').classList.remove('open');}
 function renderCCCategory(){
   const box=document.getElementById('cc-cat-container');if(!box)return;
   const sub=document.getElementById('cc-cat-sub');if(sub)sub.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
   const md=getMD();
   const totals={};let grand=0,uncat=0;
+  _ccCatItems={};
   (md.cc||[]).forEach(c=>{
+    const cardName=getCC(c.cardId).name;
     if(c.txns&&c.txns.length){
-      c.txns.forEach(t=>{const cat=t.category||'อื่นๆ';const a=f(t.amt);totals[cat]=(totals[cat]||0)+a;grand+=a;});
-    }else{const a=f(c.total);uncat+=a;grand+=a;}
+      c.txns.forEach(t=>{
+        const cat=t.category||'อื่นๆ';const a=f(t.amt);
+        totals[cat]=(totals[cat]||0)+a;grand+=a;
+        (_ccCatItems[cat]=_ccCatItems[cat]||[]).push({card:cardName,date:t.date,merchant:t.merchant,amt:a,owner:t.owner,note:t.note});
+      });
+    }else{
+      const a=f(c.total);uncat+=a;grand+=a;
+      (_ccCatItems['ไม่ระบุหมวด']=_ccCatItems['ไม่ระบุหมวด']||[]).push({card:cardName,date:'',merchant:cardName+(c.note?' ('+c.note+')':''),amt:a,owner:'',note:''});
+    }
   });
   if(grand<=0){box.innerHTML='<div style="text-align:center;color:var(--ink3);padding:20px;font-size:13px">เดือนนี้ยังไม่มีรายการบัตรเครดิต</div>';return;}
   // ── per-person split (own + half of common; other excluded) ──
@@ -1261,6 +1294,8 @@ function renderCCCategory(){
     </div>`;
   const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
   if(uncat>0)rows.push(['ไม่ระบุหมวด',uncat]);
+  _ccCatOrder=rows.map(r=>r[0]);
+  _ccCatTotals={};rows.forEach(([cat,amt])=>{_ccCatTotals[cat]=amt;});
   const colors={'กิน':'var(--sage)','ของใช้':'var(--amber)','เดินทาง':'var(--sky)','บันเทิง':'var(--lilac)','บิล/ค่าบริการ':'var(--teal)','อื่นๆ':'var(--rose)','ไม่ระบุหมวด':'var(--ink3)'};
   box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid var(--line2)">
@@ -1273,12 +1308,18 @@ function renderCCCategory(){
     ${personRow('🤝 กองกลาง (รวมก่อนหาร)',scommon,'var(--ink2)')}
     ${sother>0?personRow('— อื่นๆ (ไม่นับ)',sother,'var(--ink3)'):''}
     <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px">แยกหมวด</div>`+
-    rows.map(([cat,amt])=>{
+    rows.map(([cat,amt],i)=>{
       const pct=grand?Math.round(amt/grand*100):0;const col=colors[cat]||'var(--ink3)';
-      return `<div style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
-          <span style="font-weight:600">${cat}</span>
-          <span style="font-variant-numeric:tabular-nums"><b>${_bpFmt(amt)}</b> <span style="color:var(--ink3);font-size:11px">${pct}%</span></span>
+      const n=(_ccCatItems[cat]||[]).length;
+      return `<div class="cc-cat-block" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;align-items:center;gap:8px">
+          <span style="font-weight:600;display:flex;align-items:center;gap:6px">${cat}
+            <span style="color:var(--ink3);font-size:11px;font-weight:500">(${n})</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="font-variant-numeric:tabular-nums"><b>${_bpFmt(amt)}</b> <span style="color:var(--ink3);font-size:11px">${pct}%</span></span>
+            <button class="cc-cat-i" onclick="ccCatPopup(${i})" title="ดูรายการหมวดนี้">i</button>
+          </span>
         </div>
         <div style="height:9px;background:var(--card2);border-radius:20px;overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${col};border-radius:20px"></div>
@@ -1792,6 +1833,7 @@ window.bpGetHomeSummary=bpGetHomeSummary;
 let _cciTxns = [];
 let _cciEditId = null; // when set, ccImportSave replaces this md.cc entry instead of adding
 let _cciViewId = null; // entry currently open in the view modal
+let _cciFilterOwner = 'all'; // review-table view filter (does not affect what gets saved)
 let _cciPasteBound = false;
 // paste a screenshot (Ctrl/⌘+V) while the import modal is open → OCR it
 function _cciPasteHandler(e) {
@@ -1834,6 +1876,7 @@ function ccImportOpen() {
   const status = document.querySelector('#cci-photo .cci-ocr-status');
   if (status) status.textContent = '';
   const photo = document.getElementById('cci-photo'); if (photo) photo.style.display = '';
+  _cciFilterOwner = 'all'; _cciSyncFilter();
   if (!_cciPasteBound) { document.addEventListener('paste', _cciPasteHandler); _cciPasteBound = true; }
   ccImportRenderRows();
   ccImportSummary();
@@ -1845,33 +1888,57 @@ function _cciFillCardSelect(sel) {
     cfg.ccCards.map((c) => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${c.name}</option>`).join('');
   el.value = sel || '';
 }
-/* ── view a saved card entry (read-only) ── */
+/* ── view a saved card entry (read-only, filterable by owner) ── */
+let _cciViewFilter = 'all';
+const _ccvOwnLabel = (o) => (CC_OWNERS.find((x) => x.v === o) || {}).label?.() || o;
+// render just the (filtered) line-item list into #ccv-list
+function _ccvRenderList() {
+  const box = document.getElementById('ccv-list'); if (!box) return;
+  const c = getMD().cc.find((x) => x.id === _cciViewId);
+  const txns = (c && c.txns) || [];
+  const shown = txns.filter((t) => _cciViewFilter === 'all' || (t.owner || 'common') === _cciViewFilter);
+  const cnt = document.getElementById('ccv-count');
+  if (cnt) cnt.textContent = _cciViewFilter === 'all' ? `${txns.length} รายการ` : `${shown.length}/${txns.length} รายการ`;
+  if (!txns.length) { box.innerHTML = '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการย่อย (บันทึกแบบสรุปยอด)</div>'; return; }
+  box.innerHTML = shown.length ? shown.map((t) => `
+    <div class="ccv-row">
+      <div class="ccv-date">${_bpEsc(t.date) || '—'}</div>
+      <div class="ccv-merch">${_bpEsc(t.merchant) || '(รายการ)'}${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</div>
+      <div class="ccv-tags"><span class="cc-chip">${_bpEsc(_ccvOwnLabel(t.owner))}</span><span class="cc-chip" style="color:var(--lilac);border-color:var(--lilac-line)">${_bpEsc(t.category || 'อื่นๆ')}</span></div>
+      <div class="ccv-amt ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</div>
+    </div>`).join('')
+    : '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการของเจ้าของนี้</div>';
+}
+function ccViewSetFilter(v) { _cciViewFilter = v || 'all'; _ccvRenderList(); }
 function ccViewOpen(id) {
   const c = getMD().cc.find((x) => x.id === id);
   if (!c) return;
   _cciViewId = id;
+  _cciViewFilter = 'all';
   const card = getCC(c.cardId);
-  const ownLabel = (o) => (CC_OWNERS.find((x) => x.v === o) || {}).label?.() || o;
   document.getElementById('ccv-title').textContent = '🧾 ' + card.name + (c.note ? ' (' + c.note + ')' : '');
   const txns = c.txns || [];
-  const rows = txns.length ? txns.map((t) => `
-    <div class="ccv-row">
-      <div class="ccv-date">${_bpEsc(t.date) || '—'}</div>
-      <div class="ccv-merch">${_bpEsc(t.merchant) || '(รายการ)'}${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</div>
-      <div class="ccv-tags"><span class="cc-chip">${_bpEsc(ownLabel(t.owner))}</span><span class="cc-chip" style="color:var(--lilac);border-color:var(--lilac-line)">${_bpEsc(t.category || 'อื่นๆ')}</span></div>
-      <div class="ccv-amt ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</div>
-    </div>`).join('')
-    : '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการย่อย (บันทึกแบบสรุปยอด)</div>';
   const common = f(c.total) - f(c.p1) - f(c.p2) - f(c.other);
+  const filterBar = txns.length ? `
+    <div class="ccv-filter-bar">
+      <span id="ccv-count" style="font-size:12px;color:var(--ink2)">${txns.length} รายการ</span>
+      <select id="ccv-filter" onchange="ccViewSetFilter(this.value)" title="กรองตามเจ้าของ"
+        style="height:30px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit">
+        <option value="all">ทุกเจ้าของ</option>
+        ${CC_OWNERS.map((o) => `<option value="${o.v}">${o.label()}</option>`).join('')}
+      </select>
+    </div>` : '';
   document.getElementById('ccv-body').innerHTML = `
-    <div class="ccv-list">${rows}</div>
-    <div style="background:var(--card2);border-radius:12px;padding:11px 13px;font-size:12.5px;margin-top:12px">
-      <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:3px"><span>ยอดรวม</span><span>${_bpFmt(c.total)}</span></div>
+    ${filterBar}
+    <div id="ccv-list" class="ccv-list"></div>
+    <div style="background:var(--card2);border-radius:10px;padding:9px 12px;font-size:12px;margin-top:9px">
+      <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:2px"><span>ยอดรวม</span><span>${_bpFmt(c.total)}</span></div>
       <div style="display:flex;justify-content:space-between;color:var(--sky)"><span>${cfg.p1}</span><span>${_bpFmt(f(c.p1) + common / 2)}</span></div>
       <div style="display:flex;justify-content:space-between;color:var(--rose)"><span>${cfg.p2}</span><span>${_bpFmt(f(c.p2) + common / 2)}</span></div>
       <div style="display:flex;justify-content:space-between;color:var(--ink2)"><span>กองกลาง (หาร 2)</span><span>${_bpFmt(common)}</span></div>
       ${f(c.other) ? `<div style="display:flex;justify-content:space-between;color:var(--ink3)"><span>อื่นๆ (ไม่นับ)</span><span>${_bpFmt(c.other)}</span></div>` : ''}
     </div>`;
+  _ccvRenderList();
   const editBtn = document.querySelector('#cc-view-modal .msubmit');
   if (editBtn) editBtn.style.display = txns.length ? '' : 'none'; // only editable when we kept the line items
   document.getElementById('cc-view-modal').classList.add('open');
@@ -1887,6 +1954,7 @@ function ccViewEdit() {
   const t = document.getElementById('cci-title'); if (t) t.textContent = '✏️ แก้ไขรายการบัตร';
   const photo = document.getElementById('cci-photo'); if (photo) photo.style.display = 'none'; // editing existing rows, no re-import
   const status = document.querySelector('#cci-photo .cci-ocr-status'); if (status) status.textContent = '';
+  _cciFilterOwner = 'all'; _cciSyncFilter();
   ccImportRenderRows();
   ccImportSummary();
   document.getElementById('cc-import-modal').classList.add('open');
@@ -2005,9 +2073,22 @@ async function ccImportPhoto(input) {
   }
 }
 function ccImportClose() { document.getElementById('cc-import-modal').classList.remove('open'); }
+// populate the owner filter dropdown (dynamic p1/p2 names), keep current selection
+function _cciSyncFilter() {
+  const sel = document.getElementById('cci-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="all">ทุกเจ้าของ</option>' +
+    CC_OWNERS.map((o) => `<option value="${o.v}">${o.label()}</option>`).join('');
+  sel.value = _cciFilterOwner;
+}
+function ccImportSetFilter(v) { _cciFilterOwner = v || 'all'; ccImportRenderRows(); }
 function ccImportRenderRows() {
+  const shown = _cciTxns.filter((t) => _cciFilterOwner === 'all' || (t.owner || 'common') === _cciFilterOwner);
+  const empty = _cciFilterOwner === 'all'
+    ? 'ยังไม่มีรายการ — กด “เพิ่มแถว”'
+    : 'ไม่มีรายการของเจ้าของนี้';
   document.getElementById('cci-rows').innerHTML =
-    _cciTxns.map((t) => `
+    shown.map((t) => `
       <div class="cci-row">
         <input class="cci-in cci-date" type="text" value="${_bpEsc(t.date)}" placeholder="วันที่" oninput="ccImportField('${t.id}','date',this.value)">
         <input class="cci-in cci-merchant" type="text" value="${_bpEsc(t.merchant)}" placeholder="ร้าน/รายการ" oninput="ccImportField('${t.id}','merchant',this.value)">
@@ -2017,16 +2098,22 @@ function ccImportRenderRows() {
         <button class="cci-del" onclick="ccImportDelRow('${t.id}')" title="ลบ">✕</button>
         <input class="cci-in cci-note" type="text" value="${_bpEsc(t.note)}" placeholder="โน้ต" title="โน้ต (ไม่บังคับ)" oninput="ccImportField('${t.id}','note',this.value)">
       </div>`).join('') ||
-    '<div style="color:var(--ink3);font-size:12px;padding:8px">ยังไม่มีรายการ — กด “เพิ่มแถว”</div>';
+    `<div style="color:var(--ink3);font-size:12px;padding:8px">${empty}</div>`;
 }
-function ccImportAddRow() { _cciTxns.push(_cciBlank()); ccImportRenderRows(); ccImportSummary(); }
+// new rows adopt the active filter's owner so they stay visible
+function ccImportAddRow() {
+  const t = _cciBlank();
+  if (_cciFilterOwner !== 'all') t.owner = _cciFilterOwner;
+  _cciTxns.push(t); ccImportRenderRows(); ccImportSummary();
+}
 function ccImportDelRow(id) { _cciTxns = _cciTxns.filter((t) => t.id !== id); ccImportRenderRows(); ccImportSummary(); }
 const _cciMerchKey = merchKey; // brand grouping (from cc-utils, unit-tested)
 function ccImportField(id, field, val) {
   const t = _cciTxns.find((x) => x.id === id);
   if (!t) return;
   t[field] = val;
-  let rerender = false;
+  // when filtering by owner, changing a row's owner may move it out of view
+  let rerender = field === 'owner' && _cciFilterOwner !== 'all';
   // choosing a category → apply it to other same-merchant rows that have none yet
   if (field === 'category' && val) {
     const key = _cciMerchKey(t.merchant);
@@ -2078,10 +2165,10 @@ function ccImportSave() {
   md.cc.push({ id: Date.now(), cardId, note: '', txns, total: d.total, p1: d.p1, p2: d.p2, other: d.other });
   persist(); _bpRender(); ccImportClose(); _bpToast('นำเข้ารายการบัตรแล้ว ✓');
 }
-Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccViewOpen, ccViewClose, ccViewEdit, _cciParseOCR });
+Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, ccCatPopup, ccCatPopupClose, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

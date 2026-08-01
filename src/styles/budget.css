@@ -32,13 +32,36 @@
   #m-budget .cci-row{margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--line);grid-template-columns:1fr 1fr 34px;grid-template-areas:"merchant merchant del" "date amt amt" "owner cat cat" "note note note"}
   #m-budget .cci-del{width:34px;height:34px}
 }
+/* CC category drill-down — "i" button opens a popup of the category's txns */
+#m-budget .cc-cat-i{width:17px;height:17px;flex:0 0 17px;border:none;border-radius:50%;background:var(--lilac-bg);color:var(--lilac);font-size:11px;font-weight:800;font-style:italic;font-family:Georgia,serif;line-height:17px;text-align:center;padding:0;cursor:pointer;transition:.15s}
+#m-budget .cc-cat-i:hover{background:var(--lilac);color:#fff}
+#m-budget #cc-cat-modal .modal{width:min(560px,95vw)}
+#m-budget .cc-cat-detail{margin-top:8px;padding:6px 10px;background:var(--card2);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column}
+#m-budget .cc-cat-txn{display:grid;gap:2px 10px;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);grid-template-columns:1fr auto;grid-template-areas:"main amt" "meta amt"}
+#m-budget .cc-cat-txn:last-child{border-bottom:none}
+#m-budget .cctx-main{grid-area:main;font-size:12.5px;font-weight:600;color:var(--ink)}
+#m-budget .cctx-note{font-size:11px;color:var(--ink3);font-weight:400}
+#m-budget .cctx-meta{grid-area:meta;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#m-budget .cctx-card{font-size:10.5px;font-weight:700;color:var(--sky);background:var(--sky-bg);border:1px solid var(--sky-line);border-radius:7px;padding:0 6px}
+#m-budget .cctx-date{font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+#m-budget .cctx-amt{grid-area:amt;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+#m-budget .cctx-amt.cci-credit{color:var(--sage)}
 /* CC view modal — read-only line items */
-#m-budget #cc-view-modal .modal{width:min(640px,95vw)}
-#m-budget .ccv-list{max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:2px}
-#m-budget .ccv-row{display:grid;gap:4px 10px;align-items:center;padding:8px 2px;border-bottom:1px dashed var(--line);grid-template-columns:66px 1fr auto;grid-template-areas:"date merch amt" "tags tags tags"}
-#m-budget .ccv-date{grid-area:date;font-size:11.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
-#m-budget .ccv-merch{grid-area:merch;font-size:13px;color:var(--ink);font-weight:600}
+#m-budget #cc-view-modal .modal{width:min(560px,95vw);padding:1.1rem 1.2rem}
+#m-budget #cc-view-modal .modal-title{margin-bottom:.8rem;font-size:15px}
+#m-budget .ccv-filter-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+#m-budget .ccv-list{max-height:54vh;overflow:auto;display:flex;flex-direction:column}
+/* compact single-line row: date · merchant (+chips) · amount */
+#m-budget .ccv-row{display:grid;gap:0 8px;align-items:center;padding:5px 2px;border-bottom:1px dashed var(--line);grid-template-columns:46px minmax(0,1fr) auto auto;grid-template-areas:"date merch tags amt"}
+#m-budget .ccv-row:last-child{border-bottom:none}
+#m-budget .ccv-date{grid-area:date;font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+#m-budget .ccv-merch{grid-area:merch;font-size:12.5px;color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 #m-budget .ccv-note{font-size:11px;color:var(--ink3);font-weight:400}
-#m-budget .ccv-amt{grid-area:amt;font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+#m-budget .ccv-amt{grid-area:amt;font-size:12.5px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
 #m-budget .ccv-amt.cci-credit{color:var(--sage)}
-#m-budget .ccv-tags{grid-area:tags;display:flex;gap:6px;flex-wrap:wrap}
+#m-budget .ccv-tags{grid-area:tags;display:flex;gap:4px;align-items:center}
+#m-budget .ccv-tags .cc-chip{font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px}
+@media(max-width:480px){
+  #m-budget .ccv-row{grid-template-columns:44px minmax(0,1fr) auto;grid-template-areas:"date merch amt" "date tags amt";gap:1px 8px;padding:6px 2px}
+  #m-budget .ccv-tags{flex-wrap:wrap}
+}

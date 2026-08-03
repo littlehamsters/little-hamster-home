@@ -451,6 +451,48 @@ function saveTx(){
   document.getElementById('txTitle').textContent=f.emoji+' '+f.name;
 }
 
+/* ---------- budget → savings link (settings-driven) ---------- */
+// list of active (non-closed) funds — used to populate budget's link dropdown
+function svGetFunds(){
+  if(!state.funds)return[];
+  return state.funds.filter(f=>!f.closed).map(f=>({
+    id:f.id,
+    name:f.name,
+    emoji:f.emoji,
+    owner:f.owner||'',        // '' = กองกลาง (ใช้ร่วมกัน)
+    category:f.category||'',
+    bal:balance(f)            // ยอดคงเหลือปัจจุบัน — ช่วยแยกกองที่ชื่อซ้ำ
+  }));
+}
+// idempotent deposit tied to a budget row (srcKey). Editing the budget amount
+// updates the same tx; setting 0 / removing the link deletes it; changing the
+// fund moves it. Only tx created by budget carry a matching `src`.
+function svSyncFromBudget(opts){
+  opts=opts||{};
+  const srcKey=opts.srcKey;
+  if(!srcKey||!state.funds)return;
+  let changed=false;
+  // drop any previous budget-created tx for this source (across all funds)
+  state.funds.forEach(f=>{
+    const before=f.tx.length;
+    f.tx=f.tx.filter(t=>t.src!==srcKey);
+    if(f.tx.length!==before)changed=true;
+  });
+  const amt=Number(opts.amt)||0;
+  if(opts.fundId&&amt>0){
+    const f=state.funds.find(x=>x.id===opts.fundId);
+    if(f){
+      let ts=Date.now();
+      if(opts.date){const now=new Date();const d=new Date(opts.date+'T00:00:00');d.setHours(now.getHours(),now.getMinutes(),now.getSeconds());ts=d.getTime();}
+      f.tx.push({id:uid(),type:'in',amt,note:opts.note||'',ts,src:srcKey});
+      f.tx.sort((a,b)=>a.ts-b.ts);
+      changed=true;
+    }
+  }
+  if(changed){_svSave();_svRender();}
+  return changed;
+}
+
 /* ---------- backup / restore ---------- */
 function backup(){
   try{
@@ -513,4 +555,4 @@ document.getElementById('fName').addEventListener('keydown',e=>{if(e.key==='Ente
 document.getElementById('txAmt').addEventListener('keydown',e=>{if(e.key==='Enter')saveTx();});
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { _svLoad, applyTheme, _svSave, balance, dateStr, shortDate, daysLeft, monthsLabel, monthNet, planMonthly, fundStatus, jarCard, _svRender, setCatFilter, escapeHtml, openFund, buildEmoji, pickEmoji, buildCat, pickCat, fillOwnerSelect, reopenFund, saveFund, openTx, todayISO, openAssets, renderAssets, _svOpenSettings, ownerStats, renderPeople, addPerson, removePerson, setSeg, txRow, renderHist, openHist, renderHistFull, delTx, saveTx, backup, openRestore, applyImport, restoreFromFile, _svClose });
+Object.assign(window, { _svLoad, applyTheme, _svSave, balance, dateStr, shortDate, daysLeft, monthsLabel, monthNet, planMonthly, fundStatus, jarCard, _svRender, setCatFilter, escapeHtml, openFund, buildEmoji, pickEmoji, buildCat, pickCat, fillOwnerSelect, reopenFund, saveFund, openTx, todayISO, openAssets, renderAssets, _svOpenSettings, ownerStats, renderPeople, addPerson, removePerson, setSeg, txRow, renderHist, openHist, renderHistFull, delTx, saveTx, backup, openRestore, applyImport, restoreFromFile, _svClose, svGetFunds, svSyncFromBudget });

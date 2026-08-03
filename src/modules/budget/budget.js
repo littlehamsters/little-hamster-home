@@ -713,6 +713,158 @@ function renderCC(){
     </div>`;
 }
 
+// โหลด html2canvas แบบ lazy — โหลดจาก CDN ตอนกดปุ่มครั้งแรกเท่านั้น
+function _ensureHtml2Canvas(){
+  return new Promise((resolve,reject)=>{
+    if(window.html2canvas) return resolve(window.html2canvas);
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload=()=>resolve(window.html2canvas);
+    s.onerror=()=>reject(new Error('load-failed'));
+    document.head.appendChild(s);
+  });
+}
+// ── รายการรายจ่าย (ต่อคน) สำหรับสลิป — ผลรวมตรงกับ getExpenseDisplayTotal ──
+function _slipItems(p){
+  const md=getMD();const d=md.expenses[p];
+  const hidden=(md.hidden&&md.hidden[p])||[];
+  const items=[];
+  cfg.fixedExpense[p].forEach(fe=>{
+    if(hidden.includes(fe.id))return;
+    let amt=0;
+    if(fe.ccLinked)amt=getCCPersonTotal(p);
+    else if(fe.foodLinked)amt=getSharedFoodPerPerson();
+    else if(fe.utilityLinked)amt=getSharedUtilityPerPerson();
+    else amt=f((d.fixed[fe.id]||{}).actual);
+    if(amt>0)items.push({name:fe.name,amount:amt});
+  });
+  (d.extras||[]).forEach(e=>{const a=f(e.actual);if(a>0)items.push({name:e.name,amount:a});});
+  return items;
+}
+// เลือกไอคอนตามชื่อรายการ
+function _slipIcon(n){
+  if(/บ้าน|ผ่อน/.test(n))return'🏠';
+  if(/รถ/.test(n))return'🚗';
+  if(/กิน|อาหาร/.test(n))return'🍚';
+  if(/น้ำ|ไฟ/.test(n))return'💡';
+  if(/บัตร|เครดิต/.test(n))return'💳';
+  if(/เน็ต|internet|mobile|โทร|มือถือ/i.test(n))return'📱';
+  if(/ออม|เก็บ/.test(n))return'🐷';
+  if(/dime|ลงทุน|xrp|bitcoin|คริป|หุ้น/i.test(n))return'📈';
+  if(/ซับ|subscription|netflix|ดู|ตะไคร้/i.test(n))return'📺';
+  if(/กองกลาง|กลาง/.test(n))return'🤝';
+  if(/ประกัน/.test(n))return'🛡️';
+  if(/เทอม|เรียน|การศึกษา/.test(n))return'🎓';
+  return'📌';
+}
+// รวบรวมข้อมูลสำหรับสลิป
+function _slipData(which){
+  let income,items;
+  if(which==='common'){
+    income=getIncomeTotal('p1')+getIncomeTotal('p2');
+    const map={};
+    ['p1','p2'].forEach(p=>_slipItems(p).forEach(it=>{map[it.name]=(map[it.name]||0)+it.amount;}));
+    items=Object.entries(map).map(([name,amount])=>({name,amount}));
+  }else{
+    income=getIncomeTotal(which);
+    items=_slipItems(which);
+  }
+  const expense=items.reduce((s,i)=>s+i.amount,0);
+  items.sort((a,b)=>b.amount-a.amount);
+  items.forEach(i=>{i.pct=expense>0?Math.round(i.amount/expense*100):0;i.icon=_slipIcon(i.name);});
+  return{
+    who:which==='p1'?cfg.p1:which==='p2'?cfg.p2:'ครัวเรือน',
+    monthLabel:`${MONTHS_TH[curMonth]} ${curYear+543}`,
+    income,expense,remaining:income-expense,items
+  };
+}
+// ขอบหยักแบบใบเสร็จ (dir: 'top' ฟันชี้ขึ้น / 'bottom' ฟันชี้ลง)
+function _slipZig(w,tooth,dir){
+  const h=tooth,n=Math.ceil(w/tooth);let dp;
+  if(dir==='top'){dp=`M0 ${h}`;for(let i=0;i<n;i++){const x=i*tooth;dp+=` L${x+tooth/2} 0 L${x+tooth} ${h}`;}dp+=` L${w} ${h} Z`;}
+  else{dp=`M0 0`;for(let i=0;i<n;i++){const x=i*tooth;dp+=` L${x+tooth/2} ${h} L${x+tooth} 0`;}dp+=` L${w} 0 Z`;}
+  return`<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="${dp}" fill="#ffffff"/></svg>`;
+}
+// สร้าง HTML สลิป
+function _slipHTML(d){
+  const W=384;
+  const now=new Date(),p2=n=>String(n).padStart(2,'0');
+  const yb=now.getFullYear()+543;
+  const datetime=`${now.getDate()} ${MONTHS_TH[now.getMonth()]} ${yb} ${p2(now.getHours())}:${p2(now.getMinutes())}`;
+  const txn=`EXP${String(yb).slice(-2)}${p2(now.getMonth()+1)}${p2(now.getDate())}${p2(now.getHours())}${p2(now.getMinutes())}${p2(now.getSeconds())}`;
+  const dashed=`<div style="border-top:1.5px dashed #cdd7e3;margin:12px 0"></div>`;
+  const shdr=(ic,t)=>`<div style="display:flex;align-items:center;gap:9px;background:#eaf3ff;border-radius:12px;padding:11px 14px;margin:4px 0 6px"><span style="font-size:17px">${ic}</span><span style="font-weight:800;color:#1f6fd0;font-size:16px;flex:1">${t}</span><span style="color:#9aa4b2;font-size:13px;font-weight:600">(B)</span></div>`;
+  const ovRow=(dot,label,val,strong)=>`<div style="display:flex;align-items:center;padding:8px 4px"><span style="width:13px;height:13px;border-radius:50%;background:${dot};display:inline-block;margin-right:13px;flex-shrink:0"></span><span style="flex:1;font-size:16px;color:#374151">${label}</span><span style="font-size:${strong?19:16}px;font-weight:${strong?800:600};color:${strong?'#1f6fd0':'#1f2937'}">${val}</span></div>`;
+  const propRow=(ic,name,pct,val)=>`<div style="display:flex;align-items:center;padding:7px 4px"><span style="font-size:18px;width:28px;text-align:center;margin-right:8px;flex-shrink:0">${ic}</span><span style="flex:1;font-size:15px;color:#374151">${name}</span><span style="width:52px;font-size:15px;color:#374151">${pct}%</span><span style="font-size:15px;color:#1f2937;font-weight:600;min-width:96px;text-align:right">${val}</span></div>`;
+  const topRow=(rk,ic,name,val,pct)=>`<div style="display:flex;align-items:center;padding:7px 4px"><span style="width:18px;color:#6b7688;font-size:15px;flex-shrink:0">${rk}</span><span style="font-size:18px;width:28px;text-align:center;margin:0 8px;flex-shrink:0">${ic}</span><span style="flex:1;font-size:15px;color:#374151">${name}</span><span style="font-size:15px;color:#1f2937;font-weight:600;margin-right:12px">${val}</span><span style="width:42px;text-align:right;font-size:15px;color:#6b7688">${pct}%</span></div>`;
+  const pie=`<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="#2f7fe0"/><path d="M20 20 L20 5 A15 15 0 0 1 35 20 Z" fill="#a9ccff"/></svg>`;
+
+  // สัดส่วน: top4 + อื่นๆ
+  let propHTML;
+  if(!d.items.length){propHTML=`<div style="padding:10px 4px;color:#9aa4b2;font-size:14px">ยังไม่มีข้อมูลรายจ่าย</div>`;}
+  else{
+    const top4=d.items.slice(0,4);
+    const rest=d.items.slice(4);
+    const restSum=rest.reduce((s,i)=>s+i.amount,0);
+    propHTML=top4.map(i=>propRow(i.icon,i.name,i.pct,_bpFmt(i.amount))).join('');
+    if(restSum>0)propHTML+=propRow('⚫','อื่นๆ',d.expense>0?Math.round(restSum/d.expense*100):0,_bpFmt(restSum));
+  }
+  const topHTML=d.items.length
+    ? d.items.slice(0,5).map((i,idx)=>topRow(idx+1,i.icon,i.name,_bpFmt(i.amount),i.pct)).join('')
+    : `<div style="padding:10px 4px;color:#9aa4b2;font-size:14px">ยังไม่มีข้อมูลรายจ่าย</div>`;
+
+  return`<div style="width:${W}px;font-family:'Noto Sans Thai','Nunito',system-ui,sans-serif;filter:drop-shadow(0 8px 24px rgba(40,60,90,.14))">
+    <div style="line-height:0">${_slipZig(W,16,'top')}</div>
+    <div style="background:#fff;padding:0 26px">
+      <div style="text-align:center;padding:20px 0 4px">
+        <div style="width:74px;height:74px;border-radius:50%;background:#e8f1fe;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">${pie}</div>
+        <div style="font-size:27px;font-weight:800;color:#1f6fd0;letter-spacing:.5px">สรุปภาพรวม</div>
+        <div style="font-size:15px;color:#6b7688;margin-top:3px">${d.who} · ${d.monthLabel}</div>
+      </div>
+      <div style="font-size:13px;color:#6b7688;padding:10px 2px 0">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>วันที่-เวลา</span><span style="color:#374151">${datetime}</span></div>
+        <div style="display:flex;justify-content:space-between"><span>เลขที่รายการ</span><span style="color:#374151">${txn}</span></div>
+      </div>
+      ${dashed}
+      ${shdr('🧾','ภาพรวมการรับ-รายจ่าย')}
+      ${ovRow('#34a853','รายรับรวม',_bpFmt(d.income))}
+      ${ovRow('#ea4335','รายจ่ายรวม',_bpFmt(d.expense))}
+      ${ovRow('#2f7fe0','คงเหลือ',_bpFmt(d.remaining),true)}
+      ${dashed}
+      ${shdr('📊','สัดส่วนรายจ่าย')}
+      ${propHTML}
+      ${dashed}
+      ${shdr('🏆','Top 5 รายจ่ายสูงสุด')}
+      ${topHTML}
+      <div style="height:18px"></div>
+    </div>
+    <div style="line-height:0">${_slipZig(W,16,'bottom')}</div>
+  </div>`;
+}
+// export สรุปเป็นรูปสลิป PNG (which = 'p1' | 'p2' | 'common')
+async function exportSummaryImage(which){
+  _bpToast('กำลังสร้างรูป...');
+  let h2c;
+  try{ h2c=await _ensureHtml2Canvas(); }
+  catch(e){ _bpToast('โหลดเครื่องมือไม่สำเร็จ (ต้องต่อเน็ต)'); return; }
+  const d=_slipData(which);
+  const wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:-99999px;top:0;padding:22px;background:#eef1f5';
+  wrap.innerHTML=_slipHTML(d);
+  document.body.appendChild(wrap);
+  try{
+    const canvas=await h2c(wrap,{backgroundColor:'#eef1f5',scale:2,logging:false,useCORS:true});
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    const EN_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const engWho=which==='common'?'household':which==='p1'?'Foam':'Kheng';
+    a.download=`${engWho}_${EN_MONTHS[curMonth]}_${curYear}_summary.png`;
+    a.click();
+    _bpToast('บันทึกรูปแล้ว ✓');
+  }catch(e){ _bpToast('สร้างรูปไม่สำเร็จ'); }
+  finally{ wrap.remove(); }
+}
+
 function renderSummaryPerson(p){
   const md=getMD();
   const inc=getIncomeTotal(p);
@@ -749,7 +901,9 @@ function renderSummaryPerson(p){
     <div class="card-head"><div class="card-head-left">
       <div class="sicon" style="background:${bg};border:1.5px solid ${bl};font-size:17px;display:flex;align-items:center;justify-content:center">💰</div>
       <div><div class="stitle">สรุป ${p==='p1'?cfg.p1:cfg.p2}</div></div>
-    </div></div>
+    </div>
+      <button onclick="exportSummaryImage('${p}')" title="บันทึกสรุปเป็นรูป" style="height:26px;padding:0 10px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid ${bl};background:${bg};color:${clr};cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-camera" style="font-size:12px"></i> บันทึกรูป</button>
+    </div>
     <div class="sum-list">
       <div class="sum-row sub">
         <span>รายรับรวม</span>
@@ -825,7 +979,9 @@ function renderSummaryCommon(){
     <div class="card-head"><div class="card-head-left">
       <div class="sicon" style="background:var(--lilac-bg);border:1.5px solid var(--lilac-line);font-size:17px;display:flex;align-items:center;justify-content:center">🏡</div>
       <div><div class="stitle">สรุปรวมครัวเรือน</div></div>
-    </div></div>
+    </div>
+      <button onclick="exportSummaryImage('common')" title="บันทึกสรุปเป็นรูป" style="height:26px;padding:0 10px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-camera" style="font-size:12px"></i> บันทึกรูป</button>
+    </div>
     <div class="sum-list">
       <div class="sum-row sub" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
         <span style="font-weight:600;color:var(--sky)">${cfg.p1} <span style="font-size:11px;color:var(--ink3)">▾</span></span>
@@ -951,14 +1107,46 @@ function setFixedExpense(p,fid,field,v){
   }
   const md=getMD();
   if(!md.expenses[p].fixed[fid]) md.expenses[p].fixed[fid]={actual:0};
+  const prev=f(md.expenses[p].fixed[fid][field]);
   md.expenses[p].fixed[fid][field]=f(v);
   persist();renderBanner();renderExpenseCard(p);renderSummaryPerson(p);renderSummaryCommon();
+  if(field==='actual'&&f(v)!==prev){
+    const fe=cfg.fixedExpense[p].find(x=>x.id===fid);
+    syncExpenseToSavings(fe,p,fid,f(v));
+  }
 }
 function setExtraExpense(p,id,field,v){
   const md=getMD();
   const e=md.expenses[p].extras.find(x=>x.id===id);
   if(e){e[field]=f(v);}
   persist();renderBanner();renderExpenseCard(p);renderSummaryPerson(p);renderSummaryCommon();
+}
+// srcKey ผูกรายการฝากในกองออมกับ (เดือน + คน + รายการ) เพื่อให้แก้ยอดแล้ว update
+// รายการเดิม ไม่สร้างซ้ำ, ตั้ง 0 → ลบทิ้ง
+function _svSrcKey(p,fid){ return `bp:${mkey()}:${p}:${fid}`; }
+function _svMonthDate(){ return `${curYear}-${String(curMonth+1).padStart(2,'0')}-01`; }
+// เมื่อกรอกยอดจริงของรายการที่ผูกไว้กับกองออม → ฝากเข้ากองนั้นอัตโนมัติ
+function syncExpenseToSavings(fe,p,fid,val){
+  if(!fe||!fe.savingsFundId) return;
+  if(typeof window.svSyncFromBudget!=='function') return;
+  const note=`${fe.name} · ${MONTHS_TH[curMonth]} ${curYear+543}`;
+  const ok=window.svSyncFromBudget({srcKey:_svSrcKey(p,fid),fundId:fe.savingsFundId,amt:val,note,date:_svMonthDate()});
+  if(ok) _bpToast(val>0?'ฝากเข้ากองออมแล้ว ✓':'ลบรายการฝากในกองออมแล้ว');
+}
+// ผูก/ยกเลิกการเชื่อมรายการรายจ่ายกับกองออม (จากเมนูตั้งค่า)
+function setSavingsLink(p,fid,fundId){
+  const fe=cfg.fixedExpense[p].find(x=>x.id===fid);
+  if(!fe) return;
+  fe.savingsFundId=fundId||'';
+  persist();
+  // sync ยอดของเดือนปัจจุบันให้ตรงกับการเชื่อมใหม่ (ย้าย/สร้าง/ลบ)
+  const fdata=getMD().expenses[p].fixed[fid];
+  syncExpenseToSavings(fe,p,fid,f(fdata&&fdata.actual));
+  if(!fundId&&typeof window.svSyncFromBudget==='function'){
+    // ยกเลิกเชื่อม → ลบรายการฝากที่เคยสร้างของเดือนนี้
+    window.svSyncFromBudget({srcKey:_svSrcKey(p,fid),fundId:'',amt:0});
+  }
+  _bpToast(fundId?'เชื่อมกับกองออมแล้ว ✓':'ยกเลิกการเชื่อมแล้ว');
 }
 function addExtraIncome(p){
   const name=document.getElementById(`extra-inc-name-${p}`).value.trim();
@@ -1000,6 +1188,9 @@ function delFixed(section,p,fid){
   if(!md.hidden[p].includes(fid)) md.hidden[p].push(fid);
   if(section==='expense' && md.expenses[p].fixed[fid]) md.expenses[p].fixed[fid].actual=0;
   if(section==='income') md.incomes[p].fixed[fid]=0;
+  // ซ่อนรายการรายจ่ายเดือนนี้ → ลบรายการฝากในกองออมที่ผูกไว้ด้วย
+  if(section==='expense' && typeof window.svSyncFromBudget==='function')
+    window.svSyncFromBudget({srcKey:_svSrcKey(p,fid),fundId:'',amt:0});
   persist();
   _bpRender();
   _bpToast('ลบออกจากเดือนนี้แล้ว');
@@ -1067,28 +1258,69 @@ function renderFixedListsInModal(){
   document.getElementById('fix-inc-p1-list').innerHTML=cfg.fixedIncome.p1.map(fi=>`<span style="${chipStyle}">${fi.name}<i class="ti ti-x" style="font-size:10px;cursor:pointer" onclick="delFixedTemplate('income','p1','${fi.id}')"></i></span>`).join('');
   document.getElementById('fix-inc-p2-list').innerHTML=cfg.fixedIncome.p2.map(fi=>`<span style="${chipStyle}">${fi.name}<i class="ti ti-x" style="font-size:10px;cursor:pointer" onclick="delFixedTemplate('income','p2','${fi.id}')"></i></span>`).join('');
   const goalRowStyle='display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:12px;border:1px solid var(--line);margin-bottom:5px';
-  document.getElementById('fix-exp-p1-list').innerHTML=cfg.fixedExpense.p1.map(fe=>`
+  const funds=(typeof window.svGetFunds==='function')?window.svGetFunds():[];
+  const linkSel=(p,fe)=>{
+    if(!funds.length) return `<div style="font-size:10px;color:var(--ink3);margin-top:2px">🔗 สร้างกองในกองออมก่อนเพื่อเชื่อม</div>`;
+    const opts=`<option value="">🔗 ไม่เชื่อมกองออม</option>`+
+      funds.map(fn=>{
+        const who=fn.owner?('👤'+fn.owner):'🤝กองกลาง';
+        const bal=(fn.bal||0).toLocaleString('th-TH');
+        return `<option value="${fn.id}" ${fn.id===fe.savingsFundId?'selected':''}>${fn.emoji||'💰'} ${fn.name} · ${who} · ฿${bal}</option>`;
+      }).join('');
+    return `<select onchange="setSavingsLink('${p}','${fe.id}',this.value)" title="เชื่อมกับกองออม"
+      style="margin-top:4px;max-width:100%;height:26px;padding:0 6px;border-radius:8px;border:1px solid ${fe.savingsFundId?'var(--sage-line)':'var(--line2)'};background:${fe.savingsFundId?'var(--sage-bg)':'var(--card)'};color:${fe.savingsFundId?'var(--sage)':'var(--ink2)'};font-size:11px;font-family:inherit;cursor:pointer;outline:none">${opts}</select>`;
+  };
+  const expRow=(p,fe)=>`
     <div style="${goalRowStyle}">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600">${fe.name}</div>
         <div style="font-size:10px;color:var(--ink2)">${(TYPES[fe.type]||TYPES.expense).label}</div>
+        ${linkSel(p,fe)}
       </div>
       <input type="text" inputmode="decimal" value="${fe.goal||''}" placeholder="0.00"
         style="width:110px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right"
-        onchange="setGoalInSettings('p1','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
-      <button class="del-item-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="delFixedTemplate('expense','p1','${fe.id}')"><i class="ti ti-trash" style="font-size:12px"></i> ลบ</button>
-    </div>`).join('');
-  document.getElementById('fix-exp-p2-list').innerHTML=cfg.fixedExpense.p2.map(fe=>`
-    <div style="${goalRowStyle}">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600">${fe.name}</div>
-        <div style="font-size:10px;color:var(--ink2)">${(TYPES[fe.type]||TYPES.expense).label}</div>
+        onchange="setGoalInSettings('${p}','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
+      <button class="del-item-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="delFixedTemplate('expense','${p}','${fe.id}')"><i class="ti ti-trash" style="font-size:12px"></i> ลบ</button>
+    </div>`;
+  // ฟอร์มเพิ่มรายการรายจ่ายใหม่ (ต่อคน)
+  const addForm=(p)=>`
+    <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;padding:9px 10px;background:var(--card);border:1px dashed var(--amber-line);border-radius:12px">
+      <div style="flex:1;min-width:110px">
+        <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">ชื่อรายการใหม่</label>
+        <input id="new-exp-name-${p}" type="text" placeholder="เช่น ค่าประกัน, ค่าเทอม"
+          style="width:100%;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit">
       </div>
-      <input type="text" inputmode="decimal" value="${fe.goal||''}" placeholder="0.00"
-        style="width:110px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right"
-        onchange="setGoalInSettings('p2','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
-      <button class="del-item-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="delFixedTemplate('expense','p2','${fe.id}')"><i class="ti ti-trash" style="font-size:12px"></i> ลบ</button>
-    </div>`).join('');
+      <div>
+        <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">ประเภท</label>
+        <select id="new-exp-type-${p}" style="height:30px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit;cursor:pointer">
+          <option value="expense">รายจ่าย</option>
+          <option value="invest">ลงทุน</option>
+          <option value="save">ออม</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">Goal</label>
+        <input id="new-exp-goal-${p}" type="text" inputmode="decimal" placeholder="0.00"
+          style="width:90px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right">
+      </div>
+      <button class="add-btn" style="height:30px;background:var(--amber);color:#fff" onclick="addFixedExpense('${p}')"><i class="ti ti-plus"></i> เพิ่ม</button>
+    </div>`;
+  document.getElementById('fix-exp-p1-list').innerHTML=cfg.fixedExpense.p1.map(fe=>expRow('p1',fe)).join('')+addForm('p1');
+  document.getElementById('fix-exp-p2-list').innerHTML=cfg.fixedExpense.p2.map(fe=>expRow('p2',fe)).join('')+addForm('p2');
+}
+// เพิ่มรายการรายจ่าย fixed ใหม่ (จากเมนูตั้งค่า) — ใช้ทุกเดือน
+function addFixedExpense(p){
+  const nameEl=document.getElementById('new-exp-name-'+p);
+  const typeEl=document.getElementById('new-exp-type-'+p);
+  const goalEl=document.getElementById('new-exp-goal-'+p);
+  const name=nameEl.value.trim();
+  const type=typeEl.value||'expense';
+  const goal=f(goalEl.value);
+  if(!name){_bpToast('กรุณากรอกชื่อรายการ');return}
+  cfg.fixedExpense[p].push({id:'fe_u_'+Date.now(),name,type,goal});
+  nameEl.value='';goalEl.value='';typeEl.value='expense';
+  persist();_bpRender();renderFixedListsInModal();
+  _bpToast('เพิ่มรายการ "'+name+'" แล้ว ✓');
 }
 
 function addCCCard(){
@@ -1213,12 +1445,11 @@ function toggleChart(){
   btn.style.background=chartVisible?'var(--sky)':'';
   btn.style.color=chartVisible?'#fff':'';
   if(chartVisible){
-    // ภาพรวม / เปรียบเทียบรายการ tabs removed — default to ผลต่าง Goal
+    // default = ผลต่าง Goal — ใช้ setChartTab เพื่อให้ไฮไลต์ปุ่ม + เนื้อหาตรงกันเสมอ
     document.getElementById('chart-sec-overview').style.display='none';
     document.getElementById('chart-sec-compare').style.display='none';
-    if(document.getElementById('chart-sec-diff'))document.getElementById('chart-sec-diff').style.display='block';
-    chartTab='diff'; chartPerson='p1';
-    renderDiffTable();
+    chartPerson='p1';
+    setChartTab('diff', document.getElementById('cp3'));
   }
 }
 
@@ -1232,32 +1463,117 @@ function setChartTab(tab,btn){
   const secCC=document.getElementById('chart-sec-cc');if(secCC)secCC.style.display=tab==='cc'?'block':'none';
   if(tab==='compare'){populateCompareSelect();renderCompareChart();}
   else if(tab==='diff'){renderDiffTable();}
-  else if(tab==='cc'){renderCCCategory();}
+  else if(tab==='cc'){renderCCCategory();renderGroupTable();}
   else _bpRenderCharts();
+}
+// prefix = คำแรกของชื่อร้าน หลังตัดอักขระ/สัญลักษณ์นำหน้า แล้วตัดที่ตัวคั่นคำแรก
+function _groupPrefix(name){
+  let s=String(name||'').trim();
+  // ตัดสระ/วรรณยุกต์ไทยที่ลอยนำหน้า (เช่น " ็Hamster") และสัญลักษณ์นำหน้า เช่น "(", "*"
+  s=s.replace(/^[ัิ-ฺ็-๎]+/,'')
+     .replace(/^[^0-9A-Za-z฀-๿]+/,'');
+  // ตัดที่ตัวคั่นคำแรก: ช่องว่าง หรือสัญลักษณ์ * ( ) _ - / · : | , .
+  const t=s.split(/[\s*()_\-/·:|,.]+/)[0];
+  return (t||s).trim()||String(name||'').trim();
+}
+// รวมรายการบัตรเครดิตเดือนนี้ตาม prefix ขึ้นต้นของชื่อร้าน (merchant)
+let _grpItems={},_grpOrder=[],_grpTotals={};
+function renderGroupTable(){
+  const box=document.getElementById('group-container');if(!box)return;
+  const sub=document.getElementById('group-sub');if(sub)sub.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
+  const md=getMD();
+  // ดึงรายการจาก transaction บัตรเครดิตของเดือนนี้
+  const rows=[]; // {name, card, date, amt}
+  (md.cc||[]).forEach(c=>{
+    const cardName=getCC(c.cardId).name;
+    if(c.txns&&c.txns.length){
+      c.txns.forEach(t=>rows.push({name:t.merchant||'(รายการ)',card:cardName,date:t.date||'',amt:f(t.amt)}));
+    }else{
+      rows.push({name:c.note||cardName,card:cardName,date:'',amt:f(c.total)});
+    }
+  });
+  if(!rows.length){box.innerHTML='<div style="padding:14px;color:var(--ink3);font-size:13px">เดือนนี้ยังไม่มีรายการบัตรเครดิต</div>';return;}
+  const groups={};
+  rows.forEach(r=>{const k=_groupPrefix(r.name);(groups[k]=groups[k]||{total:0,items:[]});groups[k].total+=f(r.amt);groups[k].items.push(r);});
+  const order=Object.entries(groups).sort((a,b)=>b[1].total-a[1].total);
+  const grand=rows.reduce((s,r)=>s+f(r.amt),0);
+  _grpOrder=[];_grpItems={};_grpTotals={};
+  order.forEach(([k,g])=>{_grpOrder.push(k);_grpItems[k]=g.items;_grpTotals[k]=g.total;});
+  // dropdown เลือกร้าน → โชว์รายละเอียดของร้านนั้น
+  const opts=_grpOrder.map((k,i)=>`<option value="${i}">${_bpEsc(k)} — ${_bpFmt(_grpTotals[k])} (${_grpItems[k].length} ครั้ง)</option>`).join('');
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid var(--line2)">
+      <span style="font-size:13px;color:var(--ink2)">รวมทั้งเดือน (${order.length} ร้าน)</span>
+      <span style="font-size:20px;font-weight:700;color:var(--lilac)">${_bpFmt(grand)}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">เลือกร้าน</span>
+      <select id="group-select" onchange="renderGroupDetail()" style="flex:1;min-width:180px;font-size:13px;height:34px;padding:0 12px;border-radius:10px;border:1.5px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);font-weight:700;font-family:inherit;cursor:pointer;outline:none">${opts}</select>
+    </div>
+    <div id="group-detail"></div>`;
+  renderGroupDetail();
+}
+// รายละเอียดร้านที่เลือกจาก dropdown: รูดไปกี่ครั้ง + แต่ละยอด + รวม
+function renderGroupDetail(){
+  const sel=document.getElementById('group-select');if(!sel)return;
+  const box=document.getElementById('group-detail');if(!box)return;
+  const i=parseInt(sel.value,10)||0;
+  const k=_grpOrder[i];if(k==null){box.innerHTML='';return;}
+  const items=(_grpItems[k]||[]).slice().sort((a,b)=>f(b.amt)-f(a.amt));
+  const total=_grpTotals[k]||0;
+  box.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;padding:8px 10px;background:var(--lilac-bg);border-radius:10px">
+      <span style="font-size:13px;font-weight:700;color:var(--lilac)">🛒 ${_bpEsc(k)} · รูดไป ${items.length} ครั้ง</span>
+      <span style="font-size:17px;font-weight:700;color:var(--lilac)">${_bpFmt(total)}</span>
+    </div>`+
+    (items.length?items.map(it=>`
+      <div class="cc-cat-txn">
+        <div class="cctx-main"><span class="cctx-merch">${_bpEsc(it.name||'(รายการ)')}</span></div>
+        <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(it.date)}</span>`:''}</div>
+        <div class="cctx-amt ${f(it.amt)<0?'cci-credit':''}">${_bpFmt(it.amt)}</div>
+      </div>`).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการ</div>');
 }
 // Summary of this month's credit-card spending grouped by category (from tagged txns)
 let _ccCatItems={};       // cat -> [{card,date,merchant,amt,owner,note}]
 let _ccCatOrder=[];       // row order → resolve onclick index to category name
 let _ccCatTotals={};      // cat -> total (for the popup header)
 // open a popup listing every txn of a category for the selected month
+let _ccPopItems=[];
 function ccCatPopup(i){
   const cat=_ccCatOrder[i];if(cat==null)return;
-  const ownerLabel=(o)=>(CC_OWNERS.find(x=>x.v===o)||{}).label?.()||o;
-  const items=(_ccCatItems[cat]||[]).slice().sort((a,b)=>b.amt-a.amt);
+  _ccPopItems=(_ccCatItems[cat]||[]).slice();
   document.getElementById('ccc-title').textContent=`${cat} · ${MONTHS_TH[curMonth]} ${curYear+543}`;
+  // dropdown กรองตาม prefix ชื่อร้าน (เหมือน section ตามชื่อร้าน)
+  const prefixes=[...new Set(_ccPopItems.map(it=>_groupPrefix(it.merchant||'')))].sort((a,b)=>a.localeCompare(b,'th'));
+  const opts=`<option value="">ทุกร้าน (${_ccPopItems.length})</option>`+prefixes.map(p=>`<option value="${_bpEsc(p)}">🛒 ${_bpEsc(p)}</option>`).join('');
+  document.getElementById('ccc-body').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">กรองร้าน</span>
+      <select id="ccc-prefix" onchange="ccCatPopupFilter()" style="flex:1;min-width:150px;font-size:13px;height:32px;padding:0 10px;border-radius:10px;border:1.5px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);font-weight:700;font-family:inherit;cursor:pointer;outline:none">${opts}</select>
+    </div>
+    <div id="ccc-list"></div>`;
+  ccCatPopupFilter();
+  document.getElementById('cc-cat-modal').classList.add('open');
+}
+function ccCatPopupFilter(){
+  const box=document.getElementById('ccc-list');if(!box)return;
+  const sel=document.getElementById('ccc-prefix');
+  const pfx=sel?sel.value:'';
+  const ownerLabel=(o)=>(CC_OWNERS.find(x=>x.v===o)||{}).label?.()||o;
+  const items=_ccPopItems.filter(it=>!pfx||_groupPrefix(it.merchant||'')===pfx).sort((a,b)=>b.amt-a.amt);
+  const total=items.reduce((s,it)=>s+f(it.amt),0);
   const rows=items.length?items.map(it=>`
     <div class="cc-cat-txn">
       <div class="cctx-main"><span class="cctx-merch">${_bpEsc(it.merchant||'(รายการ)')}</span>${it.note?`<span class="cctx-note"> · ${_bpEsc(it.note)}</span>`:''}</div>
       <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(it.date)}</span>`:''}${it.owner?`<span class="cc-chip">${_bpEsc(ownerLabel(it.owner))}</span>`:''}</div>
       <div class="cctx-amt ${it.amt<0?'cci-credit':''}">${_bpFmt(it.amt)}</div>
     </div>`).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการ</div>';
-  document.getElementById('ccc-body').innerHTML=`
+  box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-      <span style="font-size:12px;color:var(--ink2)">${items.length} รายการ</span>
-      <span style="font-size:18px;font-weight:700;color:var(--lilac)">${_bpFmt(_ccCatTotals[cat]||0)}</span>
+      <span style="font-size:12px;color:var(--ink2)">${items.length} รายการ${pfx?' · รูดร้านนี้':''}</span>
+      <span style="font-size:18px;font-weight:700;color:var(--lilac)">${_bpFmt(total)}</span>
     </div>
-    <div class="cc-cat-detail" style="border:none;background:transparent;padding:0;max-height:56vh;overflow:auto">${rows}</div>`;
-  document.getElementById('cc-cat-modal').classList.add('open');
+    <div class="cc-cat-detail" style="border:none;background:transparent;padding:0;max-height:52vh;overflow:auto">${rows}</div>`;
 }
 function ccCatPopupClose(){document.getElementById('cc-cat-modal').classList.remove('open');}
 function renderCCCategory(){
@@ -2168,7 +2484,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, ccCatPopup, ccCatPopupClose, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, exportSummaryImage, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

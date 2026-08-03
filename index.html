@@ -358,8 +358,6 @@
   </div>
 </div>
 
-
-
 </div>
 <div id="m-budget"   class="m-app">
 
@@ -506,7 +504,7 @@
     <button onclick="toggleChart()" style="height:34px;padding:0 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:1.5px solid var(--line2);background:var(--card);color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;transition:.15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--card)'"><i class="ti ti-arrow-left" style="font-size:15px"></i> กลับหน้าหลัก</button>
     <div style="display:flex;background:var(--card2);border-radius:20px;padding:3px;border:1.5px solid var(--line);gap:0;flex-wrap:wrap">
       <button class="ptab active-common" id="cp3" onclick="setChartTab('diff',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-plus-minus"></i> ผลต่าง Goal</button>
-      <button class="ptab" id="cp4" onclick="setChartTab('cc',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-credit-card"></i> บัตรเครดิตแยกหมวด</button>
+      <button class="ptab" id="cp4" onclick="setChartTab('cc',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-credit-card"></i> บัตรเครดิต</button>
     </div>
   </div>
 
@@ -593,6 +591,15 @@
         <div><div class="stitle">ค่าบัตรเครดิตแยกหมวด</div><div class="ssub" id="cc-cat-sub">เดือนนี้</div></div>
       </div></div>
       <div id="cc-cat-container"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-head-left">
+        <div class="sicon" style="background:var(--lilac-bg);border:1.5px solid var(--lilac-line);font-size:17px;display:flex;align-items:center;justify-content:center">🧮</div>
+        <div><div class="stitle">รวมรายการบัตรเครดิตตามชื่อร้าน</div><div class="ssub" id="group-sub">เดือนนี้</div></div>
+      </div></div>
+      <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.5">เลือกร้านจาก dropdown (จัดกลุ่มตาม prefix ชื่อร้าน เช่น "TOPS PIN KLAO" + "TOPS RAMA 2" → TOPS) เพื่อดูว่ารูดร้านนั้นไปกี่ครั้ง แต่ละยอดเท่าไหร่ และรวมทั้งหมด</div>
+      <div id="group-container" style="overflow-x:auto"></div>
     </div>
   </div>
 

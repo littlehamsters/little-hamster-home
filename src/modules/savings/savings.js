@@ -63,10 +63,10 @@ function monthNet(f){
 function planMonthly(f){
   const bal=balance(f);
   if(f.goal<=0||!f.targetDate||bal>=f.goal)return 0;
-  const start=f.createdAt?new Date(f.createdAt):new Date();
+  const today=new Date();
   const end=new Date(f.targetDate+'T00:00:00');
-  const months=Math.max(1,Math.round((end-start)/(86400000*30.44)));
-  return f.goal/months;
+  const months=Math.max(1,Math.round((end-today)/(86400000*30.44)));
+  return (f.goal-bal)/months;
 }
 function fundStatus(f){
   const bal=balance(f);

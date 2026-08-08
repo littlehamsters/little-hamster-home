@@ -1,0 +1,308 @@
+/* Future expenses module — namespaced under #m-future, hamster theme */
+#m-future {
+  --bg:     #FFF8E8; --surf:  #FFFDF5; --surf2: #F6EFDD;
+  --line:   #EADCC2; --line2: #DFD0A8;
+  --txt:    #5E4B3C; --txt2:  #8A7060;  --txt3: #B8A898;
+  --sage:   #A8C686; --green: #6E9A4C; --green-bg: #EEF5E2; --green-line: #C4DAA8;
+  --amber:  #A87C20; --amber-bg: #FDF3D0; --amber-line: #F6D186;
+  --red:    #B85040; --red-bg:   #FAE8E4; --red-line:   #E8B8A8;
+  --r: 16px;
+  --sh: 0 1px 2px rgba(94,75,60,.05), 0 8px 24px rgba(94,75,60,.07);
+}
+
+#m-future.m-app {
+  font-family: 'IBM Plex Sans Thai', 'Sarabun', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100vh;
+  padding: 28px 18px 64px;
+  line-height: 1.55;
+}
+
+#m-future .wrap { max-width: 760px; margin: 0 auto; }
+
+/* ── header ── */
+#m-future .fe-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+#m-future .fe-header h1 {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin: 0 0 2px;
+}
+#m-future .fe-sub { font-size: 13px; color: var(--txt2); }
+
+/* ── summary row ── */
+#m-future .fe-summary-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+#m-future .fe-stat {
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sh);
+  padding: 14px 16px;
+}
+#m-future .fe-stat-lbl {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--txt2);
+  margin-bottom: 5px;
+}
+#m-future .fe-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+#m-future .fe-stat-val.accent { color: var(--green); }
+#m-future .fe-stat-val.warn   { color: var(--amber); }
+#m-future .fe-stat-val.over   { color: var(--red); }
+#m-future .fe-stat-val.ok     { color: var(--green); }
+#m-future .fe-stat-val small  { font-size: 12px; font-weight: 500; color: var(--txt3); }
+
+/* ── filter bar ── */
+#m-future .fe-filterbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+#m-future .fe-filter-btn {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line2);
+  background: var(--surf);
+  color: var(--txt2);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: .15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+#m-future .fe-filter-btn.active {
+  background: var(--sage);
+  color: #fff;
+  border-color: var(--sage);
+  box-shadow: 0 2px 8px rgba(168,198,134,.4);
+}
+#m-future .fe-badge {
+  background: rgba(255,255,255,.3);
+  border-radius: 99px;
+  padding: 0 5px;
+  font-size: 11px;
+}
+#m-future .fe-filter-btn:not(.active) .fe-badge {
+  background: var(--line);
+  color: var(--txt);
+}
+
+/* ── board ── */
+#m-future #fe-board { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── item cards ── */
+#m-future .fe-card {
+  background: var(--surf);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--sh);
+  padding: 14px 18px;
+}
+#m-future .fe-card.paid { opacity: .55; }
+#m-future .fe-card.tone-overdue { border-left: 4px solid var(--red); }
+#m-future .fe-card.tone-today,
+#m-future .fe-card.tone-soon,
+#m-future .fe-card.tone-near   { border-left: 4px solid var(--amber-line); }
+
+#m-future .fe-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+#m-future .fe-cat-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--cc) 14%, transparent);
+  color: color-mix(in srgb, var(--cc) 80%, #333);
+  border: 1px solid color-mix(in srgb, var(--cc) 28%, transparent);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
+#m-future .fe-amt {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+  color: var(--txt);
+}
+#m-future .fe-amt small { font-size: 12px; font-weight: 500; color: var(--txt3); }
+
+#m-future .fe-card-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+#m-future .fe-card-note {
+  font-size: 12px;
+  color: var(--txt2);
+  margin-bottom: 5px;
+}
+#m-future .fe-countdown {
+  font-size: 12.5px;
+  color: var(--txt3);
+  margin-bottom: 10px;
+}
+#m-future .fe-countdown.warn { color: var(--amber); font-weight: 600; }
+#m-future .fe-countdown.over { color: var(--red);   font-weight: 600; }
+#m-future .fe-countdown.ok   { color: var(--green); font-weight: 600; }
+
+#m-future .fe-card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── empty state ── */
+#m-future .fe-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--txt2);
+}
+#m-future .fe-empty-icon { font-size: 40px; margin-bottom: 10px; }
+#m-future .fe-empty h3 { font-size: 15px; color: var(--txt); margin: 0 0 14px; }
+
+/* ── buttons ── */
+#m-future .btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line2);
+  background: var(--surf);
+  color: var(--txt);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: .15s;
+  white-space: nowrap;
+}
+#m-future .btn:hover             { background: var(--surf2); border-color: var(--line2); }
+#m-future .btn.btn-primary       { background: var(--sage); color: #fff; border-color: var(--sage); box-shadow: 0 2px 8px rgba(168,198,134,.35); }
+#m-future .btn.btn-primary:hover { background: var(--green); border-color: var(--green); }
+#m-future .btn.btn-ghost         { background: transparent; color: var(--txt2); border-color: var(--line2); }
+#m-future .btn.btn-ghost.arm     { background: var(--red-bg); color: var(--red); border-color: var(--red-line); }
+
+/* ── modal ── */
+#m-future .overlay {
+  position: fixed; inset: 0;
+  background: rgba(94,75,60,.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+#m-future .overlay.show { display: flex; }
+
+#m-future .modal {
+  background: var(--surf);
+  border-radius: 20px;
+  padding: 1.5rem 1.6rem;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(94,75,60,.18);
+  border: 1px solid var(--line);
+}
+#m-future .modal h3 { font-size: 16px; font-weight: 700; margin: 0 0 1.2rem; }
+
+#m-future .modal-field { margin-bottom: 14px; }
+#m-future .modal-field label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--txt2);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+#m-future .modal-field input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line2);
+  border-radius: 10px;
+  padding: 8px 11px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--txt);
+  outline: none;
+  transition: border-color .15s;
+}
+#m-future .modal-field input:focus { border-color: var(--sage); }
+
+#m-future .fe-cat-row { display: flex; flex-wrap: wrap; gap: 5px; }
+#m-future .fe-cat-pick {
+  height: 28px;
+  padding: 0 10px;
+  border: 1.5px solid color-mix(in srgb, var(--cc) 28%, transparent);
+  background: color-mix(in srgb, var(--cc) 10%, transparent);
+  color: color-mix(in srgb, var(--cc) 90%, #222);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: .12s;
+  display: inline-flex;
+  align-items: center;
+}
+#m-future .fe-cat-pick.active {
+  background: color-mix(in srgb, var(--cc) 60%, transparent);
+  border-color: var(--cc);
+  color: #fff;
+}
+
+#m-future .modal-err {
+  font-size: 12.5px;
+  color: var(--red);
+  background: var(--red-bg);
+  border: 1px solid var(--red-line);
+  border-radius: 10px;
+  padding: 7px 11px;
+  margin-bottom: 10px;
+}
+
+#m-future .modal-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 1.2rem;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+#m-future .modal-actions .btn-ghost { margin-right: auto; }
+
+@media(max-width: 480px) {
+  #m-future .fe-summary-row { grid-template-columns: 1fr 1fr; }
+  #m-future .fe-amt { font-size: 16px; }
+}

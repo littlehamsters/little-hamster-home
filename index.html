@@ -23,7 +23,6 @@
 
 <link rel="stylesheet" href="/src/styles/salary.css">
 <link rel="stylesheet" href="/src/styles/car.css">
-<link rel="stylesheet" href="/src/styles/future.css">
 </head>
 <body>
 <div id="fb-screen">
@@ -49,7 +48,7 @@
     <div class="fb-sync" id="fb-sync"><div class="fb-dot" id="fb-dot"></div><span id="fb-sync-txt"></span></div>
   </div>
 </nav>
-<div id="m-home" class="m-app" style="display:block"><div class="home-hero"><div class="home-hero-icon">🐹</div><div class="home-hero-title">Little Hamster Home</div><div class="home-hero-badge">🐹&nbsp;บัญชีครัวเรือนของเรา</div></div><div class="home-grid"><div class="app-card" onclick="showModule('mortgage')"><div class="ac-head"><span class="ac-icon">&#127968;</span><span class="ac-name">ผ่อนบ้าน</span><span class="ac-arrow">&#8594;</span></div><div class="mini-ring-wrap"><svg class="mini-ring-svg" viewBox="0 0 120 120"><circle class="mr-bg" cx="60" cy="60" r="50"/><circle class="mr-fg" id="mo-ring" cx="60" cy="60" r="50"/></svg><div class="mr-center"><div class="mr-pct" id="mo-pct">—</div><div class="mr-lbl">ผ่อนแล้ว</div></div></div><div class="ac-stats"><div class="ac-chip blue"><div class="chip-lbl">เงินต้นคงเหลือ</div><div class="chip-val blue" id="mo-rem">—</div></div><div class="ac-chip green"><div class="chip-lbl">ผ่อนสะสม</div><div class="chip-val green" id="mo-paid">—</div></div></div><button class="ac-cta">&#128203;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('savings')"><div class="ac-head"><span class="ac-icon">&#127804;</span><span class="ac-name">กองออม</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ยอดรวมทั้งหมด</div><div class="chip-val big green" id="sv-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">กองทุน active</div><div class="chip-val green" id="sv-funds">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืบหน้าเป้าหมาย</div><div class="chip-val yellow" id="sv-pct">—</div></div></div><button class="ac-cta">&#127804;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('budget')"><div class="ac-head"><span class="ac-icon">&#128184;</span><span class="ac-name">งบประมาณ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px;font-size:13px;font-weight:700;color:var(--txt)" id="bp-month">เดือนล่าสุด</div><div class="chip-val big" id="bp-status">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">รายรับ</div><div class="chip-val green" id="bp-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">รายจ่าย</div><div class="chip-val yellow" id="bp-expense">—</div></div></div><button class="ac-cta">&#128184;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('salary')"><div class="ac-head"><span class="ac-icon">&#128202;</span><span class="ac-name">ภาษีเงินเดือน</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ภาษีรวมครัวเรือน</div><div class="chip-val big" id="st-home-tax">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">เงินได้รวม</div><div class="chip-val green" id="st-home-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืน / จ่ายเพิ่ม</div><div class="chip-val yellow" id="st-home-diff">—</div></div></div><button class="ac-cta">&#128202;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('car')"><div class="ac-head"><span class="ac-icon">&#128663;</span><span class="ac-name">บันทึกรถ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ค่าใช้จ่ายรวม</div><div class="chip-val big" id="car-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">จำนวนรถ</div><div class="chip-val green" id="car-count">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">ต่ออายุใกล้ครบ</div><div class="chip-val yellow" id="car-next">—</div></div></div><button class="ac-cta">&#128663;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('future')"><div class="ac-head"><span class="ac-icon">📋</span><span class="ac-name">ค่าใช้จ่ายในอนาคต</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">รอชำระทั้งหมด</div><div class="chip-val big" id="fe-dash-total">—</div></div><div class="ac-stats"><div class="ac-chip yellow"><div class="chip-lbl">ใกล้ครบกำหนด</div><div class="chip-val yellow" id="fe-dash-next">—</div></div><div class="ac-chip green"><div class="chip-lbl">ยอด</div><div class="chip-val green" id="fe-dash-next-amt">—</div></div></div><button class="ac-cta">📋&#160;ดูรายละเอียด</button></div></div><div class="home-foot"></div></div>
+<div id="m-home" class="m-app" style="display:block"><div class="home-hero"><div class="home-hero-icon">🐹</div><div class="home-hero-title">Little Hamster Home</div><div class="home-hero-badge">🐹&nbsp;บัญชีครัวเรือนของเรา</div></div><div class="home-grid"><div class="app-card" onclick="showModule('mortgage')"><div class="ac-head"><span class="ac-icon">&#127968;</span><span class="ac-name">ผ่อนบ้าน</span><span class="ac-arrow">&#8594;</span></div><div class="mini-ring-wrap"><svg class="mini-ring-svg" viewBox="0 0 120 120"><circle class="mr-bg" cx="60" cy="60" r="50"/><circle class="mr-fg" id="mo-ring" cx="60" cy="60" r="50"/></svg><div class="mr-center"><div class="mr-pct" id="mo-pct">—</div><div class="mr-lbl">ผ่อนแล้ว</div></div></div><div class="ac-stats"><div class="ac-chip blue"><div class="chip-lbl">เงินต้นคงเหลือ</div><div class="chip-val blue" id="mo-rem">—</div></div><div class="ac-chip green"><div class="chip-lbl">ผ่อนสะสม</div><div class="chip-val green" id="mo-paid">—</div></div></div><button class="ac-cta">&#128203;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('savings')"><div class="ac-head"><span class="ac-icon">&#127804;</span><span class="ac-name">กองออม</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ยอดรวมทั้งหมด</div><div class="chip-val big green" id="sv-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">กองทุน active</div><div class="chip-val green" id="sv-funds">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืบหน้าเป้าหมาย</div><div class="chip-val yellow" id="sv-pct">—</div></div></div><button class="ac-cta">&#127804;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('budget')"><div class="ac-head"><span class="ac-icon">&#128184;</span><span class="ac-name">งบประมาณ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px;font-size:13px;font-weight:700;color:var(--txt)" id="bp-month">เดือนล่าสุด</div><div class="chip-val big" id="bp-status">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">รายรับ</div><div class="chip-val green" id="bp-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">รายจ่าย</div><div class="chip-val yellow" id="bp-expense">—</div></div></div><button class="ac-cta">&#128184;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('salary')"><div class="ac-head"><span class="ac-icon">&#128202;</span><span class="ac-name">ภาษีเงินเดือน</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ภาษีรวมครัวเรือน</div><div class="chip-val big" id="st-home-tax">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">เงินได้รวม</div><div class="chip-val green" id="st-home-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืน / จ่ายเพิ่ม</div><div class="chip-val yellow" id="st-home-diff">—</div></div></div><button class="ac-cta">&#128202;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('car')"><div class="ac-head"><span class="ac-icon">&#128663;</span><span class="ac-name">บันทึกรถ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ค่าใช้จ่ายรวม</div><div class="chip-val big" id="car-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">จำนวนรถ</div><div class="chip-val green" id="car-count">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">ต่ออายุใกล้ครบ</div><div class="chip-val yellow" id="car-next">—</div></div></div><button class="ac-cta">&#128663;&nbsp;ดูรายละเอียด</button></div></div><div class="home-foot"></div></div>
 <div id="m-mortgage" class="m-app">
 
 <div class="container">
@@ -361,20 +360,16 @@
 
 <div class="wrap">
 
-<div class="topbar">
+<header>
   <div class="brand">
-    <div class="brand-icon">
-      <i class="ti ti-home-2"></i>
-    </div>
-    <div><div class="brand-name">🌿 Budget Planner</div><div class="brand-sub">🐹 วางแผนรายรับ-รายจ่าย</div></div>
+    <h1>วางแผนรายรับ-รายจ่าย</h1>
+    <div class="sub">🐹 บ้านหนูแฮมสเตอร์ · จัดสรรเงินแต่ละเดือน</div>
   </div>
-  <div class="topbar-right">
-
-    <button class="icon-btn" onclick="toggleChart()" id="chart-btn" title="ภาพรวม"><i class="ti ti-chart-bar"></i><span>ภาพรวม</span></button>
-    <button class="icon-btn" onclick="_bpOpenSettings()" title="ตั้งค่า"><i class="ti ti-settings"></i><span>ตั้งค่า</span></button>
-
+  <div class="tools">
+    <button class="btn" onclick="toggleChart()" id="chart-btn"><i class="ti ti-chart-bar"></i> ภาพรวม</button>
+    <button class="btn" onclick="_bpOpenSettings()"><i class="ti ti-settings"></i> ตั้งค่า</button>
   </div>
-</div>
+</header>
 
 <div class="content">
 
@@ -467,7 +462,7 @@
           <div class="sicon" style="background:var(--lilac-bg);border:1.5px solid var(--lilac-line);font-size:17px;display:flex;align-items:center;justify-content:center">💳</div>
           <div><div class="stitle">ค่าบัตรเครดิต</div><div class="ssub">แยกส่วนตัว → กองกลาง → หาร 2</div></div>
         </div>
-        <button onclick="resetPerson('common')" style="height:26px;padding:0 10px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid var(--bad-line);background:var(--bad-bg);color:var(--bad);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class="ti ti-refresh" style="font-size:12px"></i> Reset</button>
+        <button class="del-item-btn" onclick="resetPerson('common')"><i class="ti ti-refresh" style="font-size:12px"></i> Reset</button>
       </div>
       <div class="cc-list" id="cc-list"></div>
       <div class="cc-sum" id="cc-sum"></div>
@@ -909,51 +904,6 @@
     <div id="carBody"></div>
   </div>
   <div id="carModalArea"></div>
-</div>
-<div id="m-future" class="m-app">
-  <div class="wrap">
-    <header class="fe-header">
-      <div>
-        <h1>📋 ค่าใช้จ่ายในอนาคต</h1>
-        <div class="fe-sub">วางแผนล่วงหน้า ไม่มีค่าใช้จ่ายเซอร์ไพรส์</div>
-      </div>
-      <button class="btn btn-primary" id="fe-btn-add">+ เพิ่มรายการ</button>
-    </header>
-    <div class="fe-summary-row" id="fe-summary"></div>
-    <div class="fe-filterbar" id="fe-filterbar"></div>
-    <div id="fe-board"></div>
-  </div>
-  <div class="overlay" id="fe-modal">
-    <div class="modal">
-      <h3 id="fe-modal-title">เพิ่มค่าใช้จ่าย</h3>
-      <div class="modal-field">
-        <label>ชื่อรายการ</label>
-        <input id="fe-inp-name" type="text" placeholder="เช่น ค่าเปลี่ยนยาง, ค่าประกัน">
-      </div>
-      <div class="modal-field">
-        <label>จำนวนเงิน (บาท)</label>
-        <input id="fe-inp-amt" type="number" min="0" step="any" placeholder="0">
-      </div>
-      <div class="modal-field">
-        <label>วันที่ครบกำหนด</label>
-        <input id="fe-inp-date" type="date">
-      </div>
-      <div class="modal-field">
-        <label>หมวดหมู่</label>
-        <div class="fe-cat-row" id="fe-cat-row"></div>
-      </div>
-      <div class="modal-field">
-        <label>หมายเหตุ (ไม่บังคับ)</label>
-        <input id="fe-inp-note" type="text" placeholder="รายละเอียดเพิ่มเติม">
-      </div>
-      <div class="modal-err" id="fe-modal-err" style="display:none"></div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" id="fe-modal-delete" style="display:none">ลบ</button>
-        <button class="btn" id="fe-modal-cancel">ยกเลิก</button>
-        <button class="btn btn-primary" id="fe-modal-save">บันทึก</button>
-      </div>
-    </div>
-  </div>
 </div>
 <script type="module" src="/src/main.js"></script>
 </body>

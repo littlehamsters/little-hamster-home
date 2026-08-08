@@ -14,16 +14,16 @@
   --r:18px;
   --sh:0 1px 2px rgba(94,75,60,.05), 0 10px 28px rgba(94,75,60,.08); /* soft shadow */
 }
-#m-car.m-app { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding:28px 18px 64px; line-height:1.55; }
+#m-car.m-app { font-family:'IBM Plex Sans Thai','Sarabun',sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding:28px 18px 64px; line-height:1.55; -webkit-font-smoothing:antialiased; }
 #m-car .wrap { max-width:960px; margin:0 auto; }
-#m-car .car-header { margin-bottom:22px; }
-#m-car .car-header h1 { font-size:21px; font-weight:700; letter-spacing:-.01em; }
-#m-car .car-header .sub { font-size:13px; color:var(--txt2); margin-top:2px; }
+#m-car .car-header { margin-bottom:24px; }
+#m-car .car-header h1 { font-family:'Noto Serif Thai',serif; font-size:26px; font-weight:600; letter-spacing:-.3px; }
+#m-car .car-header .sub { font-size:14px; color:var(--txt2); margin-top:2px; }
 
 /* section title — used across the module (replaces boxed card headers) */
 #m-car .car-sec { margin-bottom:26px; }
 #m-car .car-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
-#m-car .car-card-title { font-size:12px; font-weight:700; color:var(--txt2); text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#m-car .car-card-title { font-family:'Noto Serif Thai',serif; font-size:15px; font-weight:600; color:var(--txt); text-transform:none; letter-spacing:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 #m-car .cst-sub { font-size:11px; font-weight:500; color:var(--txt3); text-transform:none; letter-spacing:0; }
 /* section = white card floating on the paper bg (savings style) */
 #m-car .car-card { background:var(--surf); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh); padding:18px 20px; margin:0 0 18px; }
@@ -36,8 +36,8 @@
 #m-car .car-metric { background:var(--surf2); border:none; border-radius:var(--r); padding:14px 16px; }
 #m-car .car-metric.big { background:var(--green-bg); }
 #m-car .car-metric .cm-lbl { font-size:11.5px; font-weight:600; color:var(--txt2); margin-bottom:6px; }
-#m-car .car-metric .cm-val { font-size:20px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
-#m-car .car-metric.big .cm-val { color:var(--green); font-size:22px; }
+#m-car .car-metric .cm-val { font-family:'Noto Serif Thai',serif; font-size:21px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+#m-car .car-metric.big .cm-val { color:var(--green); font-size:23px; }
 #m-car .car-metric .cm-sub { font-size:11px; font-weight:600; margin-top:3px; color:var(--txt3); }
 #m-car .urg-over { color:var(--red) !important; } #m-car .urg-soon { color:var(--amber) !important; }
 #m-car .urg-ok { color:var(--green) !important; } #m-car .urg-none { color:var(--txt3) !important; }
@@ -72,12 +72,12 @@
 
 /* ── detail head (selected car) ───────────────────────── */
 #m-car .car-detail-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:26px 0 16px; }
-#m-car .car-title { font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px; }
+#m-car .car-title { font-family:'Noto Serif Thai',serif; font-size:19px; font-weight:600; display:flex; align-items:center; gap:8px; }
 #m-car .car-head-act { display:flex; gap:8px; }
 #m-car .cc-plate { font-size:11px; font-weight:700; padding:1px 7px; border-radius:6px; background:rgba(0,0,0,.06); color:var(--txt2); }
 
 /* ── buttons ──────────────────────────────────────────── */
-#m-car .car-btn { height:34px; padding:0 15px; border-radius:999px; border:1.5px solid var(--line); background:var(--surf); color:var(--txt2); font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; transition:.16s; white-space:nowrap; }
+#m-car .car-btn { height:34px; padding:0 16px; border-radius:999px; border:1px solid var(--line); background:var(--surf); color:var(--txt2); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition:.16s; white-space:nowrap; }
 #m-car .car-btn:hover { background:var(--surf2); color:var(--txt); }
 #m-car .car-btn.sm { height:30px; padding:0 12px; font-size:12px; }
 #m-car .car-btn.primary { background:var(--sage); border-color:var(--sage); color:#fff; }
@@ -132,7 +132,7 @@
 #m-car .car-modal { background:var(--surf); border:none; border-radius:20px; width:min(400px,94vw); max-height:90vh; overflow-y:auto; box-shadow:0 20px 50px rgba(94,75,60,.22); animation:carPop .18s ease; }
 @keyframes carPop { from{opacity:0; transform:translateY(8px) scale(.98)} to{opacity:1; transform:none} }
 #m-car .car-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 4px; }
-#m-car .car-modal-head h3 { font-size:16px; font-weight:700; }
+#m-car .car-modal-head h3 { font-family:'Noto Serif Thai',serif; font-size:18px; font-weight:600; }
 #m-car .car-modal-x { border:none; background:transparent; color:var(--txt3); font-size:16px; cursor:pointer; padding:4px 8px; border-radius:8px; }
 #m-car .car-modal-x:hover { background:var(--surf2); color:var(--txt); }
 #m-car .car-modal-body { padding:8px 18px 4px; }

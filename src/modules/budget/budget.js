@@ -434,7 +434,7 @@ function renderIncomeCard(p){
           onblur="amtBlur(this,v=>setFixedIncome('${p}','${fi.id}',v))" onpaste="amtPaste(this,v=>setFixedIncome('${p}','${fi.id}',v))"
           data-raw="${val||''}"
           value="${val?f(val).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
-        <button class="del-item-btn" onclick="delFixed('income','${p}','${fi.id}')" title="ลบรายการนี้"><i class="ti ti-trash" style="font-size:13px"></i> ลบ</button>
+        <button class="del-item-btn del-icon" onclick="delFixed('income','${p}','${fi.id}')" title="ลบรายการนี้"><i class="ti ti-trash" style="font-size:14px"></i></button>
       </div>
     </div>`;
   });
@@ -450,7 +450,7 @@ function renderIncomeCard(p){
           onblur="amtBlur(this,v=>{const ex=getMD().incomes['${p}'].extras.find(x=>x.id===${e.id});if(ex){ex.amt=v;}persist();renderBanner();renderIncomeCard('${p}');renderSummaryPerson('${p}');renderSummaryCommon();})" onpaste="amtPaste(this,v=>{const ex=getMD().incomes['${p}'].extras.find(x=>x.id===${e.id});if(ex){ex.amt=v;}persist();renderBanner();renderIncomeCard('${p}');renderSummaryPerson('${p}');renderSummaryCommon();})"
           data-raw="${e.amt||''}"
           value="${e.amt?f(e.amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
-        <button class="del-item-btn" onclick="delExtraIncome('${p}',${e.id})" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i> ลบ</button>
+        <button class="del-item-btn del-icon" onclick="delExtraIncome('${p}',${e.id})" title="ลบ"><i class="ti ti-trash" style="font-size:14px"></i></button>
       </div>
     </div>`;
   });
@@ -504,7 +504,7 @@ function renderExpenseCard(p){
         <td style="text-align:right;color:var(--teal);font-weight:600">${goal?_bpFmt(goal):'-'}</td>
         <td style="text-align:right"><input class="amt-input" type="text" value="${_bpFmt(foodActual).replace('฿','')}" disabled style="width:120px;font-size:13px;text-align:right;background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line);font-weight:700;cursor:not-allowed;opacity:.85"></td>
         <td style="text-align:center">${statusCell}</td>
-        <td style="text-align:center"><button class="del-item-btn" style="height:26px;padding:0 8px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')"><i class="ti ti-trash"></i> ลบ</button></td>
+        <td style="text-align:center"><button class="del-item-btn del-icon" style="height:26px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
       </tr>`;
       return;
     }
@@ -518,7 +518,7 @@ function renderExpenseCard(p){
         <td style="text-align:right;color:var(--teal);font-weight:600">${goal?_bpFmt(goal):'-'}</td>
         <td style="text-align:right"><input class="amt-input" type="text" value="${_bpFmt(utilActual).replace('฿','')}" disabled style="width:120px;font-size:13px;text-align:right;background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line);font-weight:700;cursor:not-allowed;opacity:.85"></td>
         <td style="text-align:center">${statusCell}</td>
-        <td style="text-align:center"><button class="del-item-btn" style="height:26px;padding:0 8px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')"><i class="ti ti-trash"></i> ลบ</button></td>
+        <td style="text-align:center"><button class="del-item-btn del-icon" style="height:26px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
       </tr>`;
       return;
     }
@@ -532,28 +532,8 @@ function renderExpenseCard(p){
         <td style="text-align:right;color:var(--teal);font-weight:600">${goal?_bpFmt(goal):'-'}</td>
         <td style="text-align:right"><input class="amt-input" type="text" value="${_bpFmt(ccActual)}" disabled style="width:120px;font-size:13px;text-align:right;background:var(--lilac-bg);color:var(--lilac);border-color:var(--lilac-line);font-weight:700;cursor:not-allowed;opacity:0.85"></td>
         <td style="text-align:center">${statusCell}</td>
-        <td></td>
+        <td style="text-align:center"><button class="del-item-btn del-icon" style="background:var(--lilac-bg);color:var(--lilac);border-color:var(--lilac-line)" onclick="ccBreakdownOpen('${p}')" title="ดูรายละเอียดบัตร"><i class="ti ti-eye"></i></button></td>
       </tr>`;
-      // cc sub-rows
-      if(md.cc.length){
-        md.cc.forEach(c=>{
-          const card=getCC(c.cardId);const dot=cardColor(c.cardId);
-          const own=f(p==='p1'?c.p1:c.p2);const share=(f(c.total)-f(c.p1)-f(c.p2)-f(c.other))/2;
-          trows+=`<tr style="background:var(--card2)">
-            <td></td>
-            <td style="padding-left:20px;font-size:12px;color:var(--ink2)">
-              <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${dot};margin-right:5px;vertical-align:middle"></span>
-              ${card.name}${c.note?` <span style="color:var(--ink3)">(${c.note})</span>`:''}
-              <span style="color:var(--ink3);margin-left:6px">ส่วนตัว ${_bpFmt(own)} + กลาง ${_bpFmt(share)}</span>
-            </td>
-            <td></td>
-            <td style="text-align:right;font-size:12px;font-weight:600;color:var(--lilac)">${_bpFmt(own+share)}</td>
-            <td></td><td></td>
-          </tr>`;
-        });
-      } else {
-        trows+=`<tr><td></td><td colspan="5" style="font-size:11px;color:var(--ink3);padding-left:20px">ยังไม่มีรายการบัตร</td></tr>`;
-      }
       return;
     }
 
@@ -567,14 +547,14 @@ function renderExpenseCard(p){
       <td style="text-align:right;color:var(--teal);font-weight:600">${goal?_bpFmt(goal):'-'}</td>
       <td style="text-align:right">
         <input class="amt-input ${p==='p2'?'rose':''}" type="text" inputmode="decimal"
-          placeholder="0.00" style="width:130px;font-size:13px;text-align:right"
+          placeholder="0.00" style="width:120px;font-size:13px;text-align:right"
           onfocus="amtFocus(this)"
           onblur="amtBlur(this,v=>setFixedExpense('${p}','${fe.id}','actual',v))" onpaste="amtPaste(this,v=>setFixedExpense('${p}','${fe.id}','actual',v))"
           data-raw="${actual||''}"
           value="${actual?f(actual).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
       </td>
       <td style="text-align:center">${statusCell}</td>
-      <td style="text-align:center"><button class="del-item-btn" style="height:26px;padding:0 8px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')"><i class="ti ti-trash"></i> ลบ</button></td>
+      <td style="text-align:center"><button class="del-item-btn del-icon" style="height:26px;font-size:11px" onclick="delFixed('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash"></i></button></td>
     </tr>`;
   });
 
@@ -588,7 +568,7 @@ function renderExpenseCard(p){
       <td>${e.name} <span class="type-tag" style="${tc.style}">${tc.label}</span></td>
       <td style="text-align:right">
         <input class="amt-input" type="text" inputmode="decimal"
-          placeholder="0.00" style="width:120px;font-size:12px;text-align:right;border-color:var(--teal-line);background:var(--teal-bg)"
+          placeholder="0.00" style="width:120px;font-size:13px;text-align:right;border-color:var(--teal-line);background:var(--teal-bg)"
           onfocus="amtFocus(this)"
           onblur="amtBlur(this,v=>setExtraExpense('${p}',${e.id},'budget',v))" onpaste="amtPaste(this,v=>setExtraExpense('${p}',${e.id},'budget',v))"
           data-raw="${e.budget||''}"
@@ -596,14 +576,14 @@ function renderExpenseCard(p){
       </td>
       <td style="text-align:right">
         <input class="amt-input ${p==='p2'?'rose':''}" type="text" inputmode="decimal"
-          placeholder="0.00" style="width:120px;font-size:12px;text-align:right"
+          placeholder="0.00" style="width:120px;font-size:13px;text-align:right"
           onfocus="amtFocus(this)"
           onblur="amtBlur(this,v=>setExtraExpense('${p}',${e.id},'actual',v))" onpaste="amtPaste(this,v=>setExtraExpense('${p}',${e.id},'actual',v))"
           data-raw="${e.actual||''}"
           value="${e.actual?f(e.actual).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
       </td>
       <td style="text-align:center">${statusCell}</td>
-      <td style="text-align:center"><button class="del-item-btn" style="height:26px;padding:0 8px;font-size:11px" onclick="delExtraExpense('${p}',${e.id})"><i class="ti ti-trash"></i> ลบ</button></td>
+      <td style="text-align:center"><button class="del-item-btn del-icon" style="height:26px;font-size:11px" onclick="delExtraExpense('${p}',${e.id})" title="ลบ"><i class="ti ti-trash"></i></button></td>
     </tr>`;
   });
 
@@ -641,7 +621,7 @@ function renderExpenseCard(p){
     <div class="add-new-row" style="margin-top:8px">
       <div class="field"><label>ชื่อรายการเพิ่มเติม</label><input id="extra-exp-name-${p}" type="text" placeholder="เช่น ค่าหมอ, ซื้อของ"></div>
       <div class="field xnarrow"><label>ประเภท</label>
-        <select id="extra-exp-type-${p}">
+        <select id="extra-exp-type-${p}" class="mo-sel">
           <option value="expense">รายจ่าย</option>
           <option value="invest">ลงทุน</option>
           <option value="save">ออม</option>
@@ -659,7 +639,8 @@ function renderCC(){
   const listEl=document.getElementById('cc-list');
   const sumEl=document.getElementById('cc-sum');
   if(!md.cc.length){listEl.innerHTML='<div class="empty-state"><i class="ti ti-inbox"></i>ยังไม่มีรายการบัตร</div>';sumEl.innerHTML='';return}
-  listEl.innerHTML=md.cc.map(c=>{
+  const hasOther=md.cc.some(c=>f(c.other)>0);
+  const rows=md.cc.map(c=>{
     const card=getCC(c.cardId);const clr=cardColor(c.cardId);
     const other=f(c.other);
     const common=f(c.total)-f(c.p1)-f(c.p2)-f(c.other);
@@ -668,18 +649,19 @@ function renderCC(){
     const ownerClr=owner==='p1'?'var(--sky)':'var(--rose)';
     const ownerBg=owner==='p1'?'var(--sky-bg)':'var(--rose-bg)';
     const ownerBorder=owner==='p1'?'var(--sky-line)':'var(--rose-line)';
-    return`<div class="cc-item">
-      <div class="cc-dot" style="background:${clr}"></div>
-      <div class="cc-name">${card.name}${c.note?` <span class="cc-note">(${c.note})</span>`:''} <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:${ownerBg};color:${ownerClr};border:1px solid ${ownerBorder}">👤 ${ownerName}</span></div>
-      <div class="cc-chip" style="background:var(--sky-bg);color:var(--sky);border-color:var(--sky-line)">${cfg.p1} ${_bpFmt(c.p1)}</div>
-      <div class="cc-chip" style="background:var(--rose-bg);color:var(--rose);border-color:var(--rose-line)">${cfg.p2} ${_bpFmt(c.p2)}</div>
-      ${other?`<div class="cc-chip" style="background:var(--sage-bg);color:var(--sage);border-color:var(--sage-line)">อื่นๆ ${_bpFmt(other)}</div>`:''}
-      <div class="cc-chip" style="background:var(--teal-bg);color:var(--teal);border-color:var(--teal-line)">กลาง ${_bpFmt(common)}</div>
-      <div class="cc-total">${_bpFmt(c.total)}</div>
-      ${(c.txns&&c.txns.length)?`<button class="del-item-btn" style="background:var(--sky-bg);color:var(--sky);border-color:var(--sky-line)" onclick="ccViewOpen(${c.id})" title="ดูรายการ"><i class="ti ti-eye" style="font-size:13px"></i> ดู (${c.txns.length})</button>`:''}
-      <button class="del-item-btn" onclick="delCC(${c.id})" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i> ลบ</button>
-    </div>`;
+    return`<tr>
+      <td class="l"><span class="cc-dot" style="background:${clr}"></span><span class="cc-name">${card.name}</span>${c.note?` <span class="cc-note">(${c.note})</span>`:''} <span class="cc-owner-tag" style="background:${ownerBg};color:${ownerClr};border-color:${ownerBorder}"><i class="ti ti-user"></i> ${ownerName}</span></td>
+      <td class="num sky">${_bpFmt(c.p1)}</td>
+      <td class="num rose">${_bpFmt(c.p2)}</td>
+      ${hasOther?`<td class="num sage">${other?_bpFmt(other):'—'}</td>`:''}
+      <td class="num teal">${_bpFmt(common)}</td>
+      <td class="num tot">${_bpFmt(c.total)}</td>
+      <td class="act">${(c.txns&&c.txns.length)?`<button class="del-item-btn" style="background:var(--sky-bg);color:var(--sky);border-color:var(--sky-line)" onclick="ccViewOpen(${c.id})" title="ดูรายการ"><i class="ti ti-eye" style="font-size:13px"></i> ${c.txns.length}</button>`:''}<button class="del-item-btn" onclick="delCC(${c.id})" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i></button></td>
+    </tr>`;
   }).join('');
+  listEl.innerHTML=`<div class="cc-table-wrap"><table class="cc-table">
+    <thead><tr><th class="l">บัตร</th><th>${cfg.p1}</th><th>${cfg.p2}</th>${hasOther?'<th>อื่นๆ</th>':''}<th>กลาง</th><th>รวม</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
   const totT=md.cc.reduce((s,c)=>s+f(c.total),0);
   const totP1=md.cc.reduce((s,c)=>s+f(c.p1),0);
   const totP2=md.cc.reduce((s,c)=>s+f(c.p2),0);
@@ -694,23 +676,22 @@ function renderCC(){
     if((card?.owner||'p1')==='p1'){p1cardP1+=f(c.p1);p1cardP2+=f(c.p2);p1cardCommon+=common;}
     else{p2cardP1+=f(c.p1);p2cardP2+=f(c.p2);p2cardCommon+=common;}
   });
-  const mkRow=(label,p1v,p2v,cv,clr,bg,bl)=>`
-    <div style="background:${bg};border:1.5px solid ${bl};border-radius:14px;padding:14px 16px;flex:1;min-width:200px">
-      <div style="font-size:12px;font-weight:700;color:${clr};margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-credit-card" style="font-size:14px"></i> บัตร${label}</div>
-      <div style="display:flex;flex-direction:column;gap:0">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid ${bl}"><span style="font-size:12px;color:var(--sky)">${cfg.p1}</span><span style="font-size:13px;font-weight:700;color:var(--sky)">${_bpFmt(p1v)}</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:${cv>0?'1px solid '+bl:'none'}"><span style="font-size:12px;color:var(--rose)">${cfg.p2}</span><span style="font-size:13px;font-weight:700;color:var(--rose)">${_bpFmt(p2v)}</span></div>
-        ${cv>0?`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span style="font-size:12px;color:var(--teal)">กองกลาง</span><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--teal)">${_bpFmt(cv)}</div><div style="font-size:10px;color:var(--teal);opacity:.7">คนละ ${_bpFmt(cv/2)}</div></div></div>`:''}
-      </div>
-    </div>`;
-  const p1block=p1cardP1+p1cardP2+p1cardCommon>0?mkRow('บัตร'+cfg.p1,p1cardP1,p1cardP2,p1cardCommon,'var(--sky)','var(--sky-bg)','var(--sky-line)'):'';
-  const p2block=p2cardP1+p2cardP2+p2cardCommon>0?mkRow('บัตร'+cfg.p2,p2cardP1,p2cardP2,p2cardCommon,'var(--rose)','var(--rose-bg)','var(--rose-line)'):'';
+  const ownerRow=(name,p1v,p2v,cv)=>`<tr>
+    <td class="l"><i class="ti ti-credit-card"></i>บัตร${name}</td>
+    <td class="num sky">${_bpFmt(p1v)}</td>
+    <td class="num rose">${_bpFmt(p2v)}</td>
+    <td class="num teal">${cv>0?_bpFmt(cv):'—'}${cv>0?`<span class="cc-owner-half">คนละ ${_bpFmt(cv/2)}</span>`:''}</td>
+  </tr>`;
+  const ownerRows=[
+    (p1cardP1+p1cardP2+p1cardCommon>0)?ownerRow(cfg.p1,p1cardP1,p1cardP2,p1cardCommon):'',
+    (p2cardP1+p2cardP2+p2cardCommon>0)?ownerRow(cfg.p2,p2cardP1,p2cardP2,p2cardCommon):''
+  ].join('');
   sumEl.innerHTML=`
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">${p1block}${p2block}</div>
-    <div style="display:flex;justify-content:flex-end;align-items:center;padding-top:8px;border-top:1px solid var(--line);gap:16px">
-      ${totOther?`<span style="font-size:12px;color:var(--ink2)">อื่นๆ <strong style="color:var(--sage)">${_bpFmt(totOther)}</strong> <span style="font-size:10px">(ไม่รวม)</span></span>`:''}
-      <span style="font-size:13px;font-weight:700;color:var(--ink)">รวมทั้งหมด ${_bpFmt(totT)}</span>
-    </div>`;
+    <div class="cc-owner-wrap"><table class="cc-owner-table">
+      <thead><tr><th class="l">กลุ่มบัตร</th><th class="sky">${cfg.p1} รูด</th><th class="rose">${cfg.p2} รูด</th><th class="teal">กองกลาง</th></tr></thead>
+      <tbody>${ownerRows}</tbody>
+      <tfoot><tr><td class="l">รวมทั้งหมด${totOther?` <span class="cc-owner-other">· อื่นๆ ${_bpFmt(totOther)} (ไม่รวม)</span>`:''}</td><td class="num tot" colspan="3">${_bpFmt(totT)}</td></tr></tfoot>
+    </table></div>`;
 }
 
 function renderSummaryPerson(p){
@@ -751,28 +732,14 @@ function renderSummaryPerson(p){
       <div><div class="stitle">สรุป ${p==='p1'?cfg.p1:cfg.p2}</div></div>
     </div>
     </div>
-    <div class="sum-list">
-      <div class="sum-row sub">
-        <span>รายรับรวม</span>
-        <span style="color:${clr};font-weight:600">${_bpFmt(inc)}</span>
-      </div>
-      <div class="sum-row sub">
-        <span>รายจ่ายรวม <span style="font-size:10px;color:var(--ink3)">(รวมบัตร)</span></span>
-        <span style="color:var(--amber)">− ${_bpFmt(expenseAmt+ccTotal)}</span>
-      </div>
-      <div class="sum-row sub" style="padding-left:16px">
-        <span style="font-size:12px">· รายจ่ายทั่วไป</span>
-        <span style="font-size:12px;color:var(--amber)">− ${_bpFmt(expenseAmt)}</span>
-      </div>
-      <div class="sum-row sub" style="padding-left:16px">
-        <span style="font-size:12px">· บัตร (กองกลาง÷2 + ส่วนตัว)</span>
-        <span style="font-size:12px;color:var(--lilac)">− ${_bpFmt(ccTotal)}</span>
-      </div>
-      <div class="sum-row sub">
-        <span>ออม + ลงทุน</span>
-        <span style="color:var(--teal);font-weight:600">− ${_bpFmt(investSaveAmt)}</span>
-      </div>
-    </div>
+    <div class="sum-table-wrap"><table class="sum-table">
+      <tbody>
+        <tr><td class="l"><i class="ti ti-arrow-down-left"></i>รายรับรวม</td><td class="num" style="color:${clr}">+ ${_bpFmt(inc)}</td></tr>
+        <tr><td class="l"><i class="ti ti-receipt"></i>รายจ่ายทั่วไป</td><td class="num" style="color:var(--amber)">− ${_bpFmt(expenseAmt)}</td></tr>
+        <tr><td class="l"><i class="ti ti-credit-card"></i>บัตรเครดิต <span class="sum-note">÷2 + ส่วนตัว</span></td><td class="num" style="color:var(--lilac)">− ${_bpFmt(ccTotal)}</td></tr>
+        <tr><td class="l"><i class="ti ti-pig-money"></i>ออม + ลงทุน</td><td class="num" style="color:var(--teal)">− ${_bpFmt(investSaveAmt)}</td></tr>
+      </tbody>
+    </table></div>
     <div class="remain-box" style="background:${isGood?'var(--good-bg)':'var(--bad-bg)'};border-color:${isGood?'var(--good-line)':'var(--bad-line)'}">
       <div><div class="remain-lbl">คงเหลือ</div><div class="remain-sub">${isGood?'Good ✓':'Bad ✗'}</div></div>
       <div class="remain-val" style="color:${isGood?'var(--good)':'var(--bad)'}">${_bpFmt(rem)}</div>
@@ -828,40 +795,19 @@ function renderSummaryCommon(){
       <div><div class="stitle">สรุปรวมครัวเรือน</div></div>
     </div>
     </div>
-    <div class="sum-list">
-      <div class="sum-row sub" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
-        <span style="font-weight:600;color:var(--sky)">${cfg.p1} <span style="font-size:11px;color:var(--ink3)">▾</span></span>
-        <span style="font-weight:700;color:var(--sky)">${_bpFmt(p1Total)}</span>
-      </div>
-      <div style="display:none">
-        <div class="sum-row sub"><span style="padding-left:16px;font-size:12px;color:var(--ink2)">⚡ ค่าน้ำ-ไฟ</span><span style="font-size:12px">${_bpFmt(util1)}</span></div>
-        <div class="sum-row sub"><span style="padding-left:16px;font-size:12px;color:var(--ink2)">🍚 ค่ากิน</span><span style="font-size:12px">${_bpFmt(food1)}</span></div>
-        <div class="sum-row sub"><span style="padding-left:16px;font-size:12px;color:var(--ink2)">💳 บัตรเครดิต</span><span style="font-size:12px">${_bpFmt(ccCommonByP1+ccP1inP2card)}</span></div>
-        <div class="sum-row sub"><span style="padding-left:28px;font-size:11px;color:var(--ink3)">• กองกลาง</span><span style="font-size:11px;color:var(--ink3)">${_bpFmt(ccCommonByP1)}</span></div>
-        ${ccP1inP2card>0?`<div class="sum-row sub"><span style="padding-left:28px;font-size:11px;color:var(--ink3)">• ส่วนตัวในบัตรเข่ง</span><span style="font-size:11px;color:var(--ink3)">${_bpFmt(ccP1inP2card)}</span></div>`:''}
-
-      </div>
-
-      <div class="sum-row sub" style="cursor:pointer" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
-        <span style="font-weight:600;color:var(--rose)">${cfg.p2} <span style="font-size:11px;color:var(--ink3)">▾</span></span>
-        <span style="font-weight:700;color:var(--rose)">${_bpFmt(p2Total)}</span>
-      </div>
-      <div style="display:none">
-        <div class="sum-row sub"><span style="padding-left:16px;font-size:12px;color:var(--ink2)">🍚 ค่ากิน</span><span style="font-size:12px">${_bpFmt(food2)}</span></div>
-        <div class="sum-row sub"><span style="padding-left:16px;font-size:12px;color:var(--ink2)">💳 บัตรเครดิต</span><span style="font-size:12px">${_bpFmt(ccCommonByP2+ccP2inP1card)}</span></div>
-        <div class="sum-row sub"><span style="padding-left:28px;font-size:11px;color:var(--ink3)">• กองกลาง</span><span style="font-size:11px;color:var(--ink3)">${_bpFmt(ccCommonByP2)}</span></div>
-        ${ccP2inP1card>0?`<div class="sum-row sub"><span style="padding-left:28px;font-size:11px;color:var(--ink3)">• ส่วนตัวในบัตรโฟม</span><span style="font-size:11px;color:var(--ink3)">${_bpFmt(ccP2inP1card)}</span></div>`:''}
-
-      </div>
-
-      <div class="sum-row divider" style="margin-top:6px">
-        <span style="font-weight:700;color:${Math.abs(diff)<1?'var(--good)':diff>0?'var(--rose)':'var(--sky)'}">
-          ${Math.abs(diff)<1?'เท่ากัน ✓':(diff>0?cfg.p2+' จ่าย '+cfg.p1:cfg.p1+' จ่าย '+cfg.p2)}
-        </span>
-        <span style="font-weight:700;font-size:15px;color:${Math.abs(diff)<1?'var(--good)':'var(--bad)'}">
-          ${Math.abs(diff)<1?'':_bpFmt(Math.abs(diff)/2)}
-        </span>
-      </div>
+    <div class="sum-table-wrap"><table class="sum-table">
+      <thead><tr><th class="l">รายการ</th><th class="sky">${cfg.p1}</th><th class="rose">${cfg.p2}</th></tr></thead>
+      <tbody>
+        <tr><td class="l"><i class="ti ti-bolt"></i>ค่าน้ำ-ไฟ</td><td class="num">${_bpFmt(util1)}</td><td class="num">${_bpFmt(util2)}</td></tr>
+        <tr><td class="l"><i class="ti ti-tools-kitchen-2"></i>ค่ากิน</td><td class="num">${_bpFmt(food1)}</td><td class="num">${_bpFmt(food2)}</td></tr>
+        <tr><td class="l"><i class="ti ti-credit-card"></i>บัตรเครดิต (กองกลาง)</td><td class="num">${_bpFmt(ccCommonByP1)}</td><td class="num">${_bpFmt(ccCommonByP2)}</td></tr>
+        ${(ccP1inP2card>0||ccP2inP1card>0)?`<tr><td class="l"><i class="ti ti-arrows-exchange"></i>ส่วนตัวในบัตรอีกฝ่าย</td><td class="num">${_bpFmt(ccP1inP2card)}</td><td class="num">${_bpFmt(ccP2inP1card)}</td></tr>`:''}
+      </tbody>
+      <tfoot><tr><td class="l">รวมที่จ่ายจริง</td><td class="num tot sky">${_bpFmt(p1Total)}</td><td class="num tot rose">${_bpFmt(p2Total)}</td></tr></tfoot>
+    </table></div>
+    <div class="hh-settle ${Math.abs(diff)<1?'even':'owe'}">
+      <span>${Math.abs(diff)<1?'จ่ายเท่ากันแล้ว':(diff>0?`${cfg.p2} ต้องจ่ายคืน ${cfg.p1}`:`${cfg.p1} ต้องจ่ายคืน ${cfg.p2}`)}</span>
+      <strong>${Math.abs(diff)<1?'✓':_bpFmt(Math.abs(diff)/2)}</strong>
     </div>`;
 
   // settlement
@@ -1065,7 +1011,47 @@ function addCC(){
   clearAmt(document.getElementById('cc-p2'));
   clearAmt(document.getElementById('cc-other'));
   document.getElementById('cc-note').value='';
+  ccAddClose();
   persist();_bpRender();_bpToast('เพิ่มบัตรแล้ว ✓');
+}
+function ccAddOpen(){
+  try{populateCCSelect();}catch(e){}
+  document.getElementById('cc-add-modal').classList.add('open');
+}
+function ccAddClose(){
+  document.getElementById('cc-add-modal').classList.remove('open');
+}
+function ccBreakdownOpen(p){
+  const md=getMD();
+  const nameP=p==='p1'?cfg.p1:cfg.p2;
+  const t=document.getElementById('ccbd-title'); if(t) t.textContent='บัตรเครดิตของ '+nameP;
+  const body=document.getElementById('ccbd-body'); if(!body) return;
+  if(!md.cc.length){
+    body.innerHTML='<div class="empty-state"><i class="ti ti-inbox"></i>ยังไม่มีรายการบัตร</div>';
+  } else {
+    let total=0;
+    const rows=md.cc.map(c=>{
+      const card=getCC(c.cardId);const dot=cardColor(c.cardId);
+      const own=f(p==='p1'?c.p1:c.p2);
+      const share=(f(c.total)-f(c.p1)-f(c.p2)-f(c.other))/2;
+      const sum=own+share; total+=sum;
+      return `<tr>
+        <td class="l"><span class="cc-dot" style="background:${dot}"></span><span class="cc-name">${card.name}</span>${c.note?` <span class="cc-note">(${c.note})</span>`:''}</td>
+        <td class="num">${_bpFmt(own)}</td>
+        <td class="num">${_bpFmt(share)}</td>
+        <td class="num tot">${_bpFmt(sum)}</td>
+      </tr>`;
+    }).join('');
+    body.innerHTML=`<div class="cc-table-wrap"><table class="cc-table">
+      <thead><tr><th class="l">บัตร</th><th>ส่วนตัว</th><th>กลาง ÷2</th><th>รวม</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td class="l">รวมทั้งหมด</td><td></td><td></td><td class="num tot">${_bpFmt(total)}</td></tr></tfoot>
+    </table></div>`;
+  }
+  document.getElementById('cc-breakdown-modal').classList.add('open');
+}
+function ccBreakdownClose(){
+  document.getElementById('cc-breakdown-modal').classList.remove('open');
 }
 function delCC(id){
   const md=getMD();
@@ -1085,14 +1071,15 @@ function closeSettings(){document.getElementById('settings-modal').classList.rem
 
 function renderCardChips(){
   document.getElementById('card-chips').innerHTML=cfg.ccCards.map((c,i)=>`
-    <span class="card-chip" style="color:${CC_COLORS[i%CC_COLORS.length]};border-color:${CC_COLORS[i%CC_COLORS.length]}60;display:inline-flex;align-items:center;gap:5px">
-      ${c.name}
-      <select onchange="setCCOwner('${c.id}',this.value)" style="font-size:10px;border:none;background:transparent;color:${CC_COLORS[i%CC_COLORS.length]};cursor:pointer;font-family:inherit;outline:none">
-        <option value="p1" ${c.owner!=='p2'?'selected':''}>👤 ${cfg.p1}</option>
-        <option value="p2" ${c.owner==='p2'?'selected':''}>👤 ${cfg.p2}</option>
+    <div class="cc-card-chip">
+      <span class="ccc-dot" style="background:${CC_COLORS[i%CC_COLORS.length]}"></span>
+      <span class="ccc-name">${c.name}</span>
+      <select class="ccc-owner" onchange="setCCOwner('${c.id}',this.value)" title="เจ้าของบัตร">
+        <option value="p1" ${c.owner!=='p2'?'selected':''}>${cfg.p1}</option>
+        <option value="p2" ${c.owner==='p2'?'selected':''}>${cfg.p2}</option>
       </select>
-      <button onclick="removeCCCard('${c.id}')" style="width:18px;height:18px;border-radius:50%;border:1.5px solid ${CC_COLORS[i%CC_COLORS.length]}80;background:var(--bad-bg);color:var(--bad);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;font-size:11px;font-weight:700;line-height:1;flex-shrink:0" title="ลบบัตร">×</button>
-    </span>`).join('');
+      <button class="ccc-del" onclick="removeCCCard('${c.id}')" title="ลบบัตร"><i class="ti ti-x"></i></button>
+    </div>`).join('');
 }
 
 function renderFixedListsInModal(){
@@ -1113,7 +1100,7 @@ function renderFixedListsInModal(){
         const bal=(fn.bal||0).toLocaleString('th-TH');
         return `<option value="${fn.id}" ${fn.id===fe.savingsFundId?'selected':''}>${fn.emoji||'💰'} ${fn.name} · ${who} · ฿${bal}</option>`;
       }).join('');
-    return `<select onchange="setSavingsLink('${p}','${fe.id}',this.value)" title="เชื่อมกับกองออม"
+    return `<select class="mo-sel" onchange="setSavingsLink('${p}','${fe.id}',this.value)" title="เชื่อมกับกองออม"
       style="margin-top:4px;max-width:100%;height:26px;padding:0 6px;border-radius:8px;border:1px solid ${fe.savingsFundId?'var(--sage-line)':'var(--line2)'};background:${fe.savingsFundId?'var(--sage-bg)':'var(--card)'};color:${fe.savingsFundId?'var(--sage)':'var(--ink2)'};font-size:11px;font-family:inherit;cursor:pointer;outline:none">${opts}</select>`;
   };
   const expRow=(p,fe)=>`
@@ -1126,7 +1113,7 @@ function renderFixedListsInModal(){
       <input type="text" inputmode="decimal" value="${fe.goal||''}" placeholder="0.00"
         style="width:110px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right"
         onchange="setGoalInSettings('${p}','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
-      <button class="del-item-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="delFixedTemplate('expense','${p}','${fe.id}')"><i class="ti ti-trash" style="font-size:12px"></i> ลบ</button>
+      <button class="del-item-btn del-icon" style="height:28px;font-size:11px" onclick="delFixedTemplate('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i></button>
     </div>`;
   // ฟอร์มเพิ่มรายการรายจ่ายใหม่ (ต่อคน)
   const addForm=(p)=>`
@@ -1138,7 +1125,7 @@ function renderFixedListsInModal(){
       </div>
       <div>
         <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">ประเภท</label>
-        <select id="new-exp-type-${p}" style="height:30px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit;cursor:pointer">
+        <select id="new-exp-type-${p}" class="mo-sel" style="height:30px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit;cursor:pointer">
           <option value="expense">รายจ่าย</option>
           <option value="invest">ลงทุน</option>
           <option value="save">ออม</option>
@@ -1205,6 +1192,7 @@ function populateCCSelect(){
   const sel=document.getElementById('cc-card');const cur=sel.value;
   sel.innerHTML='<option value="">-- เลือกบัตร --</option>'+cfg.ccCards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   if(cur)sel.value=cur;
+  if(window.moSelectRefresh)window.moSelectRefresh(sel);
 }
 function updateLabels(){
   document.getElementById('ptab-p1-name').textContent=cfg.p1;
@@ -1290,6 +1278,18 @@ function toggleChart(){
   const btn=document.getElementById('chart-btn');
   btn.style.background=chartVisible?'var(--sky)':'';
   btn.style.color=chartVisible?'#fff':'';
+  const bc=document.getElementById('breadcrumb');
+  if(bc){
+    if(chartVisible){
+      bc.innerHTML='<button class="bc-item" onclick="showModule(\'home\')"><i class="ti ti-home"></i> หน้าหลัก</button>'+
+        '<span class="bc-sep"><i class="ti ti-chevron-right"></i></span>'+
+        '<button class="bc-item" onclick="toggleChart()"><i class="ti ti-wallet"></i> งบประมาณ</button>'+
+        '<span class="bc-sep"><i class="ti ti-chevron-right"></i></span>'+
+        '<span class="bc-item bc-current"><i class="ti ti-chart-bar"></i> ภาพรวม</span>';
+    } else if(window.updateBreadcrumb){
+      window.updateBreadcrumb('budget');
+    }
+  }
   if(chartVisible){
     // default = ผลต่าง Goal — ใช้ setChartTab เพื่อให้ไฮไลต์ปุ่ม + เนื้อหาตรงกันเสมอ
     document.getElementById('chart-sec-overview').style.display='none';
@@ -1354,7 +1354,7 @@ function renderGroupTable(){
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">เลือกร้าน</span>
-      <select id="group-select" onchange="renderGroupDetail()" style="flex:1;min-width:180px;font-size:13px;height:34px;padding:0 12px;border-radius:10px;border:1.5px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);font-weight:700;font-family:inherit;cursor:pointer;outline:none">${opts}</select>
+      <select id="group-select" class="mo-sel" onchange="renderGroupDetail()" style="flex:1;min-width:180px;font-size:13px;height:34px;padding:0 12px;border-radius:10px;border:1.5px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);font-weight:700;font-family:inherit;cursor:pointer;outline:none">${opts}</select>
     </div>
     <div id="group-detail"></div>`;
   renderGroupDetail();
@@ -1385,43 +1385,78 @@ let _ccCatOrder=[];       // row order → resolve onclick index to category nam
 let _ccCatTotals={};      // cat -> total (for the popup header)
 // open a popup listing every txn of a category for the selected month
 let _ccPopItems=[];
+let _ccPopSearch='';
+let _ccPopColF={};
 function ccCatPopup(i){
   const cat=_ccCatOrder[i];if(cat==null)return;
   _ccPopItems=(_ccCatItems[cat]||[]).slice();
+  _ccPopSearch='';_ccPopColF={};
   document.getElementById('ccc-title').textContent=`${cat} · ${MONTHS_TH[curMonth]} ${curYear+543}`;
-  // dropdown กรองตาม prefix ชื่อร้าน (เหมือน section ตามชื่อร้าน)
-  const prefixes=[...new Set(_ccPopItems.map(it=>_groupPrefix(it.merchant||'')))].sort((a,b)=>a.localeCompare(b,'th'));
-  const opts=`<option value="">ทุกร้าน (${_ccPopItems.length})</option>`+prefixes.map(p=>`<option value="${_bpEsc(p)}">🛒 ${_bpEsc(p)}</option>`).join('');
   document.getElementById('ccc-body').innerHTML=`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <span style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em">กรองร้าน</span>
-      <select id="ccc-prefix" onchange="ccCatPopupFilter()" style="flex:1;min-width:150px;font-size:13px;height:32px;padding:0 10px;border-radius:10px;border:1.5px solid var(--lilac-line);background:var(--lilac-bg);color:var(--lilac);font-weight:700;font-family:inherit;cursor:pointer;outline:none">${opts}</select>
+    <div class="ccv-filter-bar">
+      <div class="ccv-fl-left"><button class="ccv-clear" onclick="ccCatClear()"><i class="ti ti-filter-off"></i> ล้าง</button><span id="ccc-count" class="ccv-count"></span></div>
+      <div class="ccv-fl-right"><div class="ccv-search"><i class="ti ti-search"></i><input type="text" id="ccc-search" placeholder="ค้นหารายการ..." oninput="ccCatSearch(this.value)"></div></div>
     </div>
-    <div id="ccc-list"></div>`;
+    <div id="ccc-body-inner" style="position:relative"><div id="ccc-list" class="ccv-list"></div></div>`;
   ccCatPopupFilter();
   document.getElementById('cc-cat-modal').classList.add('open');
 }
 function ccCatPopupFilter(){
   const box=document.getElementById('ccc-list');if(!box)return;
-  const sel=document.getElementById('ccc-prefix');
-  const pfx=sel?sel.value:'';
+  const q=(_ccPopSearch||'').trim().toLowerCase();
+  const cf=_ccPopColF;
+  const all=_ccPopItems;
+  const shown=all.filter(it=>{
+    if(q){const hay=((it.merchant||'')+' '+(it.note||'')+' '+(it.card||'')+' '+(it.date||'')).toLowerCase();if(!hay.includes(q))return false;}
+    if(cf.merch&&!((it.merchant||'')+' '+(it.note||'')).toLowerCase().includes(cf.merch.toLowerCase()))return false;
+    if(cf.card&&!String(it.card||'').toLowerCase().includes(cf.card.toLowerCase()))return false;
+    if(cf.date&&!String(it.date||'').toLowerCase().includes(cf.date.toLowerCase()))return false;
+    if(cf.owner&&cf.owner!=='all'&&(it.owner||'common')!==cf.owner)return false;
+    if(cf.amt){const a=String(Math.round(Math.abs(it.amt)));if(!a.includes(cf.amt.replace(/[^0-9]/g,'')))return false;}
+    return true;
+  }).sort((a,b)=>b.amt-a.amt);
+  const total=shown.reduce((s,it)=>s+f(it.amt),0);
+  const cnt=document.getElementById('ccc-count');if(cnt)cnt.textContent=`${shown.length===all.length?all.length:shown.length+'/'+all.length} รายการ · ${_bpFmt(total)}`;
+  if(!shown.length){box.innerHTML='<div style="color:var(--ink3);font-size:12px;padding:12px;text-align:center">ไม่พบรายการ</div>';return;}
   const ownerLabel=(o)=>(CC_OWNERS.find(x=>x.v===o)||{}).label?.()||o;
-  const items=_ccPopItems.filter(it=>!pfx||_groupPrefix(it.merchant||'')===pfx).sort((a,b)=>b.amt-a.amt);
-  const total=items.reduce((s,it)=>s+f(it.amt),0);
-  const rows=items.length?items.map(it=>`
-    <div class="cc-cat-txn">
-      <div class="cctx-main"><span class="cctx-merch">${_bpEsc(it.merchant||'(รายการ)')}</span>${it.note?`<span class="cctx-note"> · ${_bpEsc(it.note)}</span>`:''}</div>
-      <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(it.date)}</span>`:''}${it.owner?`<span class="cc-chip">${_bpEsc(ownerLabel(it.owner))}</span>`:''}</div>
-      <div class="cctx-amt ${it.amt<0?'cci-credit':''}">${_bpFmt(it.amt)}</div>
-    </div>`).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการ</div>';
-  box.innerHTML=`
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-      <span style="font-size:12px;color:var(--ink2)">${items.length} รายการ${pfx?' · รูดร้านนี้':''}</span>
-      <span style="font-size:18px;font-weight:700;color:var(--lilac)">${_bpFmt(total)}</span>
-    </div>
-    <div class="cc-cat-detail" style="border:none;background:transparent;padding:0;max-height:52vh;overflow:auto">${rows}</div>`;
+  const fb=col=>`<button class="ccv-filt-btn${cf[col]&&cf[col]!=='all'?' active':''}" onclick="ccCatColFilter(event,'${col}')" title="กรอง"><i class="ti ti-filter"></i></button>`;
+  const rows=shown.map(it=>`<tr>
+      <td class="l"><span class="ccv-merch-tx">${_bpEsc(it.merchant||'(รายการ)')}</span>${it.note?`<span class="ccv-note"> · ${_bpEsc(it.note)}</span>`:''}</td>
+      <td class="l"><span class="cc-chip" style="color:var(--sky);border-color:var(--sky-line);background:var(--sky-bg)">${_bpEsc(it.card)}</span></td>
+      <td class="l ccv-date">${_bpEsc(it.date)||'—'}</td>
+      <td class="l"><span class="cc-chip">${_bpEsc(ownerLabel(it.owner))}</span></td>
+      <td class="num ${it.amt<0?'cci-credit':''}">${_bpFmt(it.amt)}</td>
+    </tr>`).join('');
+  box.innerHTML=`<table class="ccv-table">
+    <thead><tr><th class="l"><span class="ccv-th">รายการ ${fb('merch')}</span></th><th class="l"><span class="ccv-th">บัตร ${fb('card')}</span></th><th class="l"><span class="ccv-th">วันที่ ${fb('date')}</span></th><th class="l"><span class="ccv-th">เจ้าของ ${fb('owner')}</span></th><th><span class="ccv-th ccv-th-r">ยอด ${fb('amt')}</span></th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
 }
-function ccCatPopupClose(){document.getElementById('cc-cat-modal').classList.remove('open');}
+function ccCatSearch(v){_ccPopSearch=v||'';ccCatPopupFilter();}
+function ccCatClear(){_ccPopSearch='';_ccPopColF={};_ccCatCloseColPop();const s=document.getElementById('ccc-search');if(s)s.value='';ccCatPopupFilter();}
+function ccCatColFilter(e,col){
+  e.stopPropagation();_ccCatCloseColPop();
+  const btn=e.currentTarget;const body=document.getElementById('ccc-body-inner');if(!body)return;
+  const pop=document.createElement('div');pop.className='ccv-col-pop';pop.id='ccCatColPop';
+  if(col==='owner'){
+    const cur=_ccPopColF.owner||'all';
+    pop.innerHTML=`<button type="button" class="ccv-col-opt${cur==='all'?' active':''}" onclick="ccCatColSet('owner','all')">ทุกเจ้าของ</button>`
+      +CC_OWNERS.map(o=>`<button type="button" class="ccv-col-opt${cur===o.v?' active':''}" onclick="ccCatColSet('owner','${o.v}')">${o.label()}</button>`).join('');
+  }else{
+    const ph=col==='date'?'เช่น 22 JUN':(col==='amt'?'เช่น 130':(col==='card'?'ชื่อบัตร':'ค้นหา...'));
+    pop.innerHTML=`<input class="ccv-col-in" type="text" placeholder="${ph}" value="${_bpEsc(_ccPopColF[col]||'')}" oninput="ccCatColSet('${col}',this.value)">
+      <button type="button" class="ccv-col-clr" onclick="ccCatColSet('${col}','')"><i class="ti ti-x"></i> ล้าง</button>`;
+  }
+  body.appendChild(pop);
+  const br=btn.getBoundingClientRect(),pr=body.getBoundingClientRect();
+  let left=br.left-pr.left;if(left+200>pr.width)left=Math.max(4,pr.width-200);
+  pop.style.left=left+'px';pop.style.top=(br.bottom-pr.top+4)+'px';
+  setTimeout(()=>document.addEventListener('click',_ccCatColOutside,true),0);
+  const inp=pop.querySelector('input');if(inp)inp.focus();
+}
+function _ccCatColOutside(e){const p=document.getElementById('ccCatColPop');if(p&&!p.contains(e.target)&&!e.target.closest('.ccv-filt-btn'))_ccCatCloseColPop();}
+function _ccCatCloseColPop(){const p=document.getElementById('ccCatColPop');if(p)p.remove();document.removeEventListener('click',_ccCatColOutside,true);}
+function ccCatColSet(col,val){_ccPopColF[col]=val;if(col==='owner')_ccCatCloseColPop();ccCatPopupFilter();}
+function ccCatPopupClose(){_ccCatCloseColPop();document.getElementById('cc-cat-modal').classList.remove('open');}
 function renderCCCategory(){
   const box=document.getElementById('cc-cat-container');if(!box)return;
   const sub=document.getElementById('cc-cat-sub');if(sub)sub.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
@@ -1489,7 +1524,6 @@ function renderCCCategory(){
       </div>`;
     }).join('');
 }
-
 function setChartPerson(p,btn){
   chartPerson=p;
   const b1=document.getElementById('cfilt-p1');
@@ -1511,6 +1545,7 @@ function populateCompareSelect(){
   items.push('ค่าบัตรเครดิต (รวม)','ค่าน้ำ-ไฟ (กองกลาง÷2)');
   sel.innerHTML=items.map(n=>`<option value="${n}">${n}</option>`).join('');
   if(cur) sel.value=cur;
+  if(window.moSelectRefresh)window.moSelectRefresh(sel);
   // update titles
   const t1=document.getElementById('cmp-title-p1');if(t1)t1.textContent=cfg.p1;
   const t2=document.getElementById('cmp-title-p2');if(t2)t2.textContent=cfg.p2;
@@ -2049,46 +2084,123 @@ function _cciFillCardSelect(sel) {
   el.innerHTML = '<option value="">-- เลือกบัตร --</option>' +
     cfg.ccCards.map((c) => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${c.name}</option>`).join('');
   el.value = sel || '';
+  if (window.moInitSelects) window.moInitSelects(el.parentElement || document);
+  if (window.moSelectRefresh) window.moSelectRefresh(el);
 }
 /* ── view a saved card entry (read-only, filterable by owner) ── */
 let _cciViewFilter = 'all';
+let _cciViewSearch = '';
+let _ccvColF = {};
 const _ccvOwnLabel = (o) => (CC_OWNERS.find((x) => x.v === o) || {}).label?.() || o;
 // render just the (filtered) line-item list into #ccv-list
 function _ccvRenderList() {
   const box = document.getElementById('ccv-list'); if (!box) return;
   const c = getMD().cc.find((x) => x.id === _cciViewId);
   const txns = (c && c.txns) || [];
-  const shown = txns.filter((t) => _cciViewFilter === 'all' || (t.owner || 'common') === _cciViewFilter);
+  const q = (_cciViewSearch || '').trim().toLowerCase();
+  const cf = _ccvColF;
+  const shown = txns.filter((t) => {
+    if (q) {
+      const hay = ((t.merchant || '') + ' ' + (t.note || '') + ' ' + (t.category || '') + ' ' + (t.date || '')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (cf.merch && !((t.merchant || '') + ' ' + (t.note || '')).toLowerCase().includes(cf.merch.toLowerCase())) return false;
+    if (cf.date && !String(t.date || '').toLowerCase().includes(cf.date.toLowerCase())) return false;
+    if (cf.owner && cf.owner !== 'all' && (t.owner || 'common') !== cf.owner) return false;
+    if (cf.amt) { const a = String(Math.round(Math.abs(f(t.amt)))); if (!a.includes(cf.amt.replace(/[^0-9]/g, ''))) return false; }
+    return true;
+  });
   const cnt = document.getElementById('ccv-count');
-  if (cnt) cnt.textContent = _cciViewFilter === 'all' ? `${txns.length} รายการ` : `${shown.length}/${txns.length} รายการ`;
+  if (cnt) cnt.textContent = shown.length === txns.length ? `${txns.length} รายการ` : `${shown.length}/${txns.length} รายการ`;
   if (!txns.length) { box.innerHTML = '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการย่อย (บันทึกแบบสรุปยอด)</div>'; return; }
-  box.innerHTML = shown.length ? shown.map((t) => `
-    <div class="ccv-row">
-      <div class="ccv-date">${_bpEsc(t.date) || '—'}</div>
-      <div class="ccv-merch">${_bpEsc(t.merchant) || '(รายการ)'}${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</div>
-      <div class="ccv-tags"><span class="cc-chip">${_bpEsc(_ccvOwnLabel(t.owner))}</span><span class="cc-chip" style="color:var(--lilac);border-color:var(--lilac-line)">${_bpEsc(t.category || 'อื่นๆ')}</span></div>
-      <div class="ccv-amt ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</div>
-    </div>`).join('')
-    : '<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการของเจ้าของนี้</div>';
+  if (!shown.length) { box.innerHTML = '<div style="color:var(--ink3);font-size:12px;padding:12px;text-align:center">ไม่พบรายการที่ค้นหา</div>'; return; }
+  // group by category
+  const groups = {};
+  shown.forEach((t) => { const k = t.category || 'อื่นๆ'; (groups[k] = groups[k] || []).push(t); });
+  const cats = Object.keys(groups).sort();
+  const rowHtml = (t) => `<tr>
+      <td class="l ccv-date">${_bpEsc(t.date) || '—'}</td>
+      <td class="l"><span class="ccv-merch-tx">${_bpEsc(t.merchant) || '(รายการ)'}</span>${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</td>
+      <td class="l"><span class="cc-chip">${_bpEsc(_ccvOwnLabel(t.owner))}</span></td>
+      <td class="num ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</td>
+    </tr>`;
+  const bodyHtml = cats.map((cat) => {
+    const items = groups[cat];
+    const sub = items.reduce((s, t) => s + f(t.amt), 0);
+    return `<tr class="ccv-group"><td class="l" colspan="4"><i class="ti ti-tag"></i><span class="ccv-gname">${_bpEsc(cat)}</span><span class="ccv-gcount">${items.length} รายการ · ${_bpFmt(sub)}</span></td></tr>`
+      + items.map(rowHtml).join('');
+  }).join('');
+  const fb = (col) => `<button class="ccv-filt-btn${cf[col] && cf[col] !== 'all' ? ' active' : ''}" onclick="ccvColFilter(event,'${col}')" title="กรอง"><i class="ti ti-filter"></i></button>`;
+  box.innerHTML = `<table class="ccv-table">
+    <thead><tr><th class="l"><span class="ccv-th">วันที่ ${fb('date')}</span></th><th class="l"><span class="ccv-th">รายการ ${fb('merch')}</span></th><th class="l"><span class="ccv-th">เจ้าของ ${fb('owner')}</span></th><th><span class="ccv-th ccv-th-r">ยอด ${fb('amt')}</span></th></tr></thead>
+    <tbody>${bodyHtml}</tbody></table>`;
+}
+/* per-column filter popup */
+function ccvColFilter(e, col) {
+  e.stopPropagation();
+  _ccvCloseColPop();
+  const btn = e.currentTarget;
+  const body = document.getElementById('ccv-body'); if (!body) return;
+  const pop = document.createElement('div');
+  pop.className = 'ccv-col-pop'; pop.id = 'ccvColPop';
+  if (col === 'owner') {
+    const cur = _ccvColF.owner || 'all';
+    pop.innerHTML = `<button type="button" class="ccv-col-opt${cur === 'all' ? ' active' : ''}" onclick="ccvColSet('owner','all')">ทุกเจ้าของ</button>`
+      + CC_OWNERS.map((o) => `<button type="button" class="ccv-col-opt${cur === o.v ? ' active' : ''}" onclick="ccvColSet('owner','${o.v}')">${o.label()}</button>`).join('');
+  } else {
+    const ph = col === 'date' ? 'เช่น 22 JUN' : (col === 'amt' ? 'เช่น 130' : 'ค้นหา...');
+    pop.innerHTML = `<input class="ccv-col-in" type="text" placeholder="${ph}" value="${_bpEsc(_ccvColF[col] || '')}" oninput="ccvColSet('${col}',this.value)">
+      <button type="button" class="ccv-col-clr" onclick="ccvColSet('${col}','')"><i class="ti ti-x"></i> ล้าง</button>`;
+  }
+  body.appendChild(pop);
+  const br = btn.getBoundingClientRect(), pr = body.getBoundingClientRect();
+  let left = br.left - pr.left; if (left + 200 > pr.width) left = Math.max(4, pr.width - 200);
+  pop.style.left = left + 'px';
+  pop.style.top = (br.bottom - pr.top + 4) + 'px';
+  setTimeout(() => document.addEventListener('click', _ccvColOutside, true), 0);
+  const inp = pop.querySelector('input'); if (inp) inp.focus();
+}
+function _ccvColOutside(e) {
+  const p = document.getElementById('ccvColPop');
+  if (p && !p.contains(e.target) && !e.target.closest('.ccv-filt-btn')) _ccvCloseColPop();
+}
+function _ccvCloseColPop() {
+  const p = document.getElementById('ccvColPop'); if (p) p.remove();
+  document.removeEventListener('click', _ccvColOutside, true);
+}
+function ccvColSet(col, val) {
+  _ccvColF[col] = val;
+  if (col === 'owner') _ccvCloseColPop();
+  _ccvRenderList();
 }
 function ccViewSetFilter(v) { _cciViewFilter = v || 'all'; _ccvRenderList(); }
+function ccViewSearch(v) { _cciViewSearch = v || ''; _ccvRenderList(); }
+function ccViewClearFilter() {
+  _cciViewSearch = ''; _cciViewFilter = 'all'; _ccvColF = {};
+  _ccvCloseColPop();
+  const s = document.getElementById('ccv-search'); if (s) s.value = '';
+  _ccvRenderList();
+}
 function ccViewOpen(id) {
   const c = getMD().cc.find((x) => x.id === id);
   if (!c) return;
   _cciViewId = id;
   _cciViewFilter = 'all';
+  _cciViewSearch = '';
+  _ccvColF = {};
   const card = getCC(c.cardId);
   document.getElementById('ccv-title').textContent = '🧾 ' + card.name + (c.note ? ' (' + c.note + ')' : '');
   const txns = c.txns || [];
   const common = f(c.total) - f(c.p1) - f(c.p2) - f(c.other);
   const filterBar = txns.length ? `
     <div class="ccv-filter-bar">
-      <span id="ccv-count" style="font-size:12px;color:var(--ink2)">${txns.length} รายการ</span>
-      <select id="ccv-filter" onchange="ccViewSetFilter(this.value)" title="กรองตามเจ้าของ"
-        style="height:30px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit">
-        <option value="all">ทุกเจ้าของ</option>
-        ${CC_OWNERS.map((o) => `<option value="${o.v}">${o.label()}</option>`).join('')}
-      </select>
+      <div class="ccv-fl-left">
+        <button class="ccv-clear" onclick="ccViewClearFilter()"><i class="ti ti-filter-off"></i> ล้าง</button>
+        <span id="ccv-count" class="ccv-count">${txns.length} รายการ</span>
+      </div>
+      <div class="ccv-fl-right">
+        <div class="ccv-search"><i class="ti ti-search"></i><input type="text" id="ccv-search" placeholder="ค้นหารายการ..." oninput="ccViewSearch(this.value)"></div>
+      </div>
     </div>` : '';
   document.getElementById('ccv-body').innerHTML = `
     ${filterBar}
@@ -2327,10 +2439,10 @@ function ccImportSave() {
   md.cc.push({ id: Date.now(), cardId, note: '', txns, total: d.total, p1: d.p1, p2: d.p2, other: d.other });
   persist(); _bpRender(); ccImportClose(); _bpToast('นำเข้ารายการบัตรแล้ว ✓');
 }
-Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, _cciParseOCR });
+Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

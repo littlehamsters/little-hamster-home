@@ -12,8 +12,8 @@ const CATEGORIES=[
 ];
 const catById=id=>CATEGORIES.find(c=>c.id===id)||CATEGORIES[CATEGORIES.length-1];
 const SHARED='กองกลาง';
-const OWNER_ICON='👤';
-const SHARED_ICON='🤝';
+const OWNER_ICON='<i class="ti ti-user"></i>';
+const SHARED_ICON='<i class="ti ti-users"></i>';
 let state={funds:[]};
 let editId=null, txId=null, txType='in', pickedEmoji=EMOJIS[0], histId=null, pickedCat='other', catFilter='all';
 
@@ -109,9 +109,9 @@ function jarCard(f){
       deadline=`<div class="jar-deadline ok">ครบกำหนด ${dateTxt} · สำเร็จแล้ว</div>`;
     }else if(dl>0){
       const cls=dl<=31?'warn':'';
-      deadline=`<div class="jar-deadline ${cls}">⏳ เหลือ ${monthsLabel(dl)} · ครบกำหนด ${dateTxt}</div>`;
+      deadline=`<div class="jar-deadline ${cls}"><i class="ti ti-clock"></i> เหลือ ${monthsLabel(dl)} · ครบกำหนด ${dateTxt}</div>`;
     }else if(dl===0){
-      deadline=`<div class="jar-deadline warn">⏳ ครบกำหนดวันนี้</div>`;
+      deadline=`<div class="jar-deadline warn"><i class="ti ti-clock"></i> ครบกำหนดวันนี้</div>`;
     }else{
       deadline=`<div class="jar-deadline over">เลยกำหนดมา ${monthsLabel(dl)} · ${dateTxt}</div>`;
     }
@@ -121,15 +121,14 @@ function jarCard(f){
   if(!f.closed){
     const net=monthNet(f);
     const req=planMonthly(f);
-    monthly=`<div class="jar-month">📅 เดือนนี้ออม ${_svFmt(net)} บาท`
+    monthly=`<div class="jar-month"><i class="ti ti-calendar"></i> เดือนนี้ออม ${_svFmt(net)} บาท`
       +(req>0?` · ควรออม ~${_svFmt(Math.ceil(req))}/เดือน`:'')+`</div>`;
   }
   const actions=f.closed
-    ? `<button class="btn btn-primary" onclick="reopenFund('${f.id}')">เปิดอีกครั้ง</button>
-       <button class="btn" onclick="openHist('${f.id}')">ประวัติ</button>`
-    : `<button class="btn btn-primary" onclick="openTx('${f.id}','in')">ฝาก</button>
-       <button class="btn" onclick="openTx('${f.id}','out')">ถอน</button>
-       <button class="btn" onclick="openHist('${f.id}')">ประวัติ</button>`;
+    ? `<button class="btn btn-primary" onclick="reopenFund('${f.id}')"><i class="ti ti-refresh"></i> เปิดอีกครั้ง</button>
+       <button class="btn" onclick="openHist('${f.id}')"><i class="ti ti-history"></i> ประวัติ</button>`
+    : `<button class="btn btn-primary" onclick="openTx('${f.id}','in')"><i class="ti ti-plus-minus"></i> ทำรายการ</button>
+       <button class="btn" onclick="openHist('${f.id}')"><i class="ti ti-history"></i> ประวัติ</button>`;
   // progress bar
   let progBar='';
   if(has){
@@ -146,7 +145,7 @@ function jarCard(f){
           <span class="jar-emoji">${f.emoji}</span>
           <span class="jar-name">${escapeHtml(f.name)}</span>
           ${has&&!f.closed?`<span class="jar-pct">${p.toFixed(0)}%</span>`:''}
-          <button class="jar-menu" onclick="openFund('${f.id}')" title="แก้ไข">⚙</button>
+          <button class="jar-menu" onclick="openFund('${f.id}')" title="แก้ไข"><i class="ti ti-settings"></i></button>
         </div>
         ${tags?`<div class="jar-tags">${tags}</div>`:''}
         <div class="jar-bal">${_svFmt(bal)} <small>บาท</small></div>
@@ -180,7 +179,7 @@ function _svRender(){
 
   if(state.funds.length===0){
     document.getElementById('filterbar').innerHTML='';
-    board.innerHTML=`<div class="empty"><div class="big">🫙</div><h3>ยังไม่มีกองเงินออม</h3>
+    board.innerHTML=`<div class="empty"><div class="big"><i class="ti ti-pig-money"></i></div><h3>ยังไม่มีกองเงินออม</h3>
       <p>เริ่มจากสร้างกองแรก เช่น “กองฉุกเฉิน” หรือ “ทริปต่อไป”</p>
       <br><button class="btn btn-primary" onclick="openFund()">+ สร้างกองแรก</button></div>`;
     return;

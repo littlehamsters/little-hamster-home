@@ -8,15 +8,86 @@ import { MODULES, MODULE_BY_ID, SYNC_KEYS } from '../modules/registry.js';
 /* ── Navigation ──────────────────────────────────────────────────── */
 const _shown = new Set(); // modules opened at least once (for firstShow)
 
+const NAV_ICONS = {
+  home: 'ti-layout-dashboard',
+  mortgage: 'ti-home-2',
+  savings: 'ti-pig-money',
+  budget: 'ti-wallet',
+  salary: 'ti-receipt-tax',
+  car: 'ti-car',
+};
+const navIcon = (id) => NAV_ICONS[id] || 'ti-point';
+
+export function buildNavMenu() {
+  const menu = document.getElementById('nav-menu');
+  if (!menu) return;
+  const items = [{ id: 'home', name: 'หน้าหลัก' }].concat(
+    MODULES.map((m) => ({ id: m.id, name: m.name }))
+  );
+  menu.innerHTML = items
+    .map(
+      (it) =>
+        `<button class="nav-menu-item" data-id="${it.id}" onclick="showModule('${it.id}');closeNavMenu()"><i class="ti ${navIcon(it.id)}"></i> ${it.name}</button>`
+    )
+    .join('');
+}
+
+export function toggleNavMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('nav-menu');
+  if (menu) menu.classList.toggle('open');
+}
+
+export function closeNavMenu() {
+  const menu = document.getElementById('nav-menu');
+  if (menu) menu.classList.remove('open');
+}
+
+export function updateBreadcrumb(n) {
+  const bc = document.getElementById('breadcrumb');
+  if (!bc) return;
+  if (n === 'home') {
+    bc.innerHTML =
+      '<span class="bc-item bc-current"><i class="ti ti-home"></i> หน้าหลัก</span>';
+  } else {
+    const m = MODULE_BY_ID[n];
+    const name = m ? m.name : n;
+    bc.innerHTML =
+      '<button class="bc-item" onclick="showModule(\'home\')"><i class="ti ti-home"></i> หน้าหลัก</button>' +
+      '<span class="bc-sep"><i class="ti ti-chevron-right"></i></span>' +
+      '<span class="bc-item bc-current"><i class="ti ' +
+      navIcon(n) +
+      '"></i> ' +
+      name +
+      '</span>';
+  }
+  document
+    .querySelectorAll('.nav-menu-item')
+    .forEach((b) => b.classList.toggle('active', b.dataset.id === n));
+}
+
+/* ── Dark mode ───────────────────────────────────────────────────── */
+function _syncDarkIcon(on) {
+  const i = document.querySelector('#darkBtn i');
+  if (i) i.className = 'ti ' + (on ? 'ti-sun' : 'ti-moon');
+}
+export function toggleDark() {
+  const on = document.documentElement.classList.toggle('dark');
+  try { localStorage.setItem('ui_dark', on ? '1' : '0'); } catch (e) {}
+  _syncDarkIcon(on);
+}
+export function applyDarkPref() {
+  let on = false;
+  try { on = localStorage.getItem('ui_dark') === '1'; } catch (e) {}
+  document.documentElement.classList.toggle('dark', on);
+  _syncDarkIcon(on);
+}
+
 export function showModule(n) {
   document.querySelectorAll('.m-app').forEach((e) => (e.style.display = 'none'));
   const target = document.getElementById('m-' + n);
   if (target) target.style.display = 'block';
-  document
-    .querySelectorAll('.nav-btn')
-    .forEach((b) => b.classList.remove('active'));
-  const nb = document.getElementById('nav-' + n);
-  if (nb) nb.classList.add('active');
+  updateBreadcrumb(n);
 
   if (n === 'home') {
     loadDash();
@@ -125,6 +196,18 @@ export function initShell() {
     unifiedBackup,
     unifiedRestore,
     applyRemote,
+    toggleNavMenu,
+    closeNavMenu,
+    buildNavMenu,
+    updateBreadcrumb,
+    toggleDark,
+  });
+  applyDarkPref();
+  buildNavMenu();
+  updateBreadcrumb('home');
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.nav-menu-wrap');
+    if (wrap && !wrap.contains(e.target)) closeNavMenu();
   });
   loadDash();
 }

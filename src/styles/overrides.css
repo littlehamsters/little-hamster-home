@@ -1,7 +1,10 @@
 /* Cross-module overrides (fonts, hidden per-module backup) */
-/* Unify all modules to Sarabun */
-#m-savings, #m-savings * { font-family:'Sarabun',sans-serif!important; letter-spacing:normal; }
+/* Savings uses the Sakai / Inter stack */
+#m-savings, #m-savings * { font-family:'Inter','IBM Plex Sans Thai',sans-serif!important; letter-spacing:normal; }
 /* Hide individual backup/restore — replaced by unified system */
 #m-savings #btnBackup, #m-savings #btnRestore { display:none!important; }
-#m-budget,  #m-budget  * { font-family:'Sarabun',sans-serif!important; letter-spacing:normal; }
+/* Budget uses the Sakai / Inter stack (Thai falls back to IBM Plex Sans Thai) */
+#m-budget, #m-budget * { font-family:'Inter','IBM Plex Sans Thai',sans-serif!important; letter-spacing:normal; }
+/* Tabler icon glyphs must keep their own font — this rule (id+class) outranks the "* !important" above */
+#m-savings .ti, #m-budget .ti { font-family:'tabler-icons'!important; }
 #m-savings .stat .num, #m-savings .jar-bal { font-weight:600; }

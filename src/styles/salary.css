@@ -132,3 +132,29 @@
   #m-salary table{font-size:13px;}
   #m-salary th,#m-salary td{padding:7px 6px;}
 }
+
+/* ═══ Salary — Sakai theme (overrides above) ═══ */
+#m-salary {
+  --st-paper:#eef2f7; --st-surface:#ffffff; --st-surface-2:#f8fafc;
+  --st-line:#e5e7eb; --st-line-soft:#eef2f7;
+  --st-ink:#1e293b; --st-muted:#64748b; --st-faint:#94a3b8;
+  --st-sage:#3b82f6; --st-sage-deep:#2563eb; --st-sage-soft:#eff6ff; --st-sage-line:#bfdbfe;
+  --st-sky:#dbeafe; --st-sky-soft:#eff6ff; --st-sky-line:#bfdbfe;
+  --st-yellow:#f59e0b; --st-yellow-soft:#fff7ed; --st-yellow-line:#fed7aa;
+  --st-clay:#b45309; --st-clay-soft:#fff7ed;
+  --st-good:#16a34a; --st-bad:#dc2626; --st-bad-soft:#fef2f2;
+  --st-radius:12px;
+  font-family:'Inter','IBM Plex Sans Thai',sans-serif;
+}
+#m-salary .brand h1,#m-salary .card-h h2,#m-salary .group-title,#m-salary .sim h3{font-family:'Inter','IBM Plex Sans Thai',sans-serif;}
+#m-salary .brand h1{font-weight:700;letter-spacing:-.02em;}
+#m-salary .btn{border-radius:8px;}
+#m-salary .btn.primary{background:var(--st-sage);border-color:var(--st-sage);color:#fff;}
+#m-salary .btn.primary:hover{background:var(--st-sage-deep);border-color:var(--st-sage-deep);color:#fff;}
+#m-salary .scard.accent{background:var(--st-surface);border-color:var(--st-line);color:var(--st-ink);}
+#m-salary .scard.accent .lbl,#m-salary .scard.accent .sub{color:var(--st-muted);}
+#m-salary .scard.accent .val{color:var(--st-ink);}
+#m-salary .yearbox,#m-salary .pselect{border-radius:8px;}
+#m-salary .yearbox select{border-radius:6px;}
+#m-salary .field input:hover,#m-salary .tinput:hover{border-color:var(--st-sage);}
+#m-salary .field input:focus,#m-salary .st-modal-input:focus,#m-salary .tinput:focus{outline:none;border-color:var(--st-sage);box-shadow:0 0 0 3px rgba(59,130,246,.2);}

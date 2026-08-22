@@ -159,3 +159,40 @@
 /* ── toast ────────────────────────────────────────────── */
 #m-car .car-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(12px); background:var(--txt); color:var(--surf); padding:9px 18px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; transition:.22s; z-index:500; pointer-events:none; box-shadow:0 4px 18px rgba(0,0,0,.18); }
 #m-car .car-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ═══ Car — Sakai theme (overrides above) ═══ */
+#m-car {
+  --bg:#eef2f7; --surf:#ffffff; --surf2:#f8fafc;
+  --line:#e5e7eb; --line2:#d1d5db;
+  --txt:#1e293b; --txt2:#64748b; --txt3:#94a3b8;
+  --sage:#3b82f6;
+  --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+  --blue:#0891b2; --blue-bg:#ecfeff; --blue-line:#a5f3fc;
+  --amber:#f97316; --amber-bg:#fff7ed; --amber-line:#fed7aa;
+  --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+  --r:12px;
+  --sh:0 1px 3px rgba(15,23,42,.05),0 1px 2px rgba(15,23,42,.04);
+}
+#m-car.m-app { font-family:'Inter','IBM Plex Sans Thai',sans-serif; background:var(--bg); }
+#m-car .car-header h1,#m-car .car-card-title,#m-car .car-metric .cm-val,#m-car .car-title,#m-car .car-modal-head h3 { font-family:'Inter','IBM Plex Sans Thai',sans-serif; }
+#m-car .car-header h1 { font-weight:700; letter-spacing:-.02em; }
+#m-car .car-card-title { font-weight:600; }
+#m-car .car-btn { border-radius:8px; border-width:1px; }
+#m-car .car-btn.primary { background:var(--sage); border-color:var(--sage); color:#fff; }
+#m-car .car-btn.primary:hover { background:#2563eb; border-color:#2563eb; color:#fff; }
+#m-car .cf input:hover,#m-car .cf-in:hover,#m-car .cr-inline input:hover { border-color:var(--sage); }
+#m-car .cf input:focus,#m-car .cf-in:focus,#m-car .cr-inline input:focus { outline:none; border-color:var(--sage); box-shadow:0 0 0 3px rgba(59,130,246,.2); }
+/* DatePicker fits the inline renewal row (don't stretch full width) */
+#m-car .cr-inline .mo-dp-field { width:auto; }
+#m-car .cr-inline .mo-dp-field input { flex:0 1 auto; width:120px!important; height:34px; padding:0 10px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-size:12.5px; border-radius:8px; }
+#m-car .cr-inline .mo-dp-icon { width:34px; flex:0 0 34px; }
+#m-car .cf .mo-dp-field { width:100%; }
+#m-car .cf .mo-dp-field input { border:1px solid var(--line); background:var(--surf); color:var(--txt); height:40px; padding:0 12px; }
+/* service table — search / filter toolbar */
+#m-car .car-sv-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#m-car .car-search { position:relative; display:inline-flex; align-items:center; }
+#m-car .car-search i { position:absolute; left:11px; color:var(--txt3); font-size:15px; pointer-events:none; }
+#m-car .car-search input { height:34px; padding:0 12px 0 32px; border:1px solid var(--line); border-radius:8px; background:var(--surf); color:var(--txt); font-family:inherit; font-size:13px; width:190px; transition:border-color .15s, box-shadow .15s; }
+#m-car .car-search input:hover { border-color:var(--sage); }
+#m-car .car-search input:focus { outline:none; border-color:var(--sage); box-shadow:0 0 0 3px rgba(59,130,246,.2); }
+#m-car .car-search input::placeholder { color:var(--txt3); }

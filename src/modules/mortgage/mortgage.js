@@ -102,8 +102,10 @@ function populateYearFilter(){
   const years=[...new Set(data.map(r=>new Date(r.date).getFullYear()))].sort();
   const prev=sel.value?+sel.value:null;
   sel.innerHTML='';
-  years.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent='ปี '+(y+543);sel.appendChild(o);});
+  years.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=(y+543);sel.appendChild(o);});
   sel.value=(prev&&years.includes(prev))?prev:years[years.length-1];
+  if(window.moInitSelects)window.moInitSelects(sel.parentElement||document);
+  if(window.moSelectRefresh)window.moSelectRefresh(sel);
 }
 function renderTable(){
   const tb=document.getElementById('mainTable'); tb.innerHTML='';
@@ -114,7 +116,7 @@ function renderTable(){
     if(selYear&&yr!==selYear) return;
     const tr=document.createElement('tr');
     const totP=r.principal+(r.prepay||0), totI=r.interest+(r.prepayInt||0);
-    tr.innerHTML=`<td>${thDate(r.date)}</td><td>${r.rate.toFixed(2)}</td><td>${_moFmt0(totP+totI)}</td><td><button class="info-btn" onclick="payerRow(${i})" title="แยกผู้จ่าย">i</button></td><td class="prin">${_moFmt(totP)}</td><td class="intr">${_moFmt(totI)}</td><td><button class="info-btn" onclick="detailRow(${i})" title="รายละเอียดต้น/ดอก">i</button></td><td>${_moFmt(r.balance)}</td><td><button class="act-btn" onclick="editRow(${i})">✏️</button><button class="act-btn del" onclick="delRow(${i})">🗑</button></td>`;
+    tr.innerHTML=`<td>${thDate(r.date)}</td><td>${r.rate.toFixed(2)}</td><td>${_moFmt0(totP+totI)}</td><td><button class="info-btn" onclick="payerRow(${i})" title="แยกผู้จ่าย">i</button></td><td class="prin">${_moFmt(totP)}</td><td class="intr">${_moFmt(totI)}</td><td><button class="info-btn" onclick="detailRow(${i})" title="รายละเอียดต้น/ดอก">i</button></td><td>${_moFmt(r.balance)}</td><td><button class="act-btn" onclick="editRow(${i})" title="แก้ไข"><i class="ti ti-pencil"></i></button><button class="act-btn del" onclick="delRow(${i})" title="ลบ"><i class="ti ti-trash"></i></button></td>`;
     tb.appendChild(tr);
   });
   if(selYear) addYearRow(tb,selYear);
@@ -172,20 +174,20 @@ function renderCharts(){
   const balData=data.map(r=>Math.round(r.balance));
   const prinData=data.map(r=>Math.round(r.principal+(r.prepay||0)));
   const intData=data.map(r=>Math.round(r.interest));
-  const grid='#e9e1d2', tick='#a99e8b';
+  const grid='#eef2f7', tick='#94a3b8';
   if(balChart)balChart.destroy();
   balChart=new Chart(document.getElementById('balChart'),{
     data:{labels,datasets:[
-      {type:'line',label:'เงินต้นคงเหลือ',data:balData,borderColor:'#6e8c8c',backgroundColor:'rgba(110,140,140,.12)',fill:true,yAxisID:'y',tension:.3,pointRadius:0,borderWidth:2.5,order:0},
-      {type:'bar',label:'งวดต้น',data:prinData,backgroundColor:'#7a8a4e',yAxisID:'y1',stack:'s',order:1},
-      {type:'bar',label:'งวดดอก',data:intData,backgroundColor:'#c0824a',yAxisID:'y1',stack:'s',order:1}
+      {type:'line',label:'เงินต้นคงเหลือ',data:balData,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.10)',fill:true,yAxisID:'y',tension:.3,pointRadius:0,borderWidth:2.5,order:0},
+      {type:'bar',label:'งวดต้น',data:prinData,backgroundColor:'#16a34a',yAxisID:'y1',stack:'s',order:1},
+      {type:'bar',label:'งวดดอก',data:intData,backgroundColor:'#f97316',yAxisID:'y1',stack:'s',order:1}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:tick,font:{family:'Sarabun'},boxWidth:12}},
+      plugins:{legend:{labels:{color:tick,font:{family:'Inter'},boxWidth:12}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw.toLocaleString('th-TH')}}},
       scales:{
         x:{ticks:{color:tick,maxTicksLimit:10,font:{size:10}},grid:{color:grid}},
-        y:{position:'left',ticks:{color:'#6e8c8c',callback:v=>(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:grid}},
+        y:{position:'left',ticks:{color:'#3b82f6',callback:v=>(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:grid}},
         y1:{position:'right',ticks:{color:tick,callback:v=>(v/1000)+'k',font:{size:10}},grid:{display:false},max:50000}
       }}
   });
@@ -194,9 +196,9 @@ function renderCharts(){
   if(splitChart)splitChart.destroy();
   splitChart=new Chart(document.getElementById('splitChart'),{
     type:'doughnut',
-    data:{labels:[n1,n2],datasets:[{data:[f,s],backgroundColor:['#7a8a4e','#6e8c8c'],borderColor:'#fdfaf3',borderWidth:3}]},
+    data:{labels:[n1,n2],datasets:[{data:[f,s],backgroundColor:['#16a34a','#3b82f6'],borderColor:'#ffffff',borderWidth:3}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
-      plugins:{legend:{position:'bottom',labels:{color:tick,font:{family:'Sarabun'},boxWidth:12,padding:14}},
+      plugins:{legend:{position:'bottom',labels:{color:tick,font:{family:'Inter'},boxWidth:12,padding:14}},
       tooltip:{callbacks:{label:c=>c.label+': '+c.raw.toLocaleString('th-TH')+' บาท'}}}}
   });
 }
@@ -222,7 +224,7 @@ function calcNewInstallment(){
   const bal=lastBalance();
   const rate=_moNv('aRate')||0;
   const inst=(_moNv('aFoam')||0)+(_moNv('aSeng')||0);
-  const dateStr=document.getElementById('aDate').value;
+  const dateStr=window.moGetDate('aDate');
   let days=30;
   if(dateStr){const d=new Date(dateStr); days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();}
   document.getElementById('aInstallShow').value=inst?inst.toFixed(2):'';
@@ -235,7 +237,7 @@ function calcNewInstallment(){
 
 function addRow(){
   const r={
-    date:document.getElementById('aDate').value,
+    date:window.moGetDate('aDate'),
     foam:_moNv('aFoam')||0,
     seng:_moNv('aSeng')||0,
     rate:_moNv('aRate')||0,
@@ -247,6 +249,7 @@ function addRow(){
   if(!r.date){_moToast('กรุณาเลือกวันที่');return;}
   data.push(r);
   ['aDate','aFoam','aSeng','aRate','aInstallShow','aPrin','aInt','aPrepay','aPrepayInt'].forEach(id=>document.getElementById(id).value='');
+  const _adp=document.getElementById('aDate'); if(_adp) _adp.dataset.iso='';
   recalc(); _moToast('เพิ่มงวดเรียบร้อย'); 
   document.querySelector('.tab').click();
 }
@@ -267,7 +270,7 @@ function editRow(i){
   const n1=document.getElementById('name1').value, n2=document.getElementById('name2').value;
   document.getElementById('modalArea').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><h3>แก้ไขงวด ${thDate(r.date)}</h3>
     <div class="add-grid">
-      <div class="field"><label>วันที่</label><input type="date" id="eDate" value="${r.date}"></div>
+      <div class="field"><label>วันที่</label><input type="date" class="mo-dp" id="eDate" value="${r.date}"></div>
       <div class="field"><label>${n1}</label><input type="text" inputmode="decimal" id="eFoam" value="${r.foam}"></div>
       <div class="field"><label>${n2}</label><input type="text" inputmode="decimal" id="eSeng" value="${r.seng}"></div>
       <div class="field"><label>ดอกเบี้ย %</label><input type="text" inputmode="decimal" step="0.01" id="eRate" value="${r.rate}"></div>
@@ -280,9 +283,10 @@ function editRow(i){
       <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveEdit(${i})">บันทึก</button>
     </div></div></div>`;
+  if (window.moInitDatePickers) window.moInitDatePickers(document.getElementById('modalArea'));
 }
 function saveEdit(i){
-  data[i]={date:document.getElementById('eDate').value,foam:_moNv('eFoam')||0,seng:_moNv('eSeng')||0,rate:_moNv('eRate')||0,principal:_moNv('ePrin')||0,interest:_moNv('eInt')||0,prepay:_moNv('ePrepay')||0,prepayInt:_moNv('ePrepayInt')||0};
+  data[i]={date:window.moGetDate('eDate'),foam:_moNv('eFoam')||0,seng:_moNv('eSeng')||0,rate:_moNv('eRate')||0,principal:_moNv('ePrin')||0,interest:_moNv('eInt')||0,prepay:_moNv('ePrepay')||0,prepayInt:_moNv('ePrepayInt')||0};
   closeModal(); recalc(); _moToast('บันทึกการแก้ไขแล้ว');
 }
 function payerRow(i){
@@ -453,11 +457,11 @@ function calcPlan(doScroll){
   if(planChart)planChart.destroy();
   planChart=new Chart(document.getElementById('planChart'),{
     type:'line',
-    data:{labels,datasets:[{label:'เงินต้นคงเหลือ',data:rows.map(r=>Math.round(Math.max(0,r.end||0))),borderColor:'#6e8c8c',backgroundColor:'rgba(110,140,140,.12)',fill:true,tension:.25,pointRadius:2,borderWidth:2.5}]},
+    data:{labels,datasets:[{label:'เงินต้นคงเหลือ',data:rows.map(r=>Math.round(Math.max(0,r.end||0))),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.10)',fill:true,tension:.25,pointRadius:2,borderWidth:2.5}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toLocaleString('en-US')+' บาท'}}},
-      scales:{x:{ticks:{color:'#a99e8b',maxTicksLimit:10,font:{size:10}},grid:{color:'#e9e1d2'}},
-              y:{ticks:{color:'#a99e8b',callback:v=>(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'#e9e1d2'}}}}
+      scales:{x:{ticks:{color:'#94a3b8',maxTicksLimit:10,font:{size:10}},grid:{color:'#eef2f7'}},
+              y:{ticks:{color:'#94a3b8',callback:v=>(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'#eef2f7'}}}}
   });
 
   if(doScroll) res.scrollIntoView({behavior:'smooth',block:'nearest'});

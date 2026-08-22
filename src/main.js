@@ -9,6 +9,10 @@
    ═══════════════════════════════════════════════════════════════════ */
 import './modules/registry.js';
 import './core/firebase.js';
+import { moInitDatePickers } from './core/datepicker.js';
+import { moInitSelects } from './core/select.js';
 import { initShell } from './core/app.js';
 
 initShell();
+moInitDatePickers(document);
+moInitSelects(document);

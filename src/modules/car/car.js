@@ -3,9 +3,9 @@
 
 const CAR_KEY = 'car_v1';
 const RENEW_TYPES = [
-  { k: 'tax', label: 'ภาษีรถ', icon: '🧾' },
-  { k: 'act', label: 'พ.ร.บ.', icon: '🛡️' },
-  { k: 'ins', label: 'ประกันภัย', icon: '📋' },
+  { k: 'tax', label: 'ภาษีรถ', icon: '<i class="ti ti-receipt-2"></i>' },
+  { k: 'act', label: 'พ.ร.บ.', icon: '<i class="ti ti-shield-check"></i>' },
+  { k: 'ins', label: 'ประกันภัย', icon: '<i class="ti ti-file-description"></i>' },
 ];
 
 let carState = { cars: [], licenses: [], sel: '' };
@@ -64,7 +64,7 @@ const _cUrg = (iso) => {
 };
 const _cNv = (id) => {
   const el = document.getElementById(id);
-  return el ? el.value : '';
+  return el ? (el.dataset.iso != null ? el.dataset.iso : el.value) : '';
 };
 
 function _cToast(m) {
@@ -175,7 +175,7 @@ function _carModal(title, bodyHtml, saveLabel, saveExpr) {
     <div class="car-overlay show" onclick="if(event.target===this)carCloseModal()">
       <div class="car-modal">
         <div class="car-modal-head"><h3>${title}</h3>
-          <button class="car-modal-x" onclick="carCloseModal()" aria-label="ปิด">✕</button></div>
+          <button class="car-modal-x" onclick="carCloseModal()" aria-label="ปิด"><i class="ti ti-x"></i></button></div>
         <div class="car-modal-body">${bodyHtml}</div>
         <div class="car-modal-foot">
           <button class="car-btn" onclick="carCloseModal()">ยกเลิก</button>
@@ -183,6 +183,7 @@ function _carModal(title, bodyHtml, saveLabel, saveExpr) {
         </div>
       </div>
     </div>`;
+  if (window.moInitDatePickers) window.moInitDatePickers(area);
   setTimeout(() => area.querySelector('input')?.focus(), 30);
 }
 function carCloseModal() {
@@ -261,7 +262,7 @@ function carOpenLicModal(id) {
     `<label class="cf">ชื่อคน<input type="text" id="carLicName" maxlength="24" value="${
       l ? _cEsc(l.name) : ''
     }" placeholder="เช่น โฟม / เก่ง"></label>
-     <label class="cf">วันหมดอายุ<input type="date" id="carLicDue" value="${
+     <label class="cf">วันหมดอายุ<input type="date" class="mo-dp" id="carLicDue" value="${
        l ? _cEsc(l.due) : ''
      }"></label>`,
     l ? 'บันทึก' : 'เพิ่มคน',
@@ -302,7 +303,7 @@ function _carSvDetailRow(item, cost) {
   return `<div class="car-sv-row">
     <input class="car-sv-item cf-in" type="text" value="${_cEsc(item || '')}" placeholder="เช่น เปลี่ยนน้ำมันเครื่อง">
     <input class="car-sv-cost cf-in" type="number" inputmode="decimal" value="${cost ? _cEsc(cost) : ''}" placeholder="ราคา ฿" oninput="carSvUpdTotal()">
-    <button type="button" class="car-del" onclick="this.closest('.car-sv-row').remove();carSvUpdTotal()" title="ลบรายการนี้">✕</button>
+    <button type="button" class="car-del" onclick="this.closest('.car-sv-row').remove();carSvUpdTotal()" title="ลบรายการนี้"><i class="ti ti-x"></i></button>
   </div>`;
 }
 function carSvAddDetail() {
@@ -335,8 +336,8 @@ function carOpenServiceModal(id) {
   const rowsHtml = (lines.length ? lines : [{ item: '', cost: '' }])
     .map((x) => _carSvDetailRow(x.item, x.cost)).join('');
   _carModal(
-    s ? '🔧 แก้ไขบันทึกซ่อม / บำรุง' : '🔧 เพิ่มบันทึกซ่อม / บำรุง',
-    `<label class="cf">วันที่<input type="date" id="carSvDate" value="${s ? _cEsc(s.date) : _cToday()}"></label>
+    s ? '<i class="ti ti-tool"></i> แก้ไขบันทึกซ่อม / บำรุง' : '<i class="ti ti-tool"></i> เพิ่มบันทึกซ่อม / บำรุง',
+    `<label class="cf">วันที่<input type="date" class="mo-dp" id="carSvDate" value="${s ? _cEsc(s.date) : _cToday()}"></label>
      <label class="cf">เลขไมล์ (กม.)<input type="number" id="carSvOdo" inputmode="numeric" value="${s && s.odo ? _cEsc(s.odo) : ''}" placeholder="เช่น 10200"></label>
      <div class="cf-label">รายละเอียด (ระบุราคาแยกแต่ละรายการ)</div>
      <div id="carSvItems">${rowsHtml}</div>
@@ -404,9 +405,9 @@ function _carSummaryMetrics() {
        </div>
      </div>`;
   return `<div class="car-strip car-strip-top">
-    ${cell('🚗', 'ic-green', 'รถทั้งหมด', carState.cars.length + ' คัน', '', 'กำลังใช้งาน')}
-    ${cell('💰', 'ic-gold', 'ค่าใช้จ่ายรวม', _cFmt(total) + ' ฿', 'green', 'ปี ' + yr)}
-    ${cell('🛡️', 'ic-blue', 'ต่ออายุใกล้ครบ', _cEsc(r.txt), 'sm urg-' + r.cls, r.sub, 'urg-' + r.cls)}
+    ${cell('<i class="ti ti-car"></i>', 'ic-green', 'รถทั้งหมด', carState.cars.length + ' คัน', '', 'กำลังใช้งาน')}
+    ${cell('<i class="ti ti-cash"></i>', 'ic-gold', 'ค่าใช้จ่ายรวม', _cFmt(total) + ' ฿', 'green', 'ปี ' + yr)}
+    ${cell('<i class="ti ti-shield-check"></i>', 'ic-blue', 'ต่ออายุใกล้ครบ', _cEsc(r.txt), 'sm urg-' + r.cls, r.sub, 'urg-' + r.cls)}
     ${cell('🪪', 'ic-clay', 'ใบขับขี่ใกล้หมด', _cEsc(l.txt), 'sm urg-' + l.cls, l.sub, 'urg-' + l.cls)}
   </div>`;
 }
@@ -423,8 +424,8 @@ function _carLicenseSection() {
           <div class="row-sub">หมดอายุ ${_cShortDate(l.due)} · <span class="cr-note ${u.cls}">${u.note}</span></div>
         </div>
         <span class="row-act">
-          <button class="car-del" onclick="carOpenLicModal('${l.id}')" title="แก้ไข">✎</button>
-          <button class="car-del" onclick="carDelLicense('${l.id}')" title="ลบ">✕</button>
+          <button class="car-del" onclick="carOpenLicModal('${l.id}')" title="แก้ไข"><i class="ti ti-pencil"></i></button>
+          <button class="car-del" onclick="carDelLicense('${l.id}')" title="ลบ"><i class="ti ti-trash"></i></button>
         </span>
       </div>`;
     })
@@ -447,7 +448,7 @@ function _carFleetSection() {
         ? `<span class="cov-next ${u.cls}">${nx.label} · ${u.note}</span>`
         : '<span class="cov-next none">ยังไม่ตั้งต่ออายุ</span>';
       return `<div class="car-row car-ov ${c.id === carState.sel ? 'active' : ''}" onclick="carSelect('${c.id}')">
-        <span class="row-ic">🚗</span>
+        <span class="row-ic"><i class="ti ti-car"></i></span>
         <div class="row-main">
           <div class="row-name">${_cEsc(c.name)}${
         c.plate ? ` <span class="cc-plate">${_cEsc(c.plate)}</span>` : ''
@@ -461,7 +462,7 @@ function _carFleetSection() {
     .join('');
   const empty = carState.cars.length ? '' : '<div class="car-empty">ยังไม่มีรถ</div>';
   return `<div class="car-card">
-    <div class="car-card-head"><div class="car-card-title">🚗 รถทั้งหมด <span class="cst-sub">(กดเพื่อดูรายละเอียด)</span></div>
+    <div class="car-card-head"><div class="car-card-title"><i class="ti ti-car"></i> รถทั้งหมด <span class="cst-sub">(กดเพื่อดูรายละเอียด)</span></div>
       <button class="car-btn primary sm" onclick="carOpenCarModal()">+ เพิ่มรถ</button></div>
     <div class="car-list">${rows}</div>${empty}
   </div>`;
@@ -475,7 +476,7 @@ function _carRenewCard(c, t) {
     <span class="row-ic">${t.icon}</span>
     <span class="cr-lbl">${t.label}</span>
     <label class="cr-inline">ครบกำหนด
-      <input type="date" value="${_cEsc(r.due || '')}" onchange="carSetRenew('${t.k}','due',this.value)"></label>
+      <input type="date" class="mo-dp" value="${_cEsc(r.due || '')}" onchange="carSetRenew('${t.k}','due',window.moGetDate(this))"></label>
     <label class="cr-inline">฿
       <input type="number" inputmode="decimal" value="${r.cost ? _cEsc(r.cost) : ''}" placeholder="0"
         onchange="carSetRenew('${t.k}','cost',this.value)"></label>
@@ -500,8 +501,8 @@ function _carServiceRows(c) {
       <td class="l">${bullets}</td>
       <td class="num">${_carSvRecTotal(s) ? _cFmt(_carSvRecTotal(s)) : '—'}</td>
       <td class="row-act">
-        <button class="car-del" onclick="carOpenServiceModal('${s.id}')" title="แก้ไข">✎</button>
-        <button class="car-del" onclick="carDelService('${s.id}')" title="ลบ">✕</button>
+        <button class="car-del" onclick="carOpenServiceModal('${s.id}')" title="แก้ไข"><i class="ti ti-pencil"></i></button>
+        <button class="car-del" onclick="carDelService('${s.id}')" title="ลบ"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
     })
@@ -512,34 +513,62 @@ function _carDetail(c) {
     rnT = _carRenewTotal(c);
   return `
     <div class="car-detail-head">
-      <div class="car-title">🚗 ${_cEsc(c.name)}${
+      <div class="car-title"><i class="ti ti-car"></i> ${_cEsc(c.name)}${
     c.plate ? ` <span class="cc-plate">${_cEsc(c.plate)}</span>` : ''
   }</div>
       <div class="car-head-act">
-        <button class="car-btn sm" onclick="carOpenCarModal('${c.id}')">✎ แก้ไข</button>
-        <button class="car-btn danger sm" onclick="carDelCar('${c.id}')">🗑 ลบ</button>
+        <button class="car-btn sm" onclick="carOpenCarModal('${c.id}')"><i class="ti ti-pencil"></i> แก้ไข</button>
+        <button class="car-btn danger sm" onclick="carDelCar('${c.id}')"><i class="ti ti-trash"></i> ลบ</button>
       </div>
     </div>
     <div class="car-strip">
-      <div class="cs"><span class="stat-ic ic-green">💰</span><div class="cs-tx"><div class="cs-lbl">ค่าใช้จ่ายรวม</div><div class="cs-val green">${_cFmt(
+      <div class="cs"><span class="stat-ic ic-green"><i class="ti ti-cash"></i></span><div class="cs-tx"><div class="cs-lbl">ค่าใช้จ่ายรวม</div><div class="cs-val green">${_cFmt(
         svT + rnT
       )} ฿</div><div class="cs-sub">ปี ${new Date().getFullYear() + 543}</div></div></div>
-      <div class="cs"><span class="stat-ic ic-blue">🔧</span><div class="cs-tx"><div class="cs-lbl">ซ่อม/บำรุง</div><div class="cs-val">${_cFmt(svT)} ฿</div><div class="cs-sub">${(c.service || []).length} ครั้ง</div></div></div>
-      <div class="cs"><span class="stat-ic ic-gold">📄</span><div class="cs-tx"><div class="cs-lbl">ต่ออายุ</div><div class="cs-val">${_cFmt(rnT)} ฿</div><div class="cs-sub">รวมทั้งหมด</div></div></div>
+      <div class="cs"><span class="stat-ic ic-blue"><i class="ti ti-tool"></i></span><div class="cs-tx"><div class="cs-lbl">ซ่อม/บำรุง</div><div class="cs-val">${_cFmt(svT)} ฿</div><div class="cs-sub">${(c.service || []).length} ครั้ง</div></div></div>
+      <div class="cs"><span class="stat-ic ic-gold"><i class="ti ti-file-invoice"></i></span><div class="cs-tx"><div class="cs-lbl">ต่ออายุ</div><div class="cs-val">${_cFmt(rnT)} ฿</div><div class="cs-sub">รวมทั้งหมด</div></div></div>
     </div>
     <div class="car-card">
-      <div class="car-card-head"><div class="car-card-title">📄 ต่อภาษี / พ.ร.บ. / ประกัน</div></div>
+      <div class="car-card-head"><div class="car-card-title"><i class="ti ti-file-invoice"></i> ต่อภาษี / พ.ร.บ. / ประกัน</div></div>
       <div class="car-list">${RENEW_TYPES.map((t) => _carRenewCard(c, t)).join('')}</div>
     </div>
     <div class="car-card">
-      <div class="car-card-head"><div class="car-card-title">🔧 บันทึกซ่อม / บำรุงรักษา</div>
-        <button class="car-btn primary sm" onclick="carOpenServiceModal()">+ เพิ่มซ่อม</button></div>
-      <div class="car-table-wrap"><table class="car-table">
+      <div class="car-card-head"><div class="car-card-title"><i class="ti ti-tool"></i> บันทึกซ่อม / บำรุงรักษา</div>
+        <div class="car-sv-tools">
+          <div class="car-search"><i class="ti ti-search"></i><input type="text" id="carSvSearch" placeholder="ค้นหารายการ..." oninput="carFilterService()"></div>
+          <button class="car-btn primary sm" onclick="carOpenServiceModal()"><i class="ti ti-plus"></i> เพิ่มซ่อม</button>
+        </div></div>
+      <div class="car-table-wrap"><table class="car-table" id="carSvTable">
         <thead><tr><th>วันที่</th><th class="num">ไมล์</th><th class="l">รายการ</th><th class="num">ราคา</th><th></th></tr></thead>
         <tbody>${_carServiceRows(c)}</tbody></table></div>
     </div>`;
 }
 
+function carFilterService() {
+  const el = document.getElementById('carSvSearch');
+  const q = (el ? el.value : '').trim().toLowerCase();
+  const t = document.getElementById('carSvTable');
+  if (!t) return;
+  let shown = 0;
+  t.querySelectorAll('tbody tr').forEach((tr) => {
+    if (tr.querySelector('.car-empty')) return;
+    const hit = !q || tr.textContent.toLowerCase().includes(q);
+    tr.style.display = hit ? '' : 'none';
+    if (hit) shown++;
+  });
+  let none = t.querySelector('.car-sv-none');
+  if (q && shown === 0) {
+    if (!none) {
+      none = document.createElement('tr');
+      none.className = 'car-sv-none';
+      none.innerHTML = '<td colspan="5" class="car-empty">ไม่พบรายการที่ค้นหา</td>';
+      t.querySelector('tbody').appendChild(none);
+    }
+    none.style.display = '';
+  } else if (none) {
+    none.style.display = 'none';
+  }
+}
 function _carRender() {
   const root = document.getElementById('carBody');
   if (!root) return;
@@ -551,6 +580,7 @@ function _carRender() {
       ${_carLicenseSection()}
     </div>
     ${c ? _carDetail(c) : ''}`;
+  if (window.moInitDatePickers) window.moInitDatePickers(root);
 }
 
 /* ── expose to global scope (inline handlers + registry) ─────────── */
@@ -571,6 +601,7 @@ Object.assign(window, {
   carAddService,
   carSaveService,
   carDelService,
+  carFilterService,
   carSvAddDetail,
   carSvUpdTotal,
   carCloseModal,

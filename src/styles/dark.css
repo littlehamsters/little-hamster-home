@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Dark mode — activated by `dark` class on <html>.
+   (1) Repoints each module's colour vars to a dark palette.
+   (2) Overrides the globally hard-coded chrome (topbar, home, popups).
+   ═══════════════════════════════════════════════════════════════════ */
+html.dark { color-scheme: dark; }
+html.dark body { background: #0a0a0a; color: #f4f4f5; }
+
+/* ── Topbar / nav / breadcrumb / menu ─────────────────────────────── */
+html.dark .shell-nav { background:#161616; border-bottom-color:#2e2e2e; box-shadow:0 1px 3px rgba(0,0,0,.45); }
+html.dark .nav-brand { color:#f1f5f9; }
+html.dark .nav-menu-btn { background:#161616; border-color:#2e2e2e; color:#d4d4d4; }
+html.dark .nav-menu-btn:hover { background:#2e2e2e; border-color:#404040; }
+html.dark .nav-menu { background:#161616; border-color:#2e2e2e; box-shadow:0 10px 28px rgba(0,0,0,.5); }
+html.dark .nav-menu-item { color:#d4d4d4; }
+html.dark .nav-menu-item i { color:#a3a3a3; }
+html.dark .nav-menu-item:hover, html.dark .nav-menu-item.active { background:#1e3a5f; color:#93c5fd; }
+html.dark .nav-menu-item:hover i, html.dark .nav-menu-item.active i { color:#93c5fd; }
+html.dark .bc-item { color:#a3a3a3; }
+html.dark .bc-item:hover { color:#93c5fd; }
+html.dark .bc-current { color:#f1f5f9; }
+html.dark .bc-sep { color:#404040; }
+html.dark .nav-icon-btn { background:#161616; border-color:#2e2e2e; color:#d4d4d4; }
+html.dark .nav-icon-btn:hover { background:#2e2e2e; color:#f1f5f9; }
+
+/* ── Home dashboard ───────────────────────────────────────────────── */
+html.dark #m-home { background:#0a0a0a; }
+html.dark .home-hero-title { color:#f1f5f9; }
+html.dark .home-hero-sub { color:#a3a3a3; }
+html.dark .app-card { background:#161616; border-color:#2e2e2e; box-shadow:0 1px 3px rgba(0,0,0,.35); }
+html.dark .app-card:hover { border-color:#404040; box-shadow:0 8px 22px rgba(0,0,0,.45); }
+html.dark .ac-name { color:#f1f5f9; }
+html.dark .ac-arrow { color:#737373; }
+html.dark .mr-bg { stroke:#2e2e2e; }
+html.dark .mr-pct { color:#f1f5f9; }
+html.dark .mr-lbl { color:#a3a3a3; }
+html.dark .ac-chip { background:#0a0a0a; border-color:#2e2e2e; }
+html.dark .ac-chip.green { background:#14321f; border-color:#1e5235; }
+html.dark .ac-chip.blue { background:#172a46; border-color:#1e3a5f; }
+html.dark .ac-chip.yellow { background:#3a2a12; border-color:#5a3e18; }
+html.dark .chip-lbl { color:#a3a3a3; }
+html.dark .chip-val { color:#f1f5f9; }
+html.dark .home-foot { color:#737373; }
+html.dark .home-grid .app-card:nth-child(1) .ac-icon { background:#172a46; }
+html.dark .home-grid .app-card:nth-child(2) .ac-icon { background:#14321f; }
+html.dark .home-grid .app-card:nth-child(3) .ac-icon { background:#3a2a12; }
+html.dark .home-grid .app-card:nth-child(4) .ac-icon { background:#241b3a; }
+html.dark .home-grid .app-card:nth-child(5) .ac-icon { background:#0e2e34; }
+
+/* ── User chip / logout / sync ────────────────────────────────────── */
+html.dark .fb-user-chip { background:#0a0a0a; border-color:#2e2e2e; color:#f4f4f5; }
+html.dark .fb-logout { background:#161616; border-color:#2e2e2e; color:#a3a3a3; }
+html.dark .fb-logout:hover { background:#3a1717; color:#f87171; border-color:#5a2020; }
+html.dark .fb-sync { color:#a3a3a3; }
+
+/* ── DatePicker + Custom Select popups ────────────────────────────── */
+html.dark .mo-dp-icon { background:#0a0a0a; border-color:#2e2e2e; color:#a3a3a3; }
+html.dark .mo-dp-icon:hover { background:#2e2e2e; color:#f4f4f5; }
+html.dark .mo-dp-pop { background:#161616; border-color:#2e2e2e; box-shadow:0 12px 32px rgba(0,0,0,.55); }
+html.dark .mo-dp-title { color:#f1f5f9; }
+html.dark .mo-dp-nav { color:#a3a3a3; }
+html.dark .mo-dp-nav:hover { background:#2e2e2e; color:#f1f5f9; }
+html.dark .mo-dp-dow span { color:#737373; }
+html.dark .mo-dp-day { color:#d4d4d4; }
+html.dark .mo-dp-day:hover:not(:disabled) { background:#1e3a5f; color:#93c5fd; }
+html.dark .mo-dp-day.mo-dp-out { color:#404040; }
+html.dark .mo-dp-day.is-today { background:#14321f; color:#4ade80; }
+html.dark .mo-dp-foot { border-top-color:#2e2e2e; }
+html.dark .mo-dp-foot button { color:#a3a3a3; }
+html.dark .mo-dp-foot button:hover { background:#2e2e2e; color:#93c5fd; }
+html.dark .mo-sel-trigger { background:#161616; border-color:#2e2e2e; color:#f4f4f5; }
+html.dark .mo-sel-trigger:hover { background:#1f1f1f; }
+html.dark .mo-sel-list { background:#161616; border-color:#2e2e2e; box-shadow:0 10px 28px rgba(0,0,0,.5); }
+html.dark .mo-sel-opt { color:#d4d4d4; }
+html.dark .mo-sel-opt:hover, html.dark .mo-sel-opt.is-sel { background:#1e3a5f; color:#93c5fd; }
+html.dark .mo-sel-caret { color:#737373; }
+
+/* ── Module palette var overrides (covers module content) ─────────── */
+html.dark #m-budget {
+  --ink:#f4f4f5; --ink2:#a3a3a3; --ink3:#737373;
+  --paper:#0a0a0a; --card:#161616; --card2:#242424;
+  --line:#2e2e2e; --line2:#404040;
+  --sky-bg:#172a46; --sky-line:#1e3a5f;
+  --rose-bg:#3a1b2b; --rose-line:#5a2740;
+  --sage-bg:#14321f; --sage-line:#1e5235;
+  --amber-bg:#3a2a12; --amber-line:#5a3e18;
+  --teal-bg:#0e2e34; --teal-line:#164e57;
+  --lilac-bg:#241b3a; --lilac-line:#3a2c5a;
+  --good-bg:#14321f; --good-line:#1e5235;
+  --bad-bg:#3a1717; --bad-line:#5a2020;
+  --sh:0 1px 3px rgba(0,0,0,.4);
+}
+html.dark #m-budget .sum-table th, html.dark #m-budget .cc-table th, html.dark #m-budget .cc-owner-table th { background:#0a0a0a; }
+html.dark #m-budget input::placeholder { color:#737373; }
+
+html.dark #m-mortgage {
+  --bg:#0a0a0a; --surface:#161616; --surface-2:#242424;
+  --line:#2e2e2e; --line-soft:#242424;
+  --txt:#f4f4f5; --txt-2:#a3a3a3; --txt-3:#737373;
+  --green-soft:#14321f; --amber-soft:#3a2a12; --red-soft:#3a1717; --blue-soft:#172a46;
+  --sh:0 1px 3px rgba(0,0,0,.4);
+}
+html.dark #m-mortgage thead th { background:#161616; }
+html.dark #m-mortgage .brand-icon { background:#172a46; border-color:#1e3a5f; }
+
+html.dark #m-savings, html.dark #m-savings[data-theme], html.dark #m-savings[data-theme="island"] {
+  --paper:#0a0a0a; --paper-2:#242424; --card:#161616;
+  --ink:#f4f4f5; --ink-soft:#a3a3a3; --line:#2e2e2e;
+}
+html.dark #m-savings.m-app, html.dark #m-savings[data-theme="island"].m-app { background-color:#0a0a0a!important; }
+html.dark #m-savings .jar-prog-track, html.dark #m-savings .overall-bar .track { background:#2e2e2e; }
+html.dark #m-savings .sv-prog-track { background:#2e2e2e; }
+
+html.dark #m-car {
+  --bg:#0a0a0a; --surf:#161616; --surf2:#242424;
+  --line:#2e2e2e; --line2:#404040;
+  --txt:#f4f4f5; --txt2:#a3a3a3; --txt3:#737373;
+  --green-bg:#14321f; --green-line:#1e5235;
+  --blue-bg:#0e2e34; --blue-line:#164e57;
+  --amber-bg:#3a2a12; --amber-line:#5a3e18;
+  --red-bg:#3a1717; --red-line:#5a2020;
+}
+
+html.dark #m-salary {
+  --st-paper:#0a0a0a; --st-surface:#161616; --st-surface-2:#242424;
+  --st-line:#2e2e2e; --st-line-soft:#242424;
+  --st-ink:#f4f4f5; --st-muted:#a3a3a3; --st-faint:#737373;
+  --st-sage-soft:#172a46; --st-sage-line:#1e3a5f;
+  --st-sky:#172a46; --st-sky-soft:#0e2e34; --st-sky-line:#1e3a5f;
+  --st-yellow-soft:#3a2a12; --st-yellow-line:#5a3e18;
+  --st-clay-soft:#3a2a12;
+  --st-bad-soft:#3a1717;
+  --st-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+html.dark #m-salary thead th { background:#161616; }
+html.dark #m-salary .sim .out .o { background:rgba(255,255,255,.06); }
+html.dark #m-salary .sim label, html.dark #m-salary .sim .out .o .k { color:#a3a3a3; }
+html.dark #m-salary .sim, html.dark #m-salary .sim h3 { color:#f4f4f5; }

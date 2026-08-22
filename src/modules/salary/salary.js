@@ -68,10 +68,10 @@ function renderPeople(){
   state.people.forEach(p=>{opts+=`<option value="${p.id}"${p.id===state.activeId?" selected":""}>${esc(p.name||"—")}</option>`;});
   opts+=`<option value="__add__">＋ เพิ่มคนใหม่…</option>`;
   bar.innerHTML=`<span class="pl">บัญชีของ:</span>
-    <select id="stPersonSelect" class="pselect">${opts}</select>
+    <select id="stPersonSelect" class="pselect mo-sel">${opts}</select>
     <button class="btn" id="stAddPersonBtn">＋ เพิ่มคน</button>
-    <button class="btn" id="stRenameBtn">✏️ เปลี่ยนชื่อ</button>
-    <button class="btn danger" id="stDelPersonBtn">🗑️ ลบบัญชีนี้</button>`;
+    <button class="btn" id="stRenameBtn"><i class="ti ti-pencil"></i> เปลี่ยนชื่อ</button>
+    <button class="btn danger" id="stDelPersonBtn"><i class="ti ti-trash"></i> ลบบัญชีนี้</button>`;
   document.getElementById("stPersonSelect").addEventListener("change",async e=>{
     const v=e.target.value;
     if(v==="__add__"){await addPerson();renderPeople();}else selPerson(v);
@@ -170,7 +170,7 @@ function refresh(){
   let h=ln("เงินได้พึงประเมิน",fmt(r.income))+ln("หักค่าใช้จ่าย","-"+fmt(r.exp))+ln("หักค่าลดหย่อนรวม","-"+fmt(r.totalAllow))+ln("เงินได้สุทธิ (ฐานภาษี)",fmt(r.net),{bold:true,top:true})+ln("ภาษีที่ต้องชำระ",fmt(r.tax),{bold:true,color:'var(--st-clay)'})+ln("อัตราภาษีขั้นสูงสุด",(r.mg*100)+"%");
   document.getElementById("stResLines").innerHTML=h;
   const co=document.getElementById("stResCallout");
-  co.innerHTML=r.diff>=0?`<div class="callout"><span class="ic">✅</span><div>หัก ณ ที่จ่ายไว้ <b>${fmt(r.tWHT)}</b> มากกว่าภาษีจริง <b>${fmt(r.tax)}</b> — ยื่นแล้ว<b> ขอคืนได้ ${fmt(r.diff)} บาท</b></div></div>`:`<div class="callout clay"><span class="ic">⚠️</span><div>หัก ณ ที่จ่ายไว้ <b>${fmt(r.tWHT)}</b> น้อยกว่าภาษีจริง <b>${fmt(r.tax)}</b> — ตอนยื่นต้อง<b> จ่ายเพิ่ม ${fmt(-r.diff)} บาท</b></div></div>`;
+  co.innerHTML=r.diff>=0?`<div class="callout"><span class="ic"><i class="ti ti-circle-check"></i></span><div>หัก ณ ที่จ่ายไว้ <b>${fmt(r.tWHT)}</b> มากกว่าภาษีจริง <b>${fmt(r.tax)}</b> — ยื่นแล้ว<b> ขอคืนได้ ${fmt(r.diff)} บาท</b></div></div>`:`<div class="callout clay"><span class="ic"><i class="ti ti-alert-triangle"></i></span><div>หัก ณ ที่จ่ายไว้ <b>${fmt(r.tWHT)}</b> น้อยกว่าภาษีจริง <b>${fmt(r.tax)}</b> — ตอนยื่นต้อง<b> จ่ายเพิ่ม ${fmt(-r.diff)} บาท</b></div></div>`;
   let bh="";r.detail.forEach(b=>{const span=b.hi===Infinity?1e6:(b.hi-b.lo);const pct=b.amt>0?Math.min(100,b.amt/span*100):0;bh+=`<div class="bracket-row${b.active?' br-row-active':''}"><div class="br-rate">${b.rate*100}%</div><div class="br-track"><div class="br-fill" style="width:${pct}%"></div></div><div class="br-amt">${fmt(b.lo)}–${b.hi===Infinity?"ขึ้นไป":fmt(b.hi)}</div><div class="br-tax">${b.t>0?fmt(b.t):"—"}</div></div>`;});
   bh+=`<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:2px solid var(--st-line);font-weight:600"><span>รวมภาษี</span><span class="st-num" style="color:var(--st-clay)">${fmt(r.tax)}</span></div>`;
   document.getElementById("stBrackets").innerHTML=bh;

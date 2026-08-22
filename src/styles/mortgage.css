@@ -86,9 +86,11 @@
 #m-mortgage .plan-legend i {width:12px;height:12px;border-radius:3px;display:inline-block}
 #m-mortgage .yr-row {background:var(--surface-2)!important;font-weight:600}
 #m-mortgage .yr-row td {color:var(--txt);border-bottom:1px solid var(--line);border-top:1px solid var(--line)}
-#m-mortgage .act-btn {background:transparent;border:none;color:var(--txt-3);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:5px}
-#m-mortgage .act-btn:hover {background:var(--surface-2);color:var(--txt)}
-#m-mortgage .act-btn.del:hover {color:var(--red)}
+#m-mortgage .act-btn {display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--surface);border:1px solid var(--line);color:var(--txt-2);cursor:pointer;font-size:14px;padding:0;border-radius:6px;transition:.15s;margin-left:4px;vertical-align:middle}
+#m-mortgage .act-btn i {font-size:14px;line-height:1}
+#m-mortgage .act-btn:hover {background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+#m-mortgage .act-btn.del {border-color:var(--red-soft);background:var(--red-soft);color:var(--red)}
+#m-mortgage .act-btn.del:hover {background:var(--red);border-color:var(--red);color:#fff}
 #m-mortgage .info-btn {width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--txt-2);font-size:12px;font-style:italic;font-family:Georgia,'Times New Roman',serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.15s;line-height:1}
 #m-mortgage .info-btn:hover {border-color:var(--accent);color:var(--accent)}
 #m-mortgage .dl-sec {font-size:11px;font-weight:600;color:var(--txt-3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px}
@@ -119,15 +121,32 @@
 #m-mortgage .modal h3 {font-size:17px;font-weight:600;margin-bottom:6px;font-family:var(--font-display)}
 #m-mortgage .modal .sub {font-size:13px;color:var(--txt-3);margin-bottom:20px}
 
-/* Mortgage — hamster theme palette (overrides above) */
+/* Mortgage — Sakai theme palette (overrides above) */
 #m-mortgage {
-  --bg:#FFF8E8; --surface:#FFFDF5; --surface-2:#F5EED8;
-  --line:#E8D9BE; --line-soft:#EDE3CC;
-  --txt:#5E4B3C; --txt-2:#8A7060; --txt-3:#B8A898;
-  --green:#6E9A4C; --green-soft:#EEF5E2;
-  --amber:#B88020; --amber-soft:#FDF3D0;
-  --red:#B85040; --red-soft:#FAE8E4;
-  --blue:#4A8A98; --blue-soft:#E2F5F8;
-  --purple:#8A7060; --accent:#B88020;
-  --font-display:'Sarabun',sans-serif; --font-body:'Sarabun',sans-serif;
+  --bg:#eef2f7; --surface:#ffffff; --surface-2:#f8fafc;
+  --line:#e5e7eb; --line-soft:#eef2f7;
+  --txt:#1e293b; --txt-2:#64748b; --txt-3:#94a3b8;
+  --green:#16a34a; --green-soft:#f0fdf4;
+  --amber:#f97316; --amber-soft:#fff7ed;
+  --red:#dc2626; --red-soft:#fef2f2;
+  --blue:#3b82f6; --blue-soft:#eff6ff;
+  --purple:#7c3aed; --accent:#3b82f6;
+  --radius:12px; --radius-sm:8px;
+  --font-display:'Inter','IBM Plex Sans Thai',sans-serif;
+  --font-body:'Inter','IBM Plex Sans Thai',sans-serif;
 }
+/* Sakai chrome tweaks */
+#m-mortgage .card-title,#m-mortgage .dl-sec{text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:var(--txt-2)}
+#m-mortgage thead th{text-transform:none;letter-spacing:0}
+#m-mortgage .brand h1{font-weight:700;letter-spacing:-.02em}
+#m-mortgage .field input:hover{border-color:var(--blue)}
+#m-mortgage .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+#m-mortgage .brand-icon{border-radius:10px;background:var(--blue-soft);border-color:var(--blue-soft);color:var(--blue)}
+#m-mortgage .navbtn.active{color:var(--blue)}
+#m-mortgage .tab.active{border-bottom-color:var(--blue);color:var(--txt)}
+/* DatePicker — PrimeNG-style date fields */
+#m-mortgage input[type="date"]{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:9px 12px;color:var(--txt);font-family:inherit;font-size:14px;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s}
+#m-mortgage input[type="date"]:hover{border-color:var(--blue)}
+#m-mortgage input[type="date"]:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+#m-mortgage input[type="date"]::-webkit-calendar-picker-indicator{width:17px;height:17px;cursor:pointer;opacity:1;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='16' rx='2'/%3E%3Cpath d='M16 3v4M8 3v4M4 11h16'/%3E%3C/svg%3E");background-size:17px;background-repeat:no-repeat;background-position:center}
+#m-mortgage input[type="date"]::-webkit-calendar-picker-indicator:hover{filter:brightness(.8)}

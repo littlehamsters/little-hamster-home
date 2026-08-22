@@ -8,7 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.10.0/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/tabler-icons.min.css">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -23,6 +24,7 @@
 
 <link rel="stylesheet" href="/src/styles/salary.css">
 <link rel="stylesheet" href="/src/styles/car.css">
+<link rel="stylesheet" href="/src/styles/dark.css">
 </head>
 <body>
 <div id="fb-screen">
@@ -40,25 +42,30 @@
 
 <nav class="shell-nav">
   <div class="nav-inner">
-    <div class="nav-brand"><span>🐹</span><span>Little Hamster Home</span></div>
-    <button id="nav-home"     class="nav-btn active" onclick="showModule('home')"    >&#127968; หน้าหลัก</button>
-    <div class="nav-util-sep"></div>
+    <div class="nav-brand" onclick="showModule('home')"><span>🐹</span><span>Little Hamster Home</span></div>
+    <div class="nav-menu-wrap">
+      <button class="nav-menu-btn" id="nav-menu-btn" onclick="toggleNavMenu(event)"><i class="ti ti-menu-2"></i> เมนู</button>
+      <div class="nav-menu" id="nav-menu"></div>
+    </div>
+    <div class="breadcrumb" id="breadcrumb" aria-label="breadcrumb"></div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" id="darkBtn" onclick="toggleDark()" title="สลับโหมดมืด/สว่าง" aria-label="สลับโหมดมืด/สว่าง"><i class="ti ti-moon"></i></button>
     <div class="fb-user-chip" id="fb-chip"><img class="fb-avatar" id="fb-av" src="" alt=""><span id="fb-name">—</span></div>
-    <button class="fb-logout" id="fb-logout" onclick="fbSignOut()">ออก</button>
+    <button class="fb-logout" id="fb-logout" onclick="fbSignOut()"><i class="ti ti-logout"></i> ออก</button>
     <div class="fb-sync" id="fb-sync"><div class="fb-dot" id="fb-dot"></div><span id="fb-sync-txt"></span></div>
   </div>
 </nav>
-<div id="m-home" class="m-app" style="display:block"><div class="home-hero"><div class="home-hero-icon">🐹</div><div class="home-hero-title">Little Hamster Home</div><div class="home-hero-badge">🐹&nbsp;บัญชีครัวเรือนของเรา</div></div><div class="home-grid"><div class="app-card" onclick="showModule('mortgage')"><div class="ac-head"><span class="ac-icon">&#127968;</span><span class="ac-name">ผ่อนบ้าน</span><span class="ac-arrow">&#8594;</span></div><div class="mini-ring-wrap"><svg class="mini-ring-svg" viewBox="0 0 120 120"><circle class="mr-bg" cx="60" cy="60" r="50"/><circle class="mr-fg" id="mo-ring" cx="60" cy="60" r="50"/></svg><div class="mr-center"><div class="mr-pct" id="mo-pct">—</div><div class="mr-lbl">ผ่อนแล้ว</div></div></div><div class="ac-stats"><div class="ac-chip blue"><div class="chip-lbl">เงินต้นคงเหลือ</div><div class="chip-val blue" id="mo-rem">—</div></div><div class="ac-chip green"><div class="chip-lbl">ผ่อนสะสม</div><div class="chip-val green" id="mo-paid">—</div></div></div><button class="ac-cta">&#128203;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('savings')"><div class="ac-head"><span class="ac-icon">&#127804;</span><span class="ac-name">กองออม</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ยอดรวมทั้งหมด</div><div class="chip-val big green" id="sv-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">กองทุน active</div><div class="chip-val green" id="sv-funds">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืบหน้าเป้าหมาย</div><div class="chip-val yellow" id="sv-pct">—</div></div></div><button class="ac-cta">&#127804;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('budget')"><div class="ac-head"><span class="ac-icon">&#128184;</span><span class="ac-name">งบประมาณ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px;font-size:13px;font-weight:700;color:var(--txt)" id="bp-month">เดือนล่าสุด</div><div class="chip-val big" id="bp-status">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">รายรับ</div><div class="chip-val green" id="bp-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">รายจ่าย</div><div class="chip-val yellow" id="bp-expense">—</div></div></div><button class="ac-cta">&#128184;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('salary')"><div class="ac-head"><span class="ac-icon">&#128202;</span><span class="ac-name">ภาษีเงินเดือน</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ภาษีรวมครัวเรือน</div><div class="chip-val big" id="st-home-tax">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">เงินได้รวม</div><div class="chip-val green" id="st-home-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืน / จ่ายเพิ่ม</div><div class="chip-val yellow" id="st-home-diff">—</div></div></div><button class="ac-cta">&#128202;&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('car')"><div class="ac-head"><span class="ac-icon">&#128663;</span><span class="ac-name">บันทึกรถ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ค่าใช้จ่ายรวม</div><div class="chip-val big" id="car-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">จำนวนรถ</div><div class="chip-val green" id="car-count">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">ต่ออายุใกล้ครบ</div><div class="chip-val yellow" id="car-next">—</div></div></div><button class="ac-cta">&#128663;&nbsp;ดูรายละเอียด</button></div></div><div class="home-foot"></div></div>
+<div id="m-home" class="m-app" style="display:block"><div class="home-hero"><div class="home-hero-icon">🐹</div><div class="home-hero-tx"><div class="home-hero-title">Dashboard</div><div class="home-hero-sub">ภาพรวมการเงินครัวเรือน · Little Hamster Home</div></div></div><div class="home-grid"><div class="app-card" onclick="showModule('mortgage')"><div class="ac-head"><span class="ac-icon"><i class="ti ti-home-2"></i></span><span class="ac-name">ผ่อนบ้าน</span><span class="ac-arrow">&#8594;</span></div><div class="mini-ring-wrap"><svg class="mini-ring-svg" viewBox="0 0 120 120"><circle class="mr-bg" cx="60" cy="60" r="50"/><circle class="mr-fg" id="mo-ring" cx="60" cy="60" r="50"/></svg><div class="mr-center"><div class="mr-pct" id="mo-pct">—</div><div class="mr-lbl">ผ่อนแล้ว</div></div></div><div class="ac-stats"><div class="ac-chip blue"><div class="chip-lbl">เงินต้นคงเหลือ</div><div class="chip-val blue" id="mo-rem">—</div></div><div class="ac-chip green"><div class="chip-lbl">ผ่อนสะสม</div><div class="chip-val green" id="mo-paid">—</div></div></div><button class="ac-cta"><i class="ti ti-eye"></i>&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('savings')"><div class="ac-head"><span class="ac-icon"><i class="ti ti-pig-money"></i></span><span class="ac-name">กองออม</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ยอดรวมทั้งหมด</div><div class="chip-val big green" id="sv-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">กองทุน active</div><div class="chip-val green" id="sv-funds">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืบหน้าเป้าหมาย</div><div class="chip-val yellow" id="sv-pct">—</div></div></div><button class="ac-cta"><i class="ti ti-eye"></i>&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('budget')"><div class="ac-head"><span class="ac-icon"><i class="ti ti-wallet"></i></span><span class="ac-name">งบประมาณ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px;font-size:13px;font-weight:700;color:var(--txt)" id="bp-month">เดือนล่าสุด</div><div class="chip-val big" id="bp-status">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">รายรับ</div><div class="chip-val green" id="bp-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">รายจ่าย</div><div class="chip-val yellow" id="bp-expense">—</div></div></div><button class="ac-cta"><i class="ti ti-eye"></i>&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('salary')"><div class="ac-head"><span class="ac-icon"><i class="ti ti-receipt-tax"></i></span><span class="ac-name">ภาษีเงินเดือน</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ภาษีรวมครัวเรือน</div><div class="chip-val big" id="st-home-tax">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">เงินได้รวม</div><div class="chip-val green" id="st-home-income">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">คืน / จ่ายเพิ่ม</div><div class="chip-val yellow" id="st-home-diff">—</div></div></div><button class="ac-cta"><i class="ti ti-eye"></i>&nbsp;ดูรายละเอียด</button></div><div class="app-card" onclick="showModule('car')"><div class="ac-head"><span class="ac-icon"><i class="ti ti-car"></i></span><span class="ac-name">บันทึกรถ</span><span class="ac-arrow">&#8594;</span></div><div style="text-align:center;padding:.2rem 0 .65rem"><div class="chip-lbl" style="margin-bottom:4px">ค่าใช้จ่ายรวม</div><div class="chip-val big" id="car-total">—</div></div><div class="ac-stats"><div class="ac-chip green"><div class="chip-lbl">จำนวนรถ</div><div class="chip-val green" id="car-count">—</div></div><div class="ac-chip yellow"><div class="chip-lbl">ต่ออายุใกล้ครบ</div><div class="chip-val yellow" id="car-next">—</div></div></div><button class="ac-cta"><i class="ti ti-eye"></i>&nbsp;ดูรายละเอียด</button></div></div><div class="home-foot"></div></div>
 <div id="m-mortgage" class="m-app">
 
 <div class="container">
   <div class="header">
     <div class="brand">
-      <div class="brand-icon">🏠</div>
+      <div class="brand-icon"><i class="ti ti-home-2"></i></div>
       <div><h1>บัญชีผ่อนบ้าน</h1><p>ติดตามการผ่อนชำระ แยกผู้จ่าย และดอกเบี้ยลอยตัว</p></div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-ghost btn-sm" onclick="openSettings()">⚙ ตั้งค่า</button>
+      <button class="btn btn-ghost btn-sm" onclick="openSettings()"><i class="ti ti-settings"></i> ตั้งค่า</button>
     </div>
   </div>
 
@@ -92,7 +99,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">📐 วางแผนการผ่อน <span style="text-transform:none;letter-spacing:0;color:var(--txt-3);font-weight:400;margin-left:4px">(พยากรณ์รายปี)</span></div>
+    <div class="card-title"><i class="ti ti-ruler-2"></i> วางแผนการผ่อน <span style="text-transform:none;letter-spacing:0;color:var(--txt-3);font-weight:400;margin-left:4px">(พยากรณ์รายปี)</span></div>
     <p style="font-size:13px;color:var(--txt-2);margin-bottom:18px">พยากรณ์ต่อจากข้อมูลจริง เริ่มจากเงินต้นคงเหลือปัจจุบัน <strong id="planStart" style="color:var(--blue)">-</strong> บาท</p>
     <div class="setup-grid">
       <div class="field"><label>เป้าหมายลดต้น/ปี</label><input type="text" inputmode="decimal" id="planGoal" value="500000" oninput="planAuto()"></div>
@@ -104,7 +111,7 @@
       <div class="field"><label>อายุ ณ ปี 2566</label><input type="text" inputmode="decimal" id="planAge" value="28" oninput="planAuto()"></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="calcPlan(true)">📊 คำนวณแผนการผ่อน</button>
+      <button class="btn btn-primary" onclick="calcPlan(true)"><i class="ti ti-calculator"></i> คำนวณแผนการผ่อน</button>
       <span id="planNote" style="font-size:13px;color:var(--txt-3)"></span>
     </div>
 
@@ -117,11 +124,11 @@
       </div>
       <div id="planWarn"></div>
       <div class="card" style="background:var(--surface-2);margin-top:18px">
-        <div class="card-title">📉 เงินต้นคงเหลือรายปี</div>
+        <div class="card-title"><i class="ti ti-chart-line"></i> เงินต้นคงเหลือรายปี</div>
         <div class="chart-box" style="height:230px"><canvas id="planChart"></canvas></div>
       </div>
       <div style="margin-top:18px">
-        <div class="card-title">📅 ตารางพยากรณ์รายปี</div>
+        <div class="card-title"><i class="ti ti-calendar"></i> ตารางพยากรณ์รายปี</div>
         <div class="table-scroll" style="max-height:420px">
           <table>
             <thead><tr><th>อายุ</th><th>ปีที่</th><th>ปี</th><th>รวมต้น</th><th>รวมดอก</th><th>คงเหลือ</th></tr></thead>
@@ -137,11 +144,11 @@
   <div id="view-detail" class="hidden">
   <div class="card-row">
     <div class="card">
-      <div class="card-title">📉 เงินต้นคงเหลือ &amp; สัดส่วนต้น/ดอกแต่ละงวด</div>
+      <div class="card-title"><i class="ti ti-chart-area-line"></i> เงินต้นคงเหลือ &amp; สัดส่วนต้น/ดอกแต่ละงวด</div>
       <div class="chart-box"><canvas id="balChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">👥 สัดส่วนการจ่ายของแต่ละคน</div>
+      <div class="card-title"><i class="ti ti-users"></i> สัดส่วนการจ่ายของแต่ละคน</div>
       <div class="split-list" id="splitList"></div>
       <div class="chart-box" style="height:170px;margin-top:18px"><canvas id="splitChart"></canvas></div>
     </div>
@@ -149,15 +156,15 @@
 
   <div class="card">
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('table',this)">📅 รายการผ่อนรายเดือน</button>
-      <button class="tab" onclick="switchTab('year',this)">📊 สรุปรายปี</button>
-      <button class="tab" onclick="switchTab('add',this)">➕ เพิ่มงวดใหม่</button>
+      <button class="tab active" onclick="switchTab('table',this)"><i class="ti ti-calendar-month"></i> รายการผ่อนรายเดือน</button>
+      <button class="tab" onclick="switchTab('year',this)"><i class="ti ti-chart-bar"></i> สรุปรายปี</button>
+      <button class="tab" onclick="switchTab('add',this)"><i class="ti ti-plus"></i> เพิ่มงวดใหม่</button>
     </div>
 
     <div id="tab-table" class="tab-pane active">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
         <label style="font-size:13px;color:var(--txt-2)">แสดงปี</label>
-        <select id="yearFilter" onchange="renderTable()" style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-sm);padding:8px 12px;color:var(--txt);font-size:14px;font-family:inherit;cursor:pointer"></select>
+        <select id="yearFilter" class="mo-sel" onchange="renderTable()"></select>
       </div>
       <div class="table-scroll">
         <table>
@@ -177,7 +184,7 @@
       <p style="font-size:14px;color:var(--txt-2);margin-bottom:6px">กรอกยอดโฟม เข่ง ดอกเบี้ย % และวันที่ แล้วระบบจะคำนวณงวดต้น/งวดดอกให้อัตโนมัติ (แก้ไขเองได้)</p>
       <p style="font-size:13px;color:var(--txt-3);margin-bottom:18px">เงินงวดชำระ = โฟม + เข่ง · งวดดอก = ยอดคงเหลือล่าสุด (<strong id="lastBalHint">-</strong>) × ดอกเบี้ย ÷ 100 × จำนวนวันในเดือน ÷ 365 · งวดต้น = เงินงวด − งวดดอก</p>
       <div class="add-grid">
-        <div class="field"><label>วันที่</label><input type="date" id="aDate" oninput="calcNewInstallment()"></div>
+        <div class="field"><label>วันที่</label><input type="date" class="mo-dp" id="aDate" oninput="calcNewInstallment()"></div>
         <div class="field"><label id="al1">โฟม</label><input type="text" inputmode="decimal" id="aFoam" placeholder="0" oninput="calcNewInstallment()"></div>
         <div class="field"><label id="al2">เข่ง</label><input type="text" inputmode="decimal" id="aSeng" placeholder="0" oninput="calcNewInstallment()"></div>
         <div class="field"><label>เงินงวดชำระ (โฟม+เข่ง)</label><input type="text" inputmode="decimal" id="aInstallShow" placeholder="0" disabled></div>
@@ -208,11 +215,11 @@
       <div class="sub">แยกออมเป็นกอง ตั้งเป้า แล้วดูมันค่อย ๆ เต็มโหล</div>
     </div>
     <div class="tools">
-      <button class="btn" id="btnAssets">สินทรัพย์</button>
-      <button class="btn" id="btnSettings">ตั้งค่า</button>
-      <button class="btn" id="btnBackup">สำรองข้อมูล</button>
-      <button class="btn" id="btnRestore">นำเข้า</button>
-      <button class="btn btn-primary" id="btnNew">+ สร้างกอง</button>
+      <button class="btn" id="btnAssets"><i class="ti ti-wallet"></i> สินทรัพย์</button>
+      <button class="btn" id="btnSettings"><i class="ti ti-settings"></i> ตั้งค่า</button>
+      <button class="btn" id="btnBackup"><i class="ti ti-download"></i> สำรองข้อมูล</button>
+      <button class="btn" id="btnRestore"><i class="ti ti-upload"></i> นำเข้า</button>
+      <button class="btn btn-primary" id="btnNew"><i class="ti ti-plus"></i> สร้างกอง</button>
     </div>
   </header>
 
@@ -248,7 +255,7 @@
     </div>
     <div class="field">
       <label>เจ้าของกอง (เพิ่ม/แก้รายชื่อได้ในเมนูตั้งค่า)</label>
-      <select id="fOwner"></select>
+      <select id="fOwner" class="mo-sel"></select>
     </div>
     <div class="field">
       <label>เป้าหมาย (บาท) — เว้นว่างได้ถ้ายังไม่ตั้งเป้า</label>
@@ -256,7 +263,7 @@
     </div>
     <div class="field">
       <label>วันครบกำหนด (ไม่บังคับ)</label>
-      <input type="date" id="fDate">
+      <input type="date" class="mo-dp" id="fDate">
     </div>
     <div class="field">
       <label>ยอดเริ่มต้น (บาท) — เว้นว่าง = 0</label>
@@ -284,7 +291,7 @@
     </div>
     <div class="field">
       <label>วันที่</label>
-      <input type="date" id="txDate">
+      <input type="date" class="mo-dp" id="txDate">
     </div>
     <div class="field">
       <label>บันทึกช่วย (ไม่บังคับ)</label>
@@ -466,19 +473,9 @@
       </div>
       <div class="cc-list" id="cc-list"></div>
       <div class="cc-sum" id="cc-sum"></div>
-      <div style="margin-top:8px"><button class="add-btn" style="background:var(--lilac);color:#fff" onclick="ccImportOpen()"><i class="ti ti-file-import"></i> นำเข้ารายการจากสลิป</button></div>
-      <div class="add-new-row" style="margin-top:10px;flex-wrap:wrap">
-        <div class="field"><label>บัตร</label><select id="cc-card"><option value="">-- เลือก --</option></select></div>
-        <div class="field narrow"><label>ยอดรวม</label><input id="cc-total" type="text" inputmode="decimal" placeholder="0.00"
-          onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
-        <div class="field narrow"><label>ส่วนตัว <span id="cc-lbl-p1" style="color:var(--sky)">P1</span></label><input id="cc-p1" type="text" inputmode="decimal" placeholder="0.00"
-          onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
-        <div class="field narrow"><label>ส่วนตัว <span id="cc-lbl-p2" style="color:var(--rose)">P2</span></label><input id="cc-p2" type="text" inputmode="decimal" placeholder="0.00"
-          onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
-        <div class="field narrow"><label>อื่นๆ (ไม่รวมยอด)</label><input id="cc-other" type="text" inputmode="decimal" placeholder="0.00"
-          onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
-        <div class="field"><label>หมายเหตุ</label><input id="cc-note" type="text" placeholder="trip, ชื่อคนอื่น..."></div>
-        <button class="add-btn" style="background:var(--lilac);color:#fff" onclick="addCC()"><i class="ti ti-plus"></i>เพิ่ม</button>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="add-btn" style="background:var(--lilac);color:#fff" onclick="ccAddOpen()"><i class="ti ti-plus"></i> เพิ่มรายการบัตร</button>
+        <button class="btn" onclick="ccImportOpen()"><i class="ti ti-file-import"></i> นำเข้าจากสลิป</button>
       </div>
     </div>
 
@@ -494,8 +491,7 @@
 
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
-    <button onclick="toggleChart()" style="height:34px;padding:0 14px;font-size:12px;font-weight:600;border-radius:var(--r);border:1.5px solid var(--line2);background:var(--card);color:var(--ink2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;transition:.15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--card)'"><i class="ti ti-arrow-left" style="font-size:15px"></i> กลับหน้าหลัก</button>
-    <div style="display:flex;background:var(--card2);border-radius:20px;padding:3px;border:1.5px solid var(--line);gap:0;flex-wrap:wrap">
+    <div style="display:flex;background:var(--card2);border-radius:10px;padding:3px;border:1px solid var(--line);gap:0;flex-wrap:wrap">
       <button class="ptab active-common" id="cp3" onclick="setChartTab('diff',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-plus-minus"></i> ผลต่าง Goal</button>
       <button class="ptab" id="cp4" onclick="setChartTab('cc',this)" style="border-radius:16px;padding:6px 18px"><i class="ti ti-credit-card"></i> บัตรเครดิต</button>
     </div>
@@ -532,7 +528,7 @@
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div class="field" style="flex:1;min-width:180px;margin:0">
           <label style="font-size:11px;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">เลือกรายการ</label>
-          <select id="compare-item" onchange="renderCompareChart()" style="font-size:13px;height:34px;padding:0 10px;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);color:var(--ink);width:100%;font-family:inherit"></select>
+          <select id="compare-item" class="mo-sel" onchange="renderCompareChart()" style="font-size:13px;height:34px;padding:0 10px;border-radius:var(--r);border:1px solid var(--line2);background:var(--card2);color:var(--ink);width:100%;font-family:inherit"></select>
         </div>
       </div>
     </div>
@@ -601,7 +597,7 @@
 <div class="modal-bg" id="cc-import-modal">
   <div class="modal">
     <div class="modal-title"><span id="cci-title">📥 นำเข้ารายการบัตร</span> <button class="modal-close" onclick="ccImportClose()"><i class="ti ti-x"></i> ปิด</button></div>
-    <div class="field"><label>บัตร</label><select id="cci-card"><option value="">-- เลือกบัตร --</option></select></div>
+    <div class="field"><label>บัตร</label><select id="cci-card" class="mo-sel"><option value="">-- เลือกบัตร --</option></select></div>
     <div id="cci-photo" style="margin:10px 0">
       <div class="cci-drop" style="border:2px dashed var(--line2);border-radius:12px;padding:14px;text-align:center;color:var(--ink2);font-size:13px;background:var(--card2)"
         ondragover="event.preventDefault();this.style.borderColor='var(--sky)'"
@@ -617,7 +613,7 @@
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:8px 0 6px">
       <div class="mlabel" style="margin:0">รายการ (ติดป้ายเจ้าของ + หมวด)</div>
-      <select id="cci-filter" onchange="ccImportSetFilter(this.value)" title="กรองตามเจ้าของ"
+      <select id="cci-filter" class="mo-sel" onchange="ccImportSetFilter(this.value)" title="กรองตามเจ้าของ"
         style="height:30px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit">
         <option value="all">ทุกเจ้าของ</option>
       </select>
@@ -645,6 +641,36 @@
   <div class="modal">
     <div class="modal-title"><span id="ccc-title">หมวด</span> <button class="modal-close" onclick="ccCatPopupClose()"><i class="ti ti-x"></i> ปิด</button></div>
     <div id="ccc-body"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cc-add-modal">
+  <div class="modal">
+    <div class="modal-title"><span><i class="ti ti-credit-card" style="color:var(--lilac)"></i> เพิ่มรายการบัตร</span> <button class="modal-close" onclick="ccAddClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div class="field" style="margin-bottom:12px"><label>บัตร</label><select id="cc-card" class="mo-sel"><option value="">-- เลือก --</option></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>ยอดรวม</label><input id="cc-total" type="text" inputmode="decimal" placeholder="0.00"
+        onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
+      <div class="field"><label>อื่นๆ (ไม่รวมยอด)</label><input id="cc-other" type="text" inputmode="decimal" placeholder="0.00"
+        onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
+      <div class="field"><label>ส่วนตัว <span id="cc-lbl-p1" style="color:var(--sky)">P1</span></label><input id="cc-p1" type="text" inputmode="decimal" placeholder="0.00"
+        onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
+      <div class="field"><label>ส่วนตัว <span id="cc-lbl-p2" style="color:var(--rose)">P2</span></label><input id="cc-p2" type="text" inputmode="decimal" placeholder="0.00"
+        onfocus="amtFocus(this)" onblur="amtBlur(this,null)" onpaste="amtPaste(this,null)" data-raw=""></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label>หมายเหตุ</label><input id="cc-note" type="text" placeholder="trip, ชื่อคนอื่น..."></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="msubmit ghost" style="flex:1" onclick="ccAddClose()">ยกเลิก</button>
+      <button class="msubmit" style="flex:1;background:var(--lilac);color:#fff" onclick="addCC()"><i class="ti ti-plus"></i> เพิ่ม</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cc-breakdown-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="ccbd-title"><i class="ti ti-credit-card" style="color:var(--lilac)"></i> บัตรเครดิต</span> <button class="modal-close" onclick="ccBreakdownClose()"><i class="ti ti-x"></i> ปิด</button></div>
+    <div id="ccbd-body"></div>
+    <button class="msubmit ghost" style="margin-top:14px" onclick="ccBreakdownClose()">ปิด</button>
   </div>
 </div>
 
@@ -722,7 +748,7 @@
     </div>
     <div class="yearbox">
       <label>ปีภาษี</label>
-      <select id="taxYear">
+      <select id="taxYear" class="mo-sel">
         <option value="2568">2568 (ยื่น 2569)</option>
         <option value="2569">2569</option>
       </select>
@@ -739,7 +765,7 @@
   <div class="tabs">
     <button class="tab active" data-stab="income">📥 รายได้เงินเดือน</button>
     <button class="tab" data-stab="tax">🧮 คำนวณภาษี</button>
-    <button class="tab" data-stab="plan">🎯 วางแผนลดหย่อน</button>
+    <button class="tab" data-stab="plan"><i class="ti ti-target"></i> วางแผนลดหย่อน</button>
     <button class="tab" data-stab="house">🏠 สรุปรายคน</button>
   </div>
 
@@ -835,7 +861,7 @@
       <div class="sim">
         <h3>🔮 ลองวางแผน: ถ้าลงทุน/ซื้อเพิ่ม</h3>
         <div class="row">
-          <div><label>กลุ่มลดหย่อน</label><select id="stSimType"></select></div>
+          <div><label>กลุ่มลดหย่อน</label><select id="stSimType" class="mo-sel"></select></div>
           <div><label>จำนวนเงินเพิ่ม (บาท)</label><input type="number" id="stSimAmt" value="50000"></div>
         </div>
         <div class="out">
@@ -868,7 +894,7 @@
         <div class="hint">คลิกชื่อเพื่อเปิดดู/แก้รายละเอียดของคนนั้น</div>
       </div>
     </div>
-    <div class="callout" style="margin-top:2px"><span class="ic">📊</span><div id="stHouseNote">เพิ่มสมาชิกในครัวเรือนเพื่อเทียบภาระภาษีของแต่ละคน</div></div>
+    <div class="callout" style="margin-top:2px"><span class="ic"><i class="ti ti-chart-bar"></i></span><div id="stHouseNote">เพิ่มสมาชิกในครัวเรือนเพื่อเทียบภาระภาษีของแต่ละคน</div></div>
   </section>
 
   <!-- Print only -->
@@ -898,7 +924,7 @@
 <div id="m-car" class="m-app">
   <div class="wrap">
     <header class="car-header">
-      <h1>🚗 บันทึกรถ</h1>
+      <h1><i class="ti ti-car"></i> บันทึกรถ</h1>
       <div class="sub">ซ่อมบำรุง · ต่อภาษี/พ.ร.บ./ประกัน · ใบขับขี่ — แยกรายคัน</div>
     </header>
     <div id="carBody"></div>

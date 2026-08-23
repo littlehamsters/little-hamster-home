@@ -158,3 +158,20 @@
 #m-salary .yearbox select{border-radius:6px;}
 #m-salary .field input:hover,#m-salary .tinput:hover{border-color:var(--st-sage);}
 #m-salary .field input:focus,#m-salary .st-modal-input:focus,#m-salary .tinput:focus{outline:none;border-color:var(--st-sage);box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+
+/* header / toolbar — responsive */
+@media(max-width:680px){
+  #m-salary .wrap{padding:16px 14px 64px;}
+  #m-salary header.top{align-items:stretch;gap:12px;}
+  #m-salary .brand h1{font-size:22px;}
+  #m-salary .brand p{font-size:13px;}
+  #m-salary .yearbox{width:100%;justify-content:space-between;}
+  #m-salary .peoplebar{gap:6px;}
+  #m-salary .peoplebar .pl{flex:1 1 100%;margin-bottom:2px;}
+  #m-salary .peoplebar .pselect,#m-salary .peoplebar .mo-sel-wrap{flex:1 1 100%;min-width:0;}
+  #m-salary .peoplebar .mo-sel-trigger{width:100%;}
+  #m-salary .peoplebar .btn{flex:1 1 auto;justify-content:center;font-size:12.5px;padding:9px 10px;}
+}
+@media(max-width:430px){
+  #m-salary .peoplebar .btn{flex:1 1 calc(50% - 3px);}
+}

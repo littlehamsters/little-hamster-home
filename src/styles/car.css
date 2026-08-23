@@ -104,15 +104,22 @@
 #m-car .cov-next.soon { color:var(--amber); } #m-car .cov-next.over { color:var(--red); }
 #m-car .cov-next.ok { color:var(--green); } #m-car .cov-next.none { color:var(--txt3); font-weight:600; }
 
-/* renewal rows (label + inline inputs + status) */
-#m-car .car-renew { flex-wrap:wrap; }
-#m-car .car-renew .cr-lbl { font-size:13px; font-weight:700; width:74px; flex-shrink:0; }
-#m-car .cr-inline { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--txt2); }
-#m-car .cr-inline input[type=date] { height:32px; padding:0 8px; border-radius:8px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:12.5px; }
-#m-car .cr-inline input[type=number] { width:88px; height:32px; padding:0 8px; border-radius:8px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:12.5px; text-align:right; }
-#m-car .cr-inline input:focus { outline:none; border-color:var(--green); }
-#m-car .car-renew .cr-note { font-size:11.5px; font-weight:700; margin-left:auto; }
-#m-car .cr-note.soon { color:var(--amber); } #m-car .cr-note.over { color:var(--red); } #m-car .cr-note.ok { color:var(--green); } #m-car .cr-note.none { color:var(--txt3); }
+/* renewal rows — 2-tier card (head: icon+label+status pill / fields: due + cost) */
+#m-car .car-renew { display:flex; flex-direction:column; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); }
+#m-car .car-renew:last-child { border-bottom:none; }
+#m-car .cr-head { display:flex; align-items:center; gap:10px; }
+#m-car .cr-ic { font-size:18px; line-height:1; color:var(--txt2); display:inline-flex; flex-shrink:0; }
+#m-car .cr-lbl { font-size:14px; font-weight:700; color:var(--txt); flex:1; min-width:0; }
+#m-car .cr-note { margin-left:auto; flex-shrink:0; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+#m-car .cr-note.soon { color:var(--amber); background:var(--amber-bg); } #m-car .cr-note.over { color:var(--red); background:var(--red-bg); } #m-car .cr-note.ok { color:var(--green); background:var(--green-bg); } #m-car .cr-note.none { color:var(--txt3); background:var(--surf2); }
+#m-car .cr-fields { display:flex; gap:12px; flex-wrap:wrap; padding-left:28px; }
+#m-car .cr-field { display:flex; flex-direction:column; gap:4px; flex:1 1 150px; min-width:0; }
+#m-car .cr-field > span { font-size:11px; font-weight:600; color:var(--txt2); }
+#m-car .cr-field input[type=number] { height:36px; padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-family:inherit; font-size:13px; text-align:right; width:100%; }
+#m-car .cr-field .mo-dp-field { width:100%; }
+#m-car .cr-field .mo-dp-field input { flex:1 1 auto; width:100%!important; height:36px; padding:0 10px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-size:13px; border-radius:8px; }
+#m-car .cr-field .mo-dp-icon { width:38px; flex:0 0 38px; }
+@media(max-width:480px){ #m-car .cr-fields { padding-left:0; } }
 
 /* ── tables ───────────────────────────────────────────── */
 #m-car .car-table-wrap { overflow-x:auto; }
@@ -180,12 +187,8 @@
 #m-car .car-btn { border-radius:8px; border-width:1px; }
 #m-car .car-btn.primary { background:var(--sage); border-color:var(--sage); color:#fff; }
 #m-car .car-btn.primary:hover { background:#2563eb; border-color:#2563eb; color:#fff; }
-#m-car .cf input:hover,#m-car .cf-in:hover,#m-car .cr-inline input:hover { border-color:var(--sage); }
-#m-car .cf input:focus,#m-car .cf-in:focus,#m-car .cr-inline input:focus { outline:none; border-color:var(--sage); box-shadow:0 0 0 3px rgba(59,130,246,.2); }
-/* DatePicker fits the inline renewal row (don't stretch full width) */
-#m-car .cr-inline .mo-dp-field { width:auto; }
-#m-car .cr-inline .mo-dp-field input { flex:0 1 auto; width:120px!important; height:34px; padding:0 10px; border:1px solid var(--line); background:var(--surf); color:var(--txt); font-size:12.5px; border-radius:8px; }
-#m-car .cr-inline .mo-dp-icon { width:34px; flex:0 0 34px; }
+#m-car .cf input:hover,#m-car .cf-in:hover,#m-car .cr-field input:hover { border-color:var(--sage); }
+#m-car .cf input:focus,#m-car .cf-in:focus,#m-car .cr-field input:focus { outline:none; border-color:var(--sage); box-shadow:0 0 0 3px rgba(59,130,246,.2); }
 #m-car .cf .mo-dp-field { width:100%; }
 #m-car .cf .mo-dp-field input { border:1px solid var(--line); background:var(--surf); color:var(--txt); height:40px; padding:0 12px; }
 /* service table — search / filter toolbar */
@@ -196,3 +199,20 @@
 #m-car .car-search input:hover { border-color:var(--sage); }
 #m-car .car-search input:focus { outline:none; border-color:var(--sage); box-shadow:0 0 0 3px rgba(59,130,246,.2); }
 #m-car .car-search input::placeholder { color:var(--txt3); }
+
+/* ── responsive: renewal rows + layout ─────────────────── */
+@media(max-width:560px){
+  #m-car.m-app{ padding:20px 14px 60px; }
+  #m-car .car-header h1{ font-size:22px; }
+  #m-car .car-card{ padding:16px 14px; }
+  #m-car .car-detail-head{ align-items:flex-start; }
+  #m-car .car-head-act{ flex-wrap:wrap; }
+  #m-car .car-sv-tools{ width:100%; }
+  #m-car .car-search{ flex:1 1 auto; }
+  #m-car .car-search input{ width:100%; }
+}
+@media(max-width:460px){
+  #m-car .car-metrics{ grid-template-columns:1fr 1fr; }
+  #m-car .car-strip .cs{ min-width:130px; }
+  #m-car .car-head-act .car-btn{ font-size:12px; padding:0 10px; }
+}

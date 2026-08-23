@@ -472,15 +472,18 @@ function _carFleetSection() {
 function _carRenewCard(c, t) {
   const r = c.renew[t.k] || {};
   const u = _cUrg(r.due);
-  return `<div class="car-row car-renew ${u.cls}">
-    <span class="row-ic">${t.icon}</span>
-    <span class="cr-lbl">${t.label}</span>
-    <label class="cr-inline">ครบกำหนด
-      <input type="date" class="mo-dp" value="${_cEsc(r.due || '')}" onchange="carSetRenew('${t.k}','due',window.moGetDate(this))"></label>
-    <label class="cr-inline">฿
-      <input type="number" inputmode="decimal" value="${r.cost ? _cEsc(r.cost) : ''}" placeholder="0"
-        onchange="carSetRenew('${t.k}','cost',this.value)"></label>
-    <span class="cr-note pill ${u.cls}">${u.note}</span>
+  return `<div class="car-renew">
+    <div class="cr-head">
+      <span class="cr-ic">${t.icon}</span>
+      <span class="cr-lbl">${t.label}</span>
+      <span class="cr-note pill ${u.cls}">${u.note}</span>
+    </div>
+    <div class="cr-fields">
+      <label class="cr-field"><span>ครบกำหนด</span>
+        <input type="date" class="mo-dp" value="${_cEsc(r.due || '')}" onchange="carSetRenew('${t.k}','due',window.moGetDate(this))"></label>
+      <label class="cr-field"><span>ค่าใช้จ่าย (฿)</span>
+        <input type="number" inputmode="decimal" value="${r.cost ? _cEsc(r.cost) : ''}" placeholder="0" onchange="carSetRenew('${t.k}','cost',this.value)"></label>
+    </div>
   </div>`;
 }
 function _carServiceRows(c) {

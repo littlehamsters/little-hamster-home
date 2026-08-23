@@ -214,3 +214,60 @@
 #m-budget .ccc-del{width:26px;height:26px;border-radius:6px;border:1px solid var(--bad-line);background:var(--bad-bg);color:var(--bad);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;transition:.15s}
 #m-budget .ccc-del:hover{background:var(--bad);color:#fff}
 #m-budget .ccc-del i{font-size:13px}
+
+/* add-new-row: custom select fits the field + responsive wrapping */
+#m-budget .add-new-row .field .mo-sel-wrap{display:block;width:100%}
+#m-budget .add-new-row .field .mo-sel-trigger{min-width:0;width:100%;height:32px;font-size:13px;border-radius:8px}
+#m-budget .add-new-row .field.xnarrow{flex:0 0 120px}
+@media(max-width:640px){
+  #m-budget .add-new-row{align-items:stretch}
+  #m-budget .add-new-row .field{flex:1 1 100%;min-width:0}
+  #m-budget .add-new-row .field.narrow,#m-budget .add-new-row .field.xnarrow{flex:1 1 calc(50% - 4px)}
+  #m-budget .add-new-row .add-btn{width:100%;justify-content:center;height:36px}
+}
+
+/* expense table — responsive (shrink to fit small screens) */
+@media(max-width:640px){
+  #m-budget .exp-table{font-size:12px}
+  #m-budget .exp-table th,#m-budget .exp-table td{padding:6px 4px!important;width:auto!important}
+  #m-budget .exp-table th:first-child,#m-budget .exp-table td:first-child{width:26px!important;padding:6px 2px!important}
+  #m-budget .exp-table .amt-input{width:76px!important;font-size:12px!important;padding:0 6px!important;height:32px}
+  #m-budget .exp-table .type-tag{font-size:9px;padding:1px 6px}
+  #m-budget .exp-table .badge{font-size:9px;padding:1px 5px}
+  #m-budget .exp-table .del-item-btn.del-icon{padding:0 7px}
+}
+@media(max-width:420px){
+  #m-budget .exp-table .amt-input{width:64px!important}
+  #m-budget .exp-table thead th{font-size:10px}
+}
+
+/* settings GOAL rows — clean 2-tier card (head + controls), responsive */
+#m-budget .goal-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}
+#m-budget .goal-row-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+#m-budget .goal-row-head .goal-name{font-size:13px;font-weight:600;color:var(--ink)}
+#m-budget .goal-row-head .goal-type{font-size:11px;color:var(--ink2)}
+#m-budget .goal-row-ctrl{display:flex;align-items:center;gap:8px}
+#m-budget .goal-row-ctrl .mo-sel-wrap{flex:1 1 auto;min-width:0;display:block}
+#m-budget .goal-row-ctrl .mo-sel-trigger{width:100%;min-width:0;height:32px;font-size:12px;border-radius:8px}
+#m-budget .goal-row-ctrl .mo-sel-label{text-align:left}
+#m-budget .goal-row-ctrl>div{flex:1 1 auto;min-width:0;font-size:11px;color:var(--ink3)}
+#m-budget .goal-input{flex:0 0 120px;width:120px;height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:13px;font-weight:600;font-family:inherit;text-align:right}
+#m-budget .goal-input:focus{outline:none;border-color:var(--sky);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+#m-budget .goal-row-ctrl .del-item-btn{flex:0 0 auto;height:32px}
+@media(max-width:480px){
+  #m-budget .goal-row-ctrl{flex-wrap:wrap}
+  #m-budget .goal-row-ctrl .mo-sel-wrap{flex:1 1 100%}
+  #m-budget .goal-input{flex:1 1 auto;width:auto}
+}
+
+/* settings "add fixed expense" form — custom select fits + responsive */
+#m-budget .goal-add-form .gaf-type{flex:1 1 130px;min-width:0}
+#m-budget .goal-add-form .gaf-type .mo-sel-wrap{display:block;width:100%}
+#m-budget .goal-add-form .gaf-type .mo-sel-trigger{min-width:0;width:100%;height:30px;font-size:12px;border-radius:8px}
+#m-budget .goal-add-form .gaf-goal{flex:0 0 90px}
+#m-budget .goal-add-form .gaf-goal input{width:100%!important}
+@media(max-width:560px){
+  #m-budget .goal-add-form .gaf-name{flex:1 1 100%}
+  #m-budget .goal-add-form .gaf-type,#m-budget .goal-add-form .gaf-goal{flex:1 1 calc(50% - 3px)}
+  #m-budget .goal-add-form .add-btn{flex:1 1 100%;justify-content:center;height:34px}
+}

@@ -595,8 +595,8 @@ function renderExpenseCard(p){
       </div>
       <button onclick="resetPerson('${p}')" style="height:26px;padding:0 10px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid var(--bad-line);background:var(--bad-bg);color:var(--bad);cursor:pointer;display:flex;align-items:center;gap:4px;font-family:inherit"><i class=\"ti ti-refresh\" style=\"font-size:12px\"></i> Reset</button>
     </div>
-    <div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <div class="exp-table-wrap" style="overflow-x:auto">
+    <table class="exp-table" style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>
         <tr style="background:var(--amber-bg);border-bottom:2px solid var(--amber-line)">
           <th style="width:36px;padding:8px 6px;text-align:center;font-size:11px;color:var(--amber);font-weight:700">No</th>
@@ -1104,26 +1104,24 @@ function renderFixedListsInModal(){
       style="margin-top:4px;max-width:100%;height:26px;padding:0 6px;border-radius:8px;border:1px solid ${fe.savingsFundId?'var(--sage-line)':'var(--line2)'};background:${fe.savingsFundId?'var(--sage-bg)':'var(--card)'};color:${fe.savingsFundId?'var(--sage)':'var(--ink2)'};font-size:11px;font-family:inherit;cursor:pointer;outline:none">${opts}</select>`;
   };
   const expRow=(p,fe)=>`
-    <div style="${goalRowStyle}">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600">${fe.name}</div>
-        <div style="font-size:10px;color:var(--ink2)">${(TYPES[fe.type]||TYPES.expense).label}</div>
+    <div class="goal-row">
+      <div class="goal-row-head"><span class="goal-name">${fe.name}</span><span class="goal-type">${(TYPES[fe.type]||TYPES.expense).label}</span></div>
+      <div class="goal-row-ctrl">
         ${linkSel(p,fe)}
+        <input class="goal-input" type="text" inputmode="decimal" value="${fe.goal||''}" placeholder="0.00"
+          onchange="setGoalInSettings('${p}','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
+        <button class="del-item-btn del-icon" onclick="delFixedTemplate('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i></button>
       </div>
-      <input type="text" inputmode="decimal" value="${fe.goal||''}" placeholder="0.00"
-        style="width:110px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right"
-        onchange="setGoalInSettings('${p}','${fe.id}',this.value)" title="ตั้ง Goal" step="0.01">
-      <button class="del-item-btn del-icon" style="height:28px;font-size:11px" onclick="delFixedTemplate('expense','${p}','${fe.id}')" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i></button>
     </div>`;
   // ฟอร์มเพิ่มรายการรายจ่ายใหม่ (ต่อคน)
   const addForm=(p)=>`
-    <div style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;padding:9px 10px;background:var(--card);border:1px dashed var(--amber-line);border-radius:12px">
-      <div style="flex:1;min-width:110px">
+    <div class="goal-add-form" style="display:flex;gap:6px;align-items:flex-end;flex-wrap:wrap;margin-top:8px;padding:9px 10px;background:var(--card);border:1px dashed var(--amber-line);border-radius:12px">
+      <div class="gaf-name" style="flex:1;min-width:110px">
         <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">ชื่อรายการใหม่</label>
         <input id="new-exp-name-${p}" type="text" placeholder="เช่น ค่าประกัน, ค่าเทอม"
           style="width:100%;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit">
       </div>
-      <div>
+      <div class="gaf-type">
         <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">ประเภท</label>
         <select id="new-exp-type-${p}" class="mo-sel" style="height:30px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:12px;font-family:inherit;cursor:pointer">
           <option value="expense">รายจ่าย</option>
@@ -1131,7 +1129,7 @@ function renderFixedListsInModal(){
           <option value="save">ออม</option>
         </select>
       </div>
-      <div>
+      <div class="gaf-goal">
         <label style="display:block;font-size:10px;color:var(--ink2);margin-bottom:3px">Goal</label>
         <input id="new-exp-goal-${p}" type="text" inputmode="decimal" placeholder="0.00"
           style="width:90px;height:30px;padding:0 8px;border-radius:8px;border:1px solid var(--teal-line);background:var(--teal-bg);color:var(--teal);font-size:12px;font-weight:600;font-family:inherit;text-align:right">

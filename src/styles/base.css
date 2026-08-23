@@ -38,7 +38,20 @@
   .bc-current:hover{color:#1e293b}
   .bc-sep{color:#cbd5e1;display:inline-flex;align-items:center}
   .bc-sep i{font-size:14px}
-  @media(max-width:640px){.nav-brand span:last-child{display:none}.breadcrumb .bc-item:not(.bc-current){display:none}.breadcrumb .bc-sep{display:none}}
+  @media(max-width:820px){
+    .shell-nav{height:auto}
+    .nav-inner{flex-wrap:wrap;height:auto;min-height:56px;padding:9px 14px;gap:10px;row-gap:0}
+    .breadcrumb{order:10;flex:1 1 100%;padding-top:9px;margin-top:6px;border-top:1px solid #e5e7eb;overflow-x:auto}
+  }
+  @media(max-width:600px){
+    .nav-inner{gap:8px;padding:8px 12px}
+    .nav-brand span:last-child{display:none}
+    .fb-user-chip{max-width:none;padding:0 5px 0 4px}
+    .fb-user-chip #fb-name{display:none}
+    .fb-logout{font-size:0;padding:0 11px}
+    .fb-logout i{font-size:16px}
+    .fb-sync #fb-sync-txt{display:none}
+  }
 
   /* ── Modules ── */
   .m-app{display:none}

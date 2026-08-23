@@ -20,6 +20,7 @@ html.dark .bc-item { color:#a3a3a3; }
 html.dark .bc-item:hover { color:#93c5fd; }
 html.dark .bc-current { color:#f1f5f9; }
 html.dark .bc-sep { color:#404040; }
+html.dark .breadcrumb { border-top-color:#2e2e2e; }
 html.dark .nav-icon-btn { background:#161616; border-color:#2e2e2e; color:#d4d4d4; }
 html.dark .nav-icon-btn:hover { background:#2e2e2e; color:#f1f5f9; }
 

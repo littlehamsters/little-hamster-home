@@ -121,6 +121,11 @@
 #m-car .cr-field .mo-dp-icon { width:38px; flex:0 0 38px; }
 @media(max-width:480px){ #m-car .cr-fields { padding-left:0; } }
 
+/* ── detail: back button ──────────────────────────────── */
+#m-car .car-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:7px 14px 7px 11px; border:1px solid var(--line); border-radius:999px; background:var(--surf); color:var(--txt2); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; }
+#m-car .car-back:hover { border-color:var(--sage); color:var(--sage); background:var(--blue-bg); }
+#m-car .car-back i { font-size:16px; }
+
 /* ── tables ───────────────────────────────────────────── */
 #m-car .car-table-wrap { overflow-x:auto; }
 #m-car .car-table { width:100%; border-collapse:collapse; font-size:12.5px; }

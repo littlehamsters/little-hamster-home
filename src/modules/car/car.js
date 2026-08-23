@@ -9,6 +9,7 @@ const RENEW_TYPES = [
 ];
 
 let carState = { cars: [], licenses: [], sel: '' };
+let carView = 'list'; // 'list' (overview) | 'detail' (one car)
 
 /* ── helpers ─────────────────────────────────────────────────────── */
 const _cUid = () => 'c' + Math.random().toString(36).slice(2, 8);
@@ -236,13 +237,19 @@ function carDelCar(id) {
   if (!confirm('ลบรถ "' + c.name + '" และประวัติทั้งหมด?')) return;
   carState.cars = carState.cars.filter((x) => x.id !== id);
   if (carState.sel === id) carState.sel = carState.cars[0]?.id || '';
+  carView = 'list';
   _carSave();
   _carRender();
   _cToast('ลบรถแล้ว');
 }
 function carSelect(id) {
   carState.sel = id;
+  carView = 'detail';
   _carSave();
+  _carRender();
+}
+function carBack() {
+  carView = 'list';
   _carRender();
 }
 function carSetRenew(type, field, val) {
@@ -515,6 +522,7 @@ function _carDetail(c) {
   const svT = _carServiceTotal(c),
     rnT = _carRenewTotal(c);
   return `
+    <button class="car-back" onclick="carBack()"><i class="ti ti-arrow-left"></i> รถทั้งหมด</button>
     <div class="car-detail-head">
       <div class="car-title"><i class="ti ti-car"></i> ${_cEsc(c.name)}${
     c.plate ? ` <span class="cc-plate">${_cEsc(c.plate)}</span>` : ''
@@ -576,13 +584,17 @@ function _carRender() {
   const root = document.getElementById('carBody');
   if (!root) return;
   const c = _carSel();
-  root.innerHTML = `
-    ${_carSummaryMetrics()}
-    <div class="car-cards-2">
-      ${_carFleetSection()}
-      ${_carLicenseSection()}
-    </div>
-    ${c ? _carDetail(c) : ''}`;
+  if (carView === 'detail' && c) {
+    root.innerHTML = _carDetail(c);
+  } else {
+    carView = 'list';
+    root.innerHTML = `
+      ${_carSummaryMetrics()}
+      <div class="car-cards-2">
+        ${_carFleetSection()}
+        ${_carLicenseSection()}
+      </div>`;
+  }
   if (window.moInitDatePickers) window.moInitDatePickers(root);
 }
 
@@ -591,6 +603,7 @@ Object.assign(window, {
   _carLoad,
   _carRender,
   carSelect,
+  carBack,
   carOpenCarModal,
   carAddCar,
   carSaveCar,

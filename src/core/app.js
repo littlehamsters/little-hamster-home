@@ -15,6 +15,7 @@ const NAV_ICONS = {
   budget: 'ti-wallet',
   salary: 'ti-receipt-tax',
   car: 'ti-car',
+  debt: 'ti-report-money',
 };
 const navIcon = (id) => NAV_ICONS[id] || 'ti-point';
 

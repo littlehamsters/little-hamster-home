@@ -1,0 +1,181 @@
+/* Debt module — namespaced under #m-debt. Sakai/PrimeNG look (blue primary),
+   colour-tagged account chips, master–detail layout. */
+#m-debt {
+  --bg:#eef2f7; --surf:#ffffff; --surf2:#f8fafc;
+  --line:#e5e7eb; --line2:#d1d5db;
+  --txt:#1e293b; --txt2:#64748b; --txt3:#94a3b8;
+  --pri:#3b82f6; --pri-d:#2563eb;
+  --green:#16a34a; --green-bg:#f0fdf4; --green-line:#bbf7d0;
+  --gold:#f97316; --gold-bg:#fff7ed; --gold-line:#fed7aa;
+  --red:#dc2626; --red-bg:#fef2f2; --red-line:#fecaca;
+  --blue:#0891b2; --blue-bg:#ecfeff;
+  --r:12px;
+  --sh:0 1px 3px rgba(15,23,42,.05),0 1px 2px rgba(15,23,42,.04);
+}
+#m-debt.m-app { font-family:'Inter','IBM Plex Sans Thai',sans-serif; background:var(--bg); color:var(--txt); min-height:100vh; padding:28px 18px 64px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+#m-debt .wrap { max-width:960px; margin:0 auto; }
+#m-debt .debt-header { margin-bottom:24px; }
+#m-debt .debt-header h1 { font-size:26px; font-weight:700; letter-spacing:-.02em; display:flex; align-items:center; gap:10px; }
+#m-debt .debt-header .sub { font-size:14px; color:var(--txt2); margin-top:2px; }
+
+/* ── cards / section headers ─────────────────────────── */
+#m-debt .debt-card { background:var(--surf); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh); padding:18px 20px; margin:0 0 18px; }
+#m-debt .debt-card-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; padding-bottom:9px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+#m-debt .debt-card-title { font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+#m-debt .dst-sub { font-size:11px; font-weight:500; color:var(--txt3); }
+
+/* ── summary strip ───────────────────────────────────── */
+#m-debt .debt-strip { display:flex; flex-wrap:wrap; background:var(--surf); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh); padding:16px 12px; margin-bottom:18px; }
+#m-debt .debt-strip .ds { flex:1; min-width:150px; padding:8px 18px; position:relative; display:flex; align-items:center; gap:12px; }
+#m-debt .debt-strip .ds + .ds::before { content:""; position:absolute; left:0; top:18%; height:64%; width:1px; background:var(--line); }
+#m-debt .ds-tx { min-width:0; }
+#m-debt .ds-lbl { font-size:11.5px; color:var(--txt2); margin-bottom:3px; }
+#m-debt .ds-val { font-size:18px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+#m-debt .ds-val.green { color:var(--green); } #m-debt .ds-val.red { color:var(--red); }
+#m-debt .ds-sub { font-size:11px; font-weight:600; color:var(--txt3); margin-top:2px; }
+#m-debt .dstat-ic { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+#m-debt .dstat-ic.ic-green { background:var(--green-bg); color:var(--green); }
+#m-debt .dstat-ic.ic-gold  { background:var(--gold-bg); color:var(--gold); }
+#m-debt .dstat-ic.ic-blue  { background:var(--blue-bg); color:var(--blue); }
+
+/* ── account chips (colour-tagged) ───────────────────── */
+#m-debt .acc-chip { display:inline-flex; align-items:center; padding:2px 11px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap; }
+#m-debt .acc-chip.none { background:var(--surf2); color:var(--txt3); }
+#m-debt .acc-chip.green  { background:#dcfce7; color:#15803d; }
+#m-debt .acc-chip.yellow { background:#fef9c3; color:#a16207; }
+#m-debt .acc-chip.purple { background:#ede9fe; color:#6d28d9; }
+#m-debt .acc-chip.blue   { background:#dbeafe; color:#1d4ed8; }
+#m-debt .acc-chip.pink   { background:#fce7f3; color:#be185d; }
+#m-debt .acc-chip.teal   { background:#ccfbf1; color:#0f766e; }
+#m-debt .acc-chip.orange { background:#ffedd5; color:#c2410c; }
+#m-debt .acc-chip.gray   { background:#e2e8f0; color:#475569; }
+#m-debt .acc-chip.credit { background:#f1f5f9; color:#334155; border:1px dashed #cbd5e1; }
+#m-debt .acc-chip.locked { cursor:default; }
+#m-debt .acc-bar { display:flex; flex-wrap:wrap; gap:7px; }
+#m-debt .debt-empty-inline { font-size:12.5px; color:var(--txt3); }
+#m-debt .acc-flow { display:inline-flex; align-items:center; gap:6px; }
+#m-debt .acc-flow i { color:var(--txt3); font-size:14px; }
+
+/* ── list rows ───────────────────────────────────────── */
+#m-debt .debt-list { display:flex; flex-direction:column; }
+#m-debt .debt-row { display:flex; align-items:center; gap:12px; padding:12px 8px; border-bottom:1px solid var(--line); cursor:pointer; border-radius:9px; transition:.14s; }
+#m-debt .debt-row:last-child { border-bottom:none; }
+#m-debt .debt-row:hover { background:var(--surf2); }
+#m-debt .row-ic { font-size:18px; flex-shrink:0; color:var(--pri); }
+#m-debt .row-main { flex:1; min-width:0; }
+#m-debt .row-name { font-size:14px; font-weight:700; }
+#m-debt .row-sub { font-size:11.5px; color:var(--txt2); margin-top:3px; }
+#m-debt .drow-prog { display:flex; align-items:center; gap:8px; margin-top:5px; }
+#m-debt .drow-track { flex:1; height:7px; background:var(--surf2); border:1px solid var(--line); border-radius:999px; overflow:hidden; max-width:220px; }
+#m-debt .drow-fill { height:100%; background:var(--green); border-radius:999px; transition:width .5s cubic-bezier(.22,1,.36,1); }
+#m-debt .drow-pct { font-size:11px; font-weight:700; color:var(--green); font-variant-numeric:tabular-nums; }
+#m-debt .drow-total { font-size:16px; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; flex-shrink:0; }
+#m-debt .chev { color:var(--txt3); font-size:20px; font-weight:700; flex-shrink:0; }
+
+/* ── detail ──────────────────────────────────────────── */
+#m-debt .debt-back { display:inline-flex; align-items:center; gap:6px; margin-bottom:14px; padding:7px 14px 7px 11px; border:1px solid var(--line); border-radius:999px; background:var(--surf); color:var(--txt2); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; }
+#m-debt .debt-back:hover { border-color:var(--pri); color:var(--pri); background:var(--blue-bg); }
+#m-debt .debt-back i { font-size:16px; }
+#m-debt .debt-detail-head { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:6px 0 16px; }
+#m-debt .debt-title { font-size:19px; font-weight:700; display:flex; align-items:center; gap:8px; }
+#m-debt .debt-head-act { display:flex; gap:8px; }
+#m-debt .debt-prog-wide { margin:0 0 16px; }
+#m-debt .debt-prog-wide .drow-track { max-width:none; height:9px; }
+#m-debt .debt-note { background:var(--gold-bg); border:1px solid var(--gold-line); border-radius:10px; padding:10px 14px; font-size:13px; color:var(--txt); margin-bottom:18px; display:flex; gap:8px; align-items:flex-start; white-space:pre-wrap; }
+#m-debt .debt-note i { color:var(--gold); margin-top:2px; }
+
+/* ── status pill (clickable) ─────────────────────────── */
+#m-debt .st-pill { border:none; border-radius:999px; padding:4px 13px; font-family:inherit; font-size:11.5px; font-weight:700; cursor:pointer; transition:.14s; }
+#m-debt .st-pill.done { background:var(--green-bg); color:var(--green); }
+#m-debt .st-pill.pending { background:var(--gold-bg); color:var(--gold); }
+#m-debt .st-pill.deferred { background:#e0e7ff; color:#4338ca; }
+#m-debt .st-pill:hover { filter:brightness(.96); box-shadow:0 0 0 2px rgba(59,130,246,.15); }
+#m-debt .debt-table .st-cell { white-space:nowrap; }
+#m-debt .st-del { margin-left:5px; vertical-align:middle; }
+
+/* ── buttons ─────────────────────────────────────────── */
+#m-debt .debt-btn { height:34px; padding:0 16px; border-radius:8px; border:1px solid var(--line); background:var(--surf); color:var(--txt2); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; transition:.16s; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; }
+#m-debt .debt-btn:hover { background:var(--surf2); color:var(--txt); }
+#m-debt .debt-btn.sm { height:30px; padding:0 12px; font-size:12px; }
+#m-debt .debt-btn.primary { background:var(--pri); border-color:var(--pri); color:#fff; }
+#m-debt .debt-btn.primary:hover { background:var(--pri-d); border-color:var(--pri-d); color:#fff; }
+#m-debt .debt-btn.danger { color:var(--red); border-color:var(--red-line); background:transparent; }
+#m-debt .debt-btn.danger:hover { background:var(--red); color:#fff; border-color:var(--red); }
+#m-debt .debt-icon-btn { border:none; background:transparent; color:var(--txt3); cursor:pointer; font-size:14px; padding:3px 6px; border-radius:6px; }
+#m-debt .debt-icon-btn:hover { background:var(--surf2); color:var(--txt); }
+#m-debt .debt-icon-btn.danger:hover { background:var(--red-bg); color:var(--red); }
+
+/* ── table ───────────────────────────────────────────── */
+#m-debt .debt-table-wrap { overflow-x:auto; }
+#m-debt .debt-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+#m-debt .debt-table th { text-align:right; padding:8px 10px; font-size:11px; font-weight:700; color:var(--txt2); border-bottom:1px solid var(--line); white-space:nowrap; }
+#m-debt .debt-table th.l, #m-debt .debt-table td.l { text-align:left; }
+#m-debt .debt-table th:first-child, #m-debt .debt-table td:first-child { text-align:center; width:34px; color:var(--txt3); }
+#m-debt .debt-table td { padding:9px 10px; text-align:right; border-bottom:1px solid var(--surf2); font-variant-numeric:tabular-nums; white-space:nowrap; vertical-align:middle; }
+#m-debt .debt-table td.note { white-space:normal; color:var(--txt2); font-size:12px; max-width:200px; }
+#m-debt .debt-table tbody tr:hover { background:var(--surf2); }
+#m-debt .debt-table .row-act { display:flex; gap:2px; justify-content:flex-end; }
+#m-debt .debt-table .mo-sel-wrap { display:inline-block; width:100%; max-width:190px; }
+#m-debt .debt-table .debt-acc-sel + .mo-sel-trigger, #m-debt .debt-table .mo-sel-trigger { min-width:0; width:100%; height:30px; font-size:12px; }
+#m-debt .debt-empty { text-align:center; color:var(--txt3); padding:18px; font-size:12.5px; }
+#m-debt .mi-row td:first-child { position:relative; }
+#m-debt .mi-badge { display:inline-block; margin-left:4px; padding:1px 7px; border-radius:999px; background:var(--blue-bg); color:var(--blue); font-size:10px; font-weight:700; vertical-align:middle; }
+
+/* ── modal ───────────────────────────────────────────── */
+#m-debt .debt-overlay, #debtModalArea .debt-overlay { position:fixed; inset:0; z-index:400; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(15,23,42,.4); }
+#m-debt .debt-overlay.show, #debtModalArea .debt-overlay.show { display:flex; }
+.debt-overlay .debt-modal { background:var(--surf,#fff); border-radius:16px; width:min(420px,94vw); max-height:90vh; overflow-y:auto; box-shadow:0 20px 50px rgba(15,23,42,.25); animation:debtPop .18s ease; font-family:'Inter','IBM Plex Sans Thai',sans-serif; color:#1e293b; }
+.debt-overlay .debt-modal.wide { width:min(480px,94vw); }
+@keyframes debtPop { from{opacity:0; transform:translateY(8px) scale(.98)} to{opacity:1; transform:none} }
+.debt-overlay .debt-modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 4px; }
+.debt-overlay .debt-modal-head h3 { font-size:18px; font-weight:700; }
+.debt-overlay .debt-modal-x { border:none; background:transparent; color:#94a3b8; font-size:16px; cursor:pointer; padding:4px 8px; border-radius:8px; }
+.debt-overlay .debt-modal-x:hover { background:#f1f5f9; color:#1e293b; }
+.debt-overlay .debt-modal-body { padding:10px 18px 4px; }
+.debt-overlay .df { display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:13px; }
+.debt-overlay .df-hint { font-weight:500; color:#94a3b8; font-size:11px; }
+.debt-overlay .df input, .debt-overlay .df textarea { display:block; width:100%; margin-top:5px; padding:0 12px; border-radius:9px; border:1px solid #e5e7eb; background:#fff; color:#1e293b; font-family:inherit; font-size:14px; box-sizing:border-box; }
+.debt-overlay .df input { height:40px; }
+.debt-overlay .df textarea { padding:9px 12px; resize:vertical; min-height:52px; line-height:1.5; }
+.debt-overlay .df input:focus, .debt-overlay .df textarea:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.18); }
+.debt-overlay .df-gen { display:block; background:#eff6ff; border:1px solid #dbeafe; border-radius:9px; padding:8px 11px; margin-bottom:13px; line-height:1.5; color:#334155; }
+.debt-overlay .df-2col { display:flex; gap:10px; }
+.debt-overlay .df-2col .df, .debt-overlay .df-2col .owner-slot { flex:1 1 0; min-width:0; }
+.debt-overlay .owner-slot .df { margin-bottom:0; }
+.debt-overlay .dtype-seg { display:flex; gap:6px; margin-top:6px; }
+.debt-overlay .dtype-btn { flex:1 1 0; height:38px; border:1px solid #e5e7eb; background:#fff; border-radius:9px; font-family:inherit; font-size:12.5px; font-weight:600; color:#64748b; cursor:pointer; transition:.15s; }
+.debt-overlay .dtype-btn:hover { border-color:#c7d2fe; }
+.debt-overlay .dtype-btn.on { background:#eff6ff; border-color:#3b82f6; color:#2563eb; }
+.debt-overlay .dtype-locked { margin-top:5px; height:40px; display:flex; align-items:center; padding:0 12px; border-radius:9px; border:1px dashed #cbd5e1; background:#f8fafc; color:#334155; font-size:13.5px; }
+.debt-overlay .df .mo-sel-wrap { display:block; width:100%; margin-top:5px; }
+.debt-overlay .df .mo-sel-trigger { width:100%; min-width:0; height:40px; }
+.debt-overlay .df .mo-dp-field { margin-top:5px; }
+.debt-overlay .debt-modal-foot { display:flex; gap:10px; justify-content:flex-end; padding:10px 18px 18px; }
+
+/* ── account manager modal ───────────────────────────── */
+.debt-overlay .acc-list { display:flex; flex-direction:column; gap:9px; margin-bottom:14px; }
+.debt-overlay .acc-row { display:flex; align-items:center; gap:10px; }
+.debt-overlay .acc-row .acc-chip { flex-shrink:0; min-width:96px; justify-content:center; }
+.debt-overlay .acc-swatches { display:flex; gap:5px; flex:1; flex-wrap:wrap; }
+.debt-overlay .acc-sw { width:20px; height:20px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; transition:.12s; }
+.debt-overlay .acc-sw.on { border-color:#1e293b; transform:scale(1.12); }
+.debt-overlay .acc-sw.green{background:#86efac} .debt-overlay .acc-sw.yellow{background:#fde047} .debt-overlay .acc-sw.purple{background:#c4b5fd} .debt-overlay .acc-sw.blue{background:#93c5fd} .debt-overlay .acc-sw.pink{background:#f9a8d4} .debt-overlay .acc-sw.teal{background:#5eead4} .debt-overlay .acc-sw.orange{background:#fdba74} .debt-overlay .acc-sw.gray{background:#cbd5e1}
+.debt-overlay .acc-add { display:flex; align-items:center; gap:8px; flex-wrap:wrap; border-top:1px solid #e5e7eb; padding-top:13px; }
+.debt-overlay .acc-add input { flex:1 1 130px; min-width:0; height:38px; padding:0 11px; border-radius:9px; border:1px solid #e5e7eb; font-family:inherit; font-size:13.5px; }
+.debt-overlay .acc-add input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.18); }
+.debt-overlay .debt-empty { text-align:center; color:#94a3b8; padding:8px; font-size:12.5px; }
+
+/* ── toast ───────────────────────────────────────────── */
+#m-debt .debt-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(12px); background:#1e293b; color:#fff; padding:9px 18px; border-radius:12px; font-size:13px; font-weight:600; opacity:0; transition:.22s; z-index:500; pointer-events:none; box-shadow:0 4px 18px rgba(0,0,0,.18); }
+#m-debt .debt-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── responsive ──────────────────────────────────────── */
+@media(max-width:560px){
+  #m-debt.m-app { padding:20px 14px 60px; }
+  #m-debt .debt-header h1 { font-size:22px; }
+  #m-debt .debt-card { padding:16px 14px; }
+  #m-debt .debt-strip .ds { min-width:130px; }
+  #m-debt .debt-detail-head { align-items:flex-start; }
+  #m-debt .debt-head-act { flex-wrap:wrap; }
+  .debt-overlay .df-2col { flex-direction:column; gap:0; }
+}

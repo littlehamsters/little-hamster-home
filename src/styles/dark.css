@@ -47,6 +47,7 @@ html.dark .home-grid .app-card:nth-child(2) .ac-icon { background:#14321f; }
 html.dark .home-grid .app-card:nth-child(3) .ac-icon { background:#3a2a12; }
 html.dark .home-grid .app-card:nth-child(4) .ac-icon { background:#241b3a; }
 html.dark .home-grid .app-card:nth-child(5) .ac-icon { background:#0e2e34; }
+html.dark .home-grid .app-card:nth-child(6) .ac-icon { background:#3a1717; }
 
 /* ── User chip / logout / sync ────────────────────────────────────── */
 html.dark .fb-user-chip { background:#0a0a0a; border-color:#2e2e2e; color:#f4f4f5; }
@@ -121,6 +122,40 @@ html.dark #m-car {
   --amber-bg:#3a2a12; --amber-line:#5a3e18;
   --red-bg:#3a1717; --red-line:#5a2020;
 }
+
+html.dark #m-debt {
+  --bg:#0a0a0a; --surf:#161616; --surf2:#242424;
+  --line:#2e2e2e; --line2:#404040;
+  --txt:#f4f4f5; --txt2:#a3a3a3; --txt3:#737373;
+  --green:#4ade80; --green-bg:#14321f; --green-line:#1e5235;
+  --gold:#fb923c; --gold-bg:#3a2a12; --gold-line:#5a3e18;
+  --red:#f87171; --red-bg:#3a1717; --red-line:#5a2020;
+  --blue:#38bdf8; --blue-bg:#0e2e34;
+  --sh:0 1px 3px rgba(0,0,0,.4);
+}
+html.dark .debt-overlay .debt-modal { background:#161616; color:#f4f4f5; }
+html.dark .debt-overlay .debt-modal-head h3 { color:#f1f5f9; }
+html.dark .debt-overlay .df { color:#a3a3a3; }
+html.dark .debt-overlay .df input, html.dark .debt-overlay .df textarea,
+html.dark .debt-overlay .acc-add input { background:#0a0a0a; border-color:#2e2e2e; color:#f4f4f5; }
+html.dark .debt-overlay .debt-modal-x { color:#a3a3a3; }
+html.dark .debt-overlay .debt-modal-x:hover { background:#2e2e2e; color:#f4f4f5; }
+html.dark .debt-overlay .acc-add { border-top-color:#2e2e2e; }
+html.dark .debt-overlay .df-gen { background:#172a46; border-color:#1e3a5f; color:#cbd5e1; }
+html.dark #m-debt .st-pill.deferred { background:#241b3a; color:#c4b5fd; }
+html.dark #m-debt .acc-chip.credit { background:#242424; color:#d4d4d4; border-color:#404040; }
+html.dark .debt-overlay .dtype-btn { background:#0a0a0a; border-color:#2e2e2e; color:#a3a3a3; }
+html.dark .debt-overlay .dtype-btn.on { background:#172a46; border-color:#1e3a5f; color:#93c5fd; }
+html.dark .debt-overlay .dtype-locked { background:#0a0a0a; border-color:#404040; color:#d4d4d4; }
+html.dark .debt-overlay .acc-sw.on { border-color:#f4f4f5; }
+html.dark #m-debt .acc-chip.green  { background:#14321f; color:#4ade80; }
+html.dark #m-debt .acc-chip.yellow { background:#3a2a12; color:#facc15; }
+html.dark #m-debt .acc-chip.purple { background:#241b3a; color:#c4b5fd; }
+html.dark #m-debt .acc-chip.blue   { background:#172a46; color:#93c5fd; }
+html.dark #m-debt .acc-chip.pink   { background:#3a1b2b; color:#f9a8d4; }
+html.dark #m-debt .acc-chip.teal   { background:#0e2e34; color:#5eead4; }
+html.dark #m-debt .acc-chip.orange { background:#3a2412; color:#fdba74; }
+html.dark #m-debt .acc-chip.gray   { background:#242424; color:#cbd5e1; }
 
 html.dark #m-salary {
   --st-paper:#0a0a0a; --st-surface:#161616; --st-surface-2:#242424;

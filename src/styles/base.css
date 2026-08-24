@@ -85,6 +85,7 @@
   .home-grid .app-card:nth-child(3) .ac-icon{background:#ffedd5;color:#ea580c}
   .home-grid .app-card:nth-child(4) .ac-icon{background:#ede9fe;color:#7c3aed}
   .home-grid .app-card:nth-child(5) .ac-icon{background:#cffafe;color:#0891b2}
+  .home-grid .app-card:nth-child(6) .ac-icon{background:#fee2e2;color:#dc2626}
 
   /* Ring */
   .mini-ring-wrap{position:relative;width:88px;height:88px;margin:0 auto .75rem}

@@ -169,3 +169,8 @@ window.moGetDate = (el) => {
   const e = typeof el === 'string' ? document.getElementById(el) : el;
   return e ? e.dataset.iso || '' : '';
 };
+// programmatically set an mo-dp field to an ISO date (keeps display + dataset in sync)
+window.moSetDate = (el, isoVal) => {
+  const e = typeof el === 'string' ? document.getElementById(el) : el;
+  if (e) setVal(e, isoVal || '');
+};

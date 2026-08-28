@@ -42,7 +42,7 @@ const _svFmt=n=>Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:0,max
 const parseNum=s=>{const v=parseFloat(String(s).replace(/,/g,'').trim());return isNaN(v)?null:v;};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function balance(f){return f.tx.reduce((s,t)=>s+(t.type==='in'?t.amt:-t.amt),0);}
-function dateStr(ts){const d=new Date(ts);return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}
+function dateStr(ts){const d=new Date(ts);if(isNaN(d))return '—';return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}
 function shortDate(iso){if(!iso)return '';const d=new Date(iso+'T00:00:00');return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});}
 function daysLeft(iso){
   if(!iso)return null;
@@ -298,7 +298,7 @@ function openTx(id,type){
   document.getElementById('txTitle').textContent=f.emoji+' '+f.name;
   document.getElementById('txAmt').value='';
   document.getElementById('txNote').value='';
-  document.getElementById('txDate').value=todayISO();
+  if(window.moSetDate)window.moSetDate('txDate',todayISO());else document.getElementById('txDate').value=todayISO();
   document.getElementById('txErr').style.display='none';
   setSeg();
   renderHist(f);
@@ -432,7 +432,7 @@ function delTx(fid,tid){
 function saveTx(){
   const amt=parseNum(document.getElementById('txAmt').value);
   const note=document.getElementById('txNote').value.trim();
-  const dval=document.getElementById('txDate').value;
+  const dval=window.moGetDate?window.moGetDate('txDate'):document.getElementById('txDate').value;
   const err=document.getElementById('txErr');
   if(amt===null||amt<=0){err.textContent='ใส่จำนวนเงินที่มากกว่า 0';err.style.display='block';return;}
   const f=state.funds.find(x=>x.id===txId);

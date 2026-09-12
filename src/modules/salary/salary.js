@@ -18,7 +18,7 @@ const DED_MAP={stDSpouse:"dSpouse",stDChild:"dChild",stDChild2:"dChild2",stDPare
 
 // ── State ──
 let state={year:"2568",activeId:null,people:[]};
-const newPerson=n=>({id:uid(),name:n||"คนใหม่",income:blank(),ded:{}});
+const newPerson=n=>({id:uid(),name:n||"คนใหม่",income:blank(),ded:{},xmas:[]});
 const active=()=>state.people.find(p=>p.id===state.activeId)||state.people[0];
 
 // ── Tax engine ──
@@ -174,7 +174,7 @@ function refresh(){
   let bh="";r.detail.forEach(b=>{const span=b.hi===Infinity?1e6:(b.hi-b.lo);const pct=b.amt>0?Math.min(100,b.amt/span*100):0;bh+=`<div class="bracket-row${b.active?' br-row-active':''}"><div class="br-rate">${b.rate*100}%</div><div class="br-track"><div class="br-fill" style="width:${pct}%"></div></div><div class="br-amt">${fmt(b.lo)}–${b.hi===Infinity?"ขึ้นไป":fmt(b.hi)}</div><div class="br-tax">${b.t>0?fmt(b.t):"—"}</div></div>`;});
   bh+=`<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:2px solid var(--st-line);font-weight:600"><span>รวมภาษี</span><span class="st-num" style="color:var(--st-clay)">${fmt(r.tax)}</span></div>`;
   document.getElementById("stBrackets").innerHTML=bh;
-  renderPlan(r);renderHouse();
+  renderPlan(r);renderHouse();renderXmas();
 }
 
 // ── Planner ──
@@ -211,6 +211,87 @@ function renderHouse(){
   document.getElementById("stHouseNote").innerHTML=TD>=0?`รวมทั้งครัวเรือนภาษีที่ต้องชำระ <b>${fmt(TT)}</b> บาท หักไว้เกิน <b>ขอคืนได้รวม ${fmt(TD)}</b> บาท`:`รวมทั้งครัวเรือนภาษีที่ต้องชำระ <b>${fmt(TT)}</b> บาท ต้อง<b>จ่ายเพิ่มรวม ${fmt(-TD)}</b> บาทตอนยื่น`;
 }
 
+// ── คริสต์มาส: จัดสรรเงินได้เดือน ธ.ค. ──
+const _decNet=p=>{const d=(p.income&&p.income[11])||{};return num(d.salary)+num(d.ot)+num(d.bonus)-num(d.sso)-num(d.wht)-num(d.salary)*num(d.pvdPct)/100;};
+// ดึงกองออมยอดจริง (อ่านอย่างเดียว — ไม่ผูก/ไม่เติมจริง)
+function _xmasJars(){try{if(window._svLoad)window._svLoad();return window.svGetFunds?window.svGetFunds():[];}catch(e){return[];}}
+function renderXmas(){
+  const p=active();if(!p)return;if(!Array.isArray(p.xmas))p.xmas=[];
+  const d=(p.income&&p.income[11])||{};
+  const sal=num(d.salary),ot=num(d.ot),bon=num(d.bonus),pa=sal*num(d.pvdPct)/100;
+  const deduct=num(d.sso)+num(d.wht)+pa,gross=sal+ot+bon,net=gross-deduct;
+  const S=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
+  S("stXmasSalary",sal);S("stXmasOT",ot);S("stXmasBonus",bon);S("stXmasGross",gross);S("stXmasDeduct",deduct);S("stXmasNet",net);
+  const list=document.getElementById("stXmasList");if(!list)return;
+  const jars=_xmasJars();
+  // เฉพาะกองของเจ้าของคนนี้ + กองกลาง (owner ว่าง)
+  const pname=(p.name||"").trim().toLowerCase();
+  const myJars=jars.filter(j=>!j.owner||String(j.owner).trim().toLowerCase()===pname);
+  list.innerHTML=p.xmas.length?p.xmas.map((x,i)=>{
+    const del=`<button class="xmas-del" data-i="${i}" title="ลบ"><i class="ti ti-trash"></i></button>`;
+    if(x.sav){
+      // แถวกองออม: dropdown เลือกกอง (กรองตาม owner) + 3 คอลัมน์ เดิม | เติม(กรอก) | ใหม่
+      // คงตัวเลือกเดิมไว้แม้กองนั้นจะไม่ตรง owner (กันหลุด)
+      let optJars=myJars;
+      if(x.fundId&&!myJars.some(f=>f.id===x.fundId)){const ex=jars.find(f=>f.id===x.fundId);if(ex)optJars=[ex].concat(myJars);}
+      if(!optJars.length) return `<div class="xmas-row-wrap sav"><div class="xmas-srow"><span class="xf-warn">ยังไม่มีกองออมของ ${esc(p.name)} — สร้างกองในเมนู “กองออม” ก่อน</span>${del}</div></div>`;
+      const j=x.fundId?jars.find(f=>f.id===x.fundId):null;
+      return `<div class="xmas-row-wrap sav">
+        <div class="xmas-srow">
+          <select class="xmas-fund-sel" data-i="${i}"><option value="">— เลือกกอง —</option>${optJars.map(f=>`<option value="${f.id}" ${x.fundId===f.id?"selected":""}>${esc((f.emoji?f.emoji+" ":"")+f.name)}${f.owner?"":" · กองกลาง"}</option>`).join("")}</select>
+          ${del}
+        </div>
+        <div class="xmas-3col">
+          <div class="c3"><span class="k">เดิม</span><span class="v st-num" data-cur="${i}">${j?fmt(j.bal):"—"}</span></div>
+          <div class="c3 op">+</div>
+          <div class="c3 mid"><span class="k">เติม</span><input class="xmas-amt st-num" data-i="${i}" inputmode="numeric" value="${fmtIn(x.amt)}" placeholder="0"></div>
+          <div class="c3 op">=</div>
+          <div class="c3 to"><span class="k">ใหม่</span><span class="v st-num xf-new" data-new="${i}">${j?fmt(j.bal+num(x.amt)):"—"}</span></div>
+        </div>
+      </div>`;
+    }
+    // แถวทั่วไป: ชื่อ + จำนวน
+    return `<div class="xmas-row-wrap">
+      <div class="xmas-row">
+        <input class="xmas-name" data-i="${i}" value="${esc(x.label||"")}" placeholder="เช่น โปะบ้าน / ลดหย่อน / ใช้จ่าย">
+        <input class="xmas-amt st-num" data-i="${i}" inputmode="numeric" value="${fmtIn(x.amt)}" placeholder="0">
+        ${del}
+      </div>
+    </div>`;
+  }).join(""):'<div class="xmas-empty">ยังไม่มีรายการ — กดปุ่มด้านบน หรือ “＋ เพิ่มรายการ” เพื่อจัดสรร</div>';
+  list.querySelectorAll(".xmas-name").forEach(inp=>inp.addEventListener("input",e=>{active().xmas[+e.target.dataset.i].label=e.target.value;autoSave();}));
+  list.querySelectorAll(".xmas-amt").forEach(inp=>{
+    inp.addEventListener("input",e=>{const i=+e.target.dataset.i;active().xmas[i].amt=num(e.target.value);autoSave();updateXmasTotals();updateXmasNew(i);});
+    inp.addEventListener("blur",e=>{e.target.value=fmtIn(e.target.value);});
+  });
+  list.querySelectorAll(".xmas-fund-sel").forEach(sel=>sel.addEventListener("change",e=>{const i=+e.target.dataset.i;active().xmas[i].fundId=e.target.value||"";autoSave();renderXmas();}));
+  list.querySelectorAll(".xmas-del").forEach(b=>b.addEventListener("click",()=>{active().xmas.splice(+b.dataset.i,1);autoSave();renderXmas();}));
+  updateXmasTotals();
+}
+// อัปเดตช่อง "ใหม่" ของแถวกองออม เมื่อพิมพ์จำนวน (ไม่ re-render เพื่อคงโฟกัส)
+function updateXmasNew(i){
+  const p=active();if(!p||!p.xmas[i])return;const x=p.xmas[i];if(!x.sav)return;
+  const el=document.querySelector('#stXmasList [data-new="'+i+'"]');if(!el)return;
+  const j=x.fundId?_xmasJars().find(f=>f.id===x.fundId):null;
+  el.textContent=j?fmt(j.bal+num(x.amt)):"—";
+}
+function updateXmasTotals(){
+  const p=active();if(!p)return;
+  const net=_decNet(p),alloc=(p.xmas||[]).reduce((s,x)=>s+num(x.amt),0),remain=net-alloc;
+  const toSav=(p.xmas||[]).filter(x=>x.fundId).reduce((s,x)=>s+num(x.amt),0);
+  const a=document.getElementById("stXmasAlloc");if(a)a.textContent=fmt(alloc);
+  const ts=document.getElementById("stXmasToSavings");if(ts)ts.textContent=fmt(toSav);
+  const rEl=document.getElementById("stXmasRemain");if(rEl){rEl.textContent=(remain<0?"-":"")+fmt(Math.abs(remain));rEl.className="st-num "+(remain<0?"bad":(remain>0?"good":""));}
+  const bar=document.getElementById("stXmasBar");
+  if(bar){const pct=net>0?Math.min(100,Math.max(0,alloc/net*100)):0;bar.style.width=pct+"%";bar.style.background=remain<0?"var(--st-clay)":"var(--st-sage)";}
+}
+function xmasAddRow(label,sav){
+  const p=active();if(!p)return;if(!Array.isArray(p.xmas))p.xmas=[];
+  p.xmas.push({label:label||"",amt:0,sav:!!sav,fundId:""});autoSave();renderXmas();
+  const names=document.querySelectorAll("#stXmasList .xmas-name");
+  if(names.length&&!label)names[names.length-1].focus();
+}
+
 // ── Persistence: load from localStorage ──
 function load(){
   try{
@@ -222,7 +303,7 @@ function load(){
 }
 function seed(){
   if(!state.people||!state.people.length)state.people=[newPerson("คนที่ 1")];
-  state.people.forEach(p=>{if(!p.income||p.income.length!==12)p.income=blank();if(!p.ded)p.ded={};});
+  state.people.forEach(p=>{if(!p.income||p.income.length!==12)p.income=blank();if(!p.ded)p.ded={};if(!Array.isArray(p.xmas))p.xmas=[];});
   if(!state.activeId||!state.people.find(p=>p.id===state.activeId))state.activeId=state.people[0].id;
 }
 
@@ -269,6 +350,8 @@ function setupDed(){
 document.getElementById("taxYear").addEventListener("change",refresh);
 document.getElementById("stAddPerson2").addEventListener("click",addPerson);
 document.getElementById("stPrintBtn").addEventListener("click",()=>window.print());
+document.getElementById("stXmasAdd").addEventListener("click",()=>xmasAddRow(""));
+document.querySelectorAll("#stXmasPresets .xmas-chip").forEach(b=>b.addEventListener("click",()=>xmasAddRow(b.dataset.preset,b.dataset.sav==="1")));
 document.getElementById("stFillAll").addEventListener("click",async()=>{
   const who=active().name;
   const sal=await modal("เงินเดือนต่อเดือนของ "+who+" (บาท)",{input:true,numeric:true,value:"",ok:"ถัดไป"});if(sal===null)return;

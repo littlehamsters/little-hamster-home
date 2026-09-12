@@ -368,6 +368,7 @@ function importData(ev){
 }
 
 let planChart=null;
+let _planRows={}; // year → {p,pReg,pPre} for the forecast "รวมต้น" info popup
 function planAuto(){
   const monthly=_moNv('planMonthly')||0, prepay=_moNv('planPrepay')||0;
   const yearly=monthly*12;
@@ -388,7 +389,9 @@ function calcPlan(doScroll){
   const actByYear={};
   data.forEach(r=>{
     const y=new Date(r.date).getFullYear();
-    if(!actByYear[y]) actByYear[y]={p:0,i:0,end:0};
+    if(!actByYear[y]) actByYear[y]={p:0,pReg:0,pPre:0,i:0,end:0};
+    actByYear[y].pReg+=r.principal;          // เงินต้นจากงวดผ่อนปกติ
+    actByYear[y].pPre+=(r.prepay||0);        // เงินต้นจากการโปะ
     actByYear[y].p+=r.principal+(r.prepay||0);
     actByYear[y].i+=r.interest+(r.prepayInt||0);
     actByYear[y].end=r.balance;
@@ -409,9 +412,9 @@ function calcPlan(doScroll){
     if(prin<=0){ tooLow=true; break; }
     if(prin>bal) prin=bal;
     bal-=prin; projInt+=intAmt;
-    if(!projByYear[y]) projByYear[y]={p:0,i:0,end:bal};
-    projByYear[y].p+=prin; projByYear[y].i+=intAmt;
-    if(d.getMonth()===11 && prepayYr>0 && bal>0){ const ap=Math.min(prepayYr,bal); bal-=ap; projByYear[y].p+=ap; }
+    if(!projByYear[y]) projByYear[y]={p:0,pReg:0,pPre:0,i:0,end:bal};
+    projByYear[y].p+=prin; projByYear[y].pReg+=prin; projByYear[y].i+=intAmt;
+    if(d.getMonth()===11 && prepayYr>0 && bal>0){ const ap=Math.min(prepayYr,bal); bal-=ap; projByYear[y].p+=ap; projByYear[y].pPre+=ap; }
     projByYear[y].end=bal;
     d.setMonth(d.getMonth()+1);
   }
@@ -419,10 +422,19 @@ function calcPlan(doScroll){
 
   const allYears=[...new Set([...Object.keys(actByYear),...Object.keys(projByYear)].map(Number))].sort((a,b)=>a-b);
   const rows=allYears.map(y=>{
-    const a=actByYear[y]||{p:0,i:0,end:null}, pj=projByYear[y]||null;
+    const a=actByYear[y]||{p:0,pReg:0,pPre:0,i:0,end:null}, pj=projByYear[y]||null;
     const kind = y<lastActualYear ? 'past' : (y===lastActualYear ? 'now' : 'future');
-    return {year:y, yearNo:y-2023+1, age:startAge+(y-2023), p:(a.p||0)+(pj?pj.p:0), i:(a.i||0)+(pj?pj.i:0), end:pj?pj.end:a.end, kind};
+    return {year:y, yearNo:y-2023+1, age:startAge+(y-2023),
+      p:(a.p||0)+(pj?pj.p:0),
+      pReg:(a.pReg||0)+(pj?pj.pReg:0),   // รวมผ่อนปกติ (จริง+พยากรณ์)
+      pRegAct:(a.pReg||0),               // ผ่อนปกติ — เดือนที่จ่ายจริงแล้ว
+      pRegProj:(pj?pj.pReg:0),           // ผ่อนปกติ — เดือนที่เหลือจนสิ้นปี (พยากรณ์)
+      pPre:(a.pPre||0)+(pj?pj.pPre:0),   // รวมโปะ (จริง+พยากรณ์)
+      pPreAct:(a.pPre||0),               // โปะ — จ่ายจริงแล้ว
+      pPreProj:(pj?pj.pPre:0),           // โปะ — พยากรณ์สิ้นปี
+      i:(a.i||0)+(pj?pj.i:0), end:pj?pj.end:a.end, kind};
   });
+  _planRows={}; rows.forEach(rw=>{ _planRows[rw.year]={p:rw.p,pReg:rw.pReg,pRegAct:rw.pRegAct,pRegProj:rw.pRegProj,pPre:rw.pPre,pPreAct:rw.pPreAct,pPreProj:rw.pPreProj}; });
 
   const res=document.getElementById('planResult'); res.classList.remove('hidden');
   const warn=document.getElementById('planWarn');
@@ -447,7 +459,8 @@ function calcPlan(doScroll){
     const tr=document.createElement('tr');
     tr.className = rw===payoffRow ? 'payoff-row' : (rw.kind==='past' ? 'past-row' : (rw.kind==='now' ? 'now-row' : ''));
     const endTxt=rw.end!=null?_moFmt(Math.max(0,rw.end)):'-';
-    tr.innerHTML='<td>'+rw.age+'</td><td>'+rw.yearNo+'</td><td>'+(rw.year+543)+'</td><td class="prin">'+_moFmt(rw.p)+'</td><td class="intr">'+_moFmt(rw.i)+'</td><td>'+endTxt+'</td>';
+    const prinInfo = rw.pPre>0 ? ' <button class="info-btn" onclick="planPrinDetail('+rw.year+')" title="ผ่อนปกติ vs โปะ">i</button>' : '';
+    tr.innerHTML='<td>'+rw.age+'</td><td>'+rw.yearNo+'</td><td>'+(rw.year+543)+'</td><td class="prin">'+_moFmt(rw.p)+prinInfo+'</td><td class="intr">'+_moFmt(rw.i)+'</td><td>'+endTxt+'</td>';
     tb.appendChild(tr);
   });
   const lg=document.getElementById('planLegend');
@@ -467,5 +480,35 @@ function calcPlan(doScroll){
   if(doScroll) res.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
+function planPrinDetail(yr){
+  const d=_planRows[yr]; if(!d) return;
+  const pct = d.p>0 ? Math.round(d.pReg/d.p*100) : 0;
+  // แสดงบรรทัดแยกจ่ายแล้ว/ที่เหลือ เฉพาะปีที่มีทั้งสองส่วน (ปีปัจจุบัน); ปีอื่นแสดงรวม
+  const regBreak = (d.pRegAct>0 && d.pRegProj>0)
+    ? `<div class="dl-row"><span class="dl-lbl">&nbsp;&nbsp;• จ่ายจริงแล้ว (งวดปกติ)</span><span class="dl-val">${_moFmt(d.pRegAct)}</span></div>
+       <div class="dl-row"><span class="dl-lbl">&nbsp;&nbsp;• ที่เหลือจนสิ้นปี (พยากรณ์)</span><span class="dl-val" style="color:var(--txt-2)">${_moFmt(d.pRegProj)}</span></div>`
+    : '';
+  const preBreak = (d.pPreAct>0 && d.pPreProj>0)
+    ? `<div class="dl-row"><span class="dl-lbl">&nbsp;&nbsp;• โปะจริงที่จ่ายแล้ว</span><span class="dl-val">${_moFmt(d.pPreAct)}</span></div>
+       <div class="dl-row"><span class="dl-lbl">&nbsp;&nbsp;• โปะพยากรณ์สิ้นปี</span><span class="dl-val" style="color:var(--txt-2)">${_moFmt(d.pPreProj)}</span></div>`
+    : '';
+  document.getElementById('modalArea').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">
+    <h3>รวมต้น ปี ${yr+543}</h3>
+    <p class="sub">แยกที่มาของเงินต้นที่ตัดในปีนี้</p>
+    <div class="dl-sec">งวดปกติ</div>
+    <div class="dl-row"><span class="dl-lbl">ยอดจริงจากผ่อน (งวดปกติ)</span><span class="dl-val">${_moFmt(d.pReg)}</span></div>
+    ${regBreak}
+    <div class="dl-sec">โปะ</div>
+    <div class="dl-row"><span class="dl-lbl">โปะเพิ่ม</span><span class="dl-val" style="color:var(--blue)">${_moFmt(d.pPre)}</span></div>
+    ${preBreak}
+    <div class="dl-row total"><span class="dl-lbl">รวมต้น</span><span class="dl-val" style="color:var(--green)">${_moFmt(d.p)}</span></div>
+    <div class="dl-sec">สัดส่วน</div>
+    <div class="dl-row"><span class="dl-lbl">ผ่อนปกติ ${pct}% · โปะ ${100-pct}%</span><span class="dl-val"></span></div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">ปิด</button>
+    </div>
+  </div></div>`;
+}
+
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { _moNv, _moToast, _moLoad, _moSave, recalc, setCheer, renderSplit, populateYearFilter, renderTable, addYearRow, renderYears, yearDetail, renderCharts, showView, switchTab, lastBalance, calcNewInstallment, addRow, delRow, confirmDel, editRow, saveEdit, payerRow, detailRow, closeModal, openSettings, saveSettings, exportData, importData, planAuto, calcPlan });
+Object.assign(window, { _moNv, _moToast, _moLoad, _moSave, recalc, setCheer, renderSplit, populateYearFilter, renderTable, addYearRow, renderYears, yearDetail, renderCharts, showView, switchTab, lastBalance, calcNewInstallment, addRow, delRow, confirmDel, editRow, saveEdit, payerRow, detailRow, closeModal, openSettings, saveSettings, exportData, importData, planAuto, calcPlan, planPrinDetail });

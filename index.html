@@ -767,6 +767,7 @@
     <button class="tab active" data-stab="income">📥 รายได้เงินเดือน</button>
     <button class="tab" data-stab="tax">🧮 คำนวณภาษี</button>
     <button class="tab" data-stab="plan"><i class="ti ti-target"></i> วางแผนลดหย่อน</button>
+    <button class="tab" data-stab="xmas">🎄 คริสต์มาส</button>
     <button class="tab" data-stab="house">🏠 สรุปรายคน</button>
   </div>
 
@@ -872,6 +873,44 @@
         </div>
       </div>
     </div></div>
+  </section>
+
+  <!-- TAB: คริสต์มาส — จัดสรรเงินได้เดือน ธ.ค. -->
+  <section class="panel" id="stPanel-xmas">
+    <div class="card">
+      <div class="card-h"><div><span class="eyebrow">🎄 เงินได้เดือนธันวาคม</span><h2>โบนัส/เงินเดือนก้อนคริสต์มาส</h2></div></div>
+      <div class="card-b">
+        <div class="callout"><span class="ic">💡</span><div>ยอดดึงจากแถว <b>ธ.ค.</b> ในตารางรายได้ — ใส่โบนัสคริสต์มาสในช่อง “โบนัส” ของเดือน ธ.ค. แล้วมาวางแผนที่นี่</div></div>
+        <div class="xmas-inc">
+          <div class="xi"><div class="k">เงินเดือน</div><div class="v st-num" id="stXmasSalary">0</div></div>
+          <div class="xi"><div class="k">OT</div><div class="v st-num" id="stXmasOT">0</div></div>
+          <div class="xi"><div class="k">โบนัส 🎄</div><div class="v st-num" id="stXmasBonus">0</div></div>
+          <div class="xi total"><div class="k">รวมก่อนหัก</div><div class="v st-num" id="stXmasGross">0</div></div>
+          <div class="xi"><div class="k">หัก ปกส./ภาษี/PVD</div><div class="v st-num" id="stXmasDeduct">0</div></div>
+          <div class="xi net"><div class="k">คงเหลือสุทธิ (เอาไปใช้)</div><div class="v st-num" id="stXmasNet">0</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div><span class="eyebrow">จัดสรร</span><h2>จะเอาเงินก้อนนี้ไปเติมตรงไหน</h2></div>
+        <div class="toolbar"><button class="btn primary" id="stXmasAdd">＋ เพิ่มรายการ</button></div></div>
+      <div class="card-b">
+        <div class="xmas-presets" id="stXmasPresets">
+          <button class="xmas-chip" data-preset="โปะบ้าน">🏠 โปะบ้าน</button>
+          <button class="xmas-chip" data-preset="กองออม" data-sav="1">🐷 กองออม</button>
+          <button class="xmas-chip" data-preset="ลดหย่อนภาษี">📉 ลดหย่อนภาษี</button>
+          <button class="xmas-chip" data-preset="ใช้จ่าย">🛒 ใช้จ่าย</button>
+          <button class="xmas-chip" data-preset="เก็บสด">💵 เก็บสด</button>
+        </div>
+        <div id="stXmasList"></div>
+        <div class="xmas-sum">
+          <div class="xmas-bar-wrap"><div class="xmas-bar" id="stXmasBar"></div></div>
+          <div class="xmas-sum-row"><span>จัดสรรแล้ว</span><span class="st-num" id="stXmasAlloc">0</span></div>
+          <div class="xmas-sum-row"><span>🐷 เข้ากองออมรวม</span><span class="st-num" id="stXmasToSavings">0</span></div>
+          <div class="xmas-sum-row total"><span>คงเหลือ</span><span class="st-num" id="stXmasRemain">0</span></div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- TAB 4 -->

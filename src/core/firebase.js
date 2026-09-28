@@ -11,6 +11,9 @@ var FB_HH_KEY   = 'fb_household_id';
 var _fbAuth=null, _fbDb=null, _fbUser=null, _fbUnsub=null, _fbTimer=null;
 var _fbIgnoreNext = false;
 var _fbSyncing = false;
+var _fbDirty = {};   // keys changed locally, waiting to be pushed (upload only these — same doc, merge)
+var _fbBusyAt = 0;   // when "กำลังบันทึก..." first shown → keep visible ≥500ms
+var _fbFlushScheduled = false;
 
 /* ── Boot ──────────────────────────────────────────────────────── */
 (function fbBoot(){
@@ -91,26 +94,44 @@ function fbStartSync(){
 
 function fbSaveToCloud(){
   if(!_fbUser) return;
-  fbSetSync('busy','กำลังบันทึก...');
+  var keys=Object.keys(_fbDirty);
+  if(!keys.length) return;          // nothing changed → skip write
+  _fbDirty={};                      // claim these; re-mark on failure
+  // same single doc as before — write ONLY changed fields (merge keeps the rest intact)
   var p={updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:_fbUser.displayName||_fbUser.email};
-  SYNC_KEYS.forEach(function(k){ p[k]=localStorage.getItem(k)||''; });
+  keys.forEach(function(k){ p[k]=localStorage.getItem(k)||''; });
   _fbIgnoreNext=true;
   fbDocRef().set(p,{merge:true})
-    .then(function(){ fbSetSync('ok','ซิงค์แล้ว'); setTimeout(function(){_fbIgnoreNext=false;},2000); })
-    .catch(function(){ fbSetSync('err','บันทึกไม่สำเร็จ'); _fbIgnoreNext=false; });
+    .then(function(){
+      // keep "กำลังบันทึก..." visible long enough to notice, even when the write is instant
+      var wait=Math.max(0,500-(Date.now()-_fbBusyAt));
+      setTimeout(function(){ fbSetSync('ok','ซิงค์แล้ว'); },wait);
+      setTimeout(function(){_fbIgnoreNext=false;},2000);
+    })
+    .catch(function(){ fbSetSync('err','บันทึกไม่สำเร็จ'); keys.forEach(function(k){_fbDirty[k]=true;}); _fbIgnoreNext=false; });
 }
 
 function fbDebounce(){
-  if(_fbTimer) clearTimeout(_fbTimer);
-  _fbTimer = setTimeout(fbSaveToCloud, 300);
+  // sync ทันที: โชว์สถานะทันทีที่แก้ แล้ว flush ตอนจบ microtask
+  // (รวม setItem หลายครั้งในจังหวะเดียว เช่น bp3_months+bp3_cfg → commit ครั้งเดียว)
+  if(_fbUser){ _fbBusyAt=Date.now(); fbSetSync('busy','กำลังบันทึก...'); }
+  if(_fbFlushScheduled) return;
+  _fbFlushScheduled=true;
+  Promise.resolve().then(function(){ _fbFlushScheduled=false; fbSaveToCloud(); });
 }
 
 /* ── Intercept localStorage writes → trigger cloud save ────────── */
 var _origLS = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value){
   _origLS(key, value);
-  if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1) fbDebounce();
+  if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1){ _fbDirty[key]=true; fbDebounce(); }
 };
+
+// flush any pending change before the page unloads (queues the write to Firestore's
+// offline cache → next load reads it back, closing the "edit then quick refresh" gap)
+window.addEventListener('beforeunload', function(){
+  if(_fbUser && Object.keys(_fbDirty).length) fbSaveToCloud();
+});
 
 function fbApplyRemote(){ applyRemote(); }
 function fbInitAllApps(){ fbApplyRemote(); }

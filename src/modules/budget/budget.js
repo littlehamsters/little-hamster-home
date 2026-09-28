@@ -1349,6 +1349,17 @@ let chartVisible=false;
 let chartPerson='p1';
 let chartTab='diff';
 
+// บังคับกลับมาหน้างบประมาณหลัก (ออกจากโหมดภาพรวม) — เรียกตอนเปิดเมนูงบประมาณใหม่
+function _bpShowMain(){
+  chartVisible=false;
+  const panel=document.getElementById('chart-panel');
+  const wrap=document.querySelector('#m-budget .wrap');
+  if(panel)panel.style.display='none';
+  if(wrap)wrap.style.display='block';
+  const btn=document.getElementById('chart-btn');
+  if(btn){btn.style.background='';btn.style.color='';}
+  if(window.updateBreadcrumb)window.updateBreadcrumb('budget');
+}
 function toggleChart(){
   chartVisible=!chartVisible;
   const panel=document.getElementById('chart-panel');
@@ -2525,7 +2536,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

@@ -8,8 +8,10 @@ export default {
   order: 3,
   storageKeys: ['bp3_months', 'bp3_cfg', 'bp3_theme'],
 
-  // re-pull linked "รับสุทธิ" from the salary module each time budget opens
+  // เปิดเมนูงบประมาณใหม่ทุกครั้ง: กลับมาหน้าหลัก (ออกจากโหมดภาพรวม)
+  // + re-pull linked "รับสุทธิ" from the salary module
   show() {
+    if (typeof window._bpShowMain === 'function') window._bpShowMain();
     if (typeof window._bpRender === 'function') window._bpRender();
   },
 

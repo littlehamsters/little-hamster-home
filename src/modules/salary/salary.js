@@ -377,6 +377,29 @@ window.stInit=function(){load();seed();setupDed();initUI();};
 window.stReloadFromStorage=function(){
   try{load();seed();initUI();}catch(e){}
 };
+// Called by budget module: net-received (รับสุทธิ) of a person for a given month index (0=ม.ค.)
+// name matches a salary person by name (case-insensitive). Returns null if no such person,
+// so the budget can fall back to a manual value instead of forcing 0.
+window.stGetNetForMonth=function(name,monthIdx){
+  try{
+    if(!state.people||!state.people.length){load();seed();}
+    if(!state.people||!state.people.length)return null;
+    const key=String(name==null?"":name).trim().toLowerCase();
+    const p=state.people.find(x=>String(x.name||"").trim().toLowerCase()===key);
+    if(!p)return null;
+    const m=(p.income&&p.income[monthIdx])||null;
+    if(!m)return 0;
+    const pa=num(m.salary)*num(m.pvdPct)/100;
+    return num(m.salary)+num(m.ot)+num(m.bonus)-num(m.sso)-num(m.wht)-pa;
+  }catch(e){return null;}
+};
+// Names of all salary people (for budget link hints)
+window.stGetPeopleNames=function(){
+  try{
+    if(!state.people||!state.people.length){load();seed();}
+    return (state.people||[]).map(p=>p.name);
+  }catch(e){return[];}
+};
 // Called by loadDash() to get accurate household tax summary
 window.stGetHomeSummary=function(){
   try{

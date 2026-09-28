@@ -31,9 +31,9 @@ let cfg={
   ccCards:[...DEFAULT_CC_CARDS],
   ccCategories:[...CC_CATEGORIES],
   fixedIncome:{p1:[
-    {id:'fi_1',name:'เงินเดือน'},{id:'fi_2',name:'โบนัส'},{id:'fi_3',name:'รายได้อื่น'}
+    {id:'fi_1',name:'เงินเดือน',salaryLinked:true},{id:'fi_2',name:'โบนัส'},{id:'fi_3',name:'รายได้อื่น'}
   ],p2:[
-    {id:'fi_4',name:'เงินเดือน'},{id:'fi_5',name:'โบนัส'},{id:'fi_6',name:'รายได้อื่น'}
+    {id:'fi_4',name:'เงินเดือน',salaryLinked:true},{id:'fi_5',name:'โบนัส'},{id:'fi_6',name:'รายได้อื่น'}
   ]},
   fixedExpense:{p1:[
     {id:'fe_1',name:'ค่าบ้าน',type:'expense',goal:22200},
@@ -73,7 +73,7 @@ function getMD(){
   if(!months[k]) months[k]={
     incomes:{p1:{fixed:{},extras:[]},p2:{fixed:{},extras:[]}},
     expenses:{p1:{fixed:{},extras:[]},p2:{fixed:{},extras:[]}},
-    cc:[],hidden:{p1:[],p2:[]},sharedUtility:0,sharedWater:0,sharedElectric:0,sharedFood:0
+    cc:[],hidden:{p1:[],p2:[]},sharedUtility:0,sharedWater:0,sharedElectric:0,sharedInternet:0,sharedFood:0
   };
   ['p1','p2'].forEach(p=>{
     if(!months[k].incomes[p]) months[k].incomes[p]={fixed:{},extras:[]};
@@ -86,6 +86,7 @@ function getMD(){
   if(months[k].sharedWater===undefined) months[k].sharedWater=0;
   if(months[k].sharedFood===undefined) months[k].sharedFood=0;
   if(months[k].sharedElectric===undefined) months[k].sharedElectric=0;
+  if(months[k].sharedInternet===undefined) months[k].sharedInternet=0;
   return months[k];
 }
 
@@ -105,7 +106,16 @@ function _bpLoad(){
     }
     if(Array.isArray(s.ccCategories)&&s.ccCategories.length) cfg.ccCategories=s.ccCategories.slice();
     if(!cfg.ccCategories.includes('อื่นๆ')) cfg.ccCategories.push('อื่นๆ'); // keep fallback
-    if(s.fixedIncome)cfg.fixedIncome=s.fixedIncome;
+    if(s.fixedIncome){
+      // keep the user's income template (added/removed items) but backfill the
+      // salaryLinked flag from defaults for known items saved before this feature
+      const defLinkById={};
+      ['p1','p2'].forEach(pp=>cfg.fixedIncome[pp].forEach(fi=>{if(fi.salaryLinked)defLinkById[fi.id]=true;}));
+      cfg.fixedIncome=s.fixedIncome;
+      ['p1','p2'].forEach(pp=>(cfg.fixedIncome[pp]||[]).forEach(fi=>{
+        if(fi.salaryLinked===undefined&&defLinkById[fi.id])fi.salaryLinked=true;
+      }));
+    }
     if(s.fixedExpense){
       // merge: update goal/name/type from saved, but keep ccLinked from default
       ['p1','p2'].forEach(p=>{
@@ -176,16 +186,33 @@ function statusBadge(type,budget,actual){
 }
 
 // ── TOTALS CALC ──
+// ── Salary link: pull "รับสุทธิ" (net received) from the ภาษีเงินเดือน module ──
+// Returns the net for the budget person (matched by name) for a month index (0=Jan),
+// or null when the salary module has no matching person/data (→ fall back to manual value).
+function getLinkedSalary(p,monthIdx){
+  if(typeof window.stGetNetForMonth!=='function') return null;
+  const name=p==='p1'?cfg.p1:cfg.p2;
+  const v=window.stGetNetForMonth(name,monthIdx==null?curMonth:monthIdx);
+  return v==null?null:f(v);
+}
+// Resolve a fixed-income item's value: linked salary when available, else the stored amount.
+function resolveFixedIncome(p,fi,storedVal,monthIdx){
+  if(fi&&fi.salaryLinked){
+    const v=getLinkedSalary(p,monthIdx);
+    if(v!=null) return v;
+  }
+  return f(storedVal);
+}
 function getIncomeTotal(p){
   const md=getMD();
   const d=md.incomes[p];
-  const fixedTotal=cfg.fixedIncome[p].reduce((s,fi)=>s+f(d.fixed[fi.id]),0);
+  const fixedTotal=cfg.fixedIncome[p].reduce((s,fi)=>s+resolveFixedIncome(p,fi,d.fixed[fi.id],curMonth),0);
   const extraTotal=(d.extras||[]).reduce((s,e)=>s+f(e.amt),0);
   return fixedTotal+extraTotal;
 }
 function getSharedUtilityPerPerson(){
   const md=getMD();
-  return (f(md.sharedWater)+f(md.sharedElectric))/2;
+  return (f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
 }
 function getSharedFoodPerPerson(){return f(getMD().sharedFood)/2;}
 function setSharedFood(v){
@@ -214,11 +241,18 @@ function setSharedElectric(v){
   ['p1','p2'].forEach(p=>{renderExpenseCard(p);renderSummaryPerson(p)});
   renderBanner();renderSummaryCommon();
 }
+function setSharedInternet(v){
+  getMD().sharedInternet=f(v);
+  persist();renderUtility();
+  ['p1','p2'].forEach(p=>{renderExpenseCard(p);renderSummaryPerson(p)});
+  renderBanner();renderSummaryCommon();
+}
 function renderUtility(){
   const md=getMD();
   const water=f(md.sharedWater);
   const electric=f(md.sharedElectric);
-  const total=water+electric;
+  const internet=f(md.sharedInternet);
+  const total=water+electric+internet;
   const per=total/2;
 
   const setInput=(id,val)=>{
@@ -230,6 +264,7 @@ function renderUtility(){
   };
   setInput('utility-water',water||null);
   setInput('utility-electric',electric||null);
+  setInput('utility-internet',internet||null);
   // food — _bpLoad stored p1/p2 values
   setInput('food-p1',f(md.sharedFoodP1)||null);
   setInput('food-p2',f(md.sharedFoodP2)||null);
@@ -247,10 +282,11 @@ function renderUtility(){
 
   const disp=document.getElementById('utility-display');
   if(!disp) return;
-  if(!total){disp.innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 2px">ยังไม่ได้กรอกยอดค่าน้ำ/ค่าไฟ</div>';return;}
+  if(!total){disp.innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 2px">ยังไม่ได้กรอกยอดค่าน้ำ/ค่าไฟ/เน็ต</div>';return;}
   disp.innerHTML=`<div style="display:flex;align-items:center;gap:16px;padding:10px 12px;background:var(--amber-bg);border-radius:12px;border:1px solid var(--amber-line);font-size:13px;flex-wrap:wrap">
     <div><span style="color:var(--ink2)">ค่าน้ำ</span> <strong style="color:var(--amber)">${_bpFmt(water)}</strong></div>
     <div><span style="color:var(--ink2)">ค่าไฟ</span> <strong style="color:var(--amber)">${_bpFmt(electric)}</strong></div>
+    <div><span style="color:var(--ink2)">ค่าเน็ต</span> <strong style="color:var(--amber)">${_bpFmt(internet)}</strong></div>
     <div style="border-left:1px solid var(--amber-line);padding-left:16px"><span style="color:var(--ink2)">รวม</span> <strong style="color:var(--amber)">${_bpFmt(total)}</strong></div>
     <div><span style="color:var(--ink2)">คนละ</span> <strong style="color:var(--amber);font-size:15px">${_bpFmt(per)}</strong></div>
   </div>`;
@@ -317,8 +353,19 @@ function resetMonth(){
 
 function changeMonth(d){
   curMonth+=d;if(curMonth>11){curMonth=0;curYear++}if(curMonth<0){curMonth=11;curYear--}
-  document.getElementById('month-label').textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
+  const lbl=`${MONTHS_TH[curMonth]} ${curYear+543}`;
+  document.getElementById('month-label').textContent=lbl;
+  const lblC=document.getElementById('month-label-chart');if(lblC)lblC.textContent=lbl;
   _bpRender();
+  if(chartVisible)_bpRerenderChart();
+}
+
+// re-render whatever chart tab is currently open (เรียกเมื่อเปลี่ยนเดือนในหน้าภาพรวม)
+function _bpRerenderChart(){
+  if(chartTab==='compare'){populateCompareSelect();renderCompareChart();}
+  else if(chartTab==='diff'){renderDiffTable();}
+  else if(chartTab==='cc'){renderCCCategory();renderGroupTable();}
+  else _bpRenderCharts();
 }
 
 // ── PERSON TABS ──
@@ -423,10 +470,26 @@ function renderIncomeCard(p){
   const hiddenIncIds=md.hidden[p]||[];
   cfg.fixedIncome[p].forEach((fi,i)=>{
     if(hiddenIncIds.includes(fi.id)) return;
+    const linked=fi.salaryLinked?getLinkedSalary(p,curMonth):null;
+    if(fi.salaryLinked&&linked!=null){
+      // read-only row: value pulled from ภาษีเงินเดือน (รับสุทธิ)
+      rows+=`<div class="fixed-item" style="background:${bg};border-color:${bl}">
+        <div class="fixed-item-num" style="background:${bg};border:1px solid ${bl};color:${clr}">${i+1}</div>
+        <div style="flex:1;min-width:0"><div class="fixed-item-name">${fi.name} <span style="font-size:10px;background:${bg};color:${clr};border:1px solid ${bl};border-radius:8px;padding:1px 6px;white-space:nowrap"><i class="ti ti-link" style="font-size:10px"></i> รับสุทธิ · ภาษีเงินเดือน</span></div>${fi.note?`<div class="fixed-item-sub">${fi.note}</div>`:''}</div>
+        <div class="fixed-item-inputs">
+          <input class="amt-input ${p==='p2'?'rose':''}" type="text" disabled title="ดึงอัตโนมัติจากภาษีเงินเดือน (รับสุทธิ) เดือนนี้"
+            style="border-color:${bl};background:${bg};color:${clr};font-weight:700;cursor:not-allowed;opacity:.9"
+            value="${f(linked).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}">
+          <button class="del-item-btn del-icon" onclick="delFixed('income','${p}','${fi.id}')" title="ลบรายการนี้"><i class="ti ti-trash" style="font-size:14px"></i></button>
+        </div>
+      </div>`;
+      return;
+    }
     const val=f(d.fixed[fi.id]);
+    const hint=fi.salaryLinked?`<div class="fixed-item-sub" style="color:var(--amber)"><i class="ti ti-link-off" style="font-size:10px"></i> เชื่อมภาษีเงินเดือนไว้ แต่ยังไม่พบชื่อ "${p==='p1'?cfg.p1:cfg.p2}" ในภาษีเงินเดือน</div>`:'';
     rows+=`<div class="fixed-item">
       <div class="fixed-item-num" style="background:${bg};border:1px solid ${bl};color:${clr}">${i+1}</div>
-      <div style="flex:1;min-width:0"><div class="fixed-item-name">${fi.name}</div>${fi.note?`<div class="fixed-item-sub">${fi.note}</div>`:''}</div>
+      <div style="flex:1;min-width:0"><div class="fixed-item-name">${fi.name}</div>${fi.note?`<div class="fixed-item-sub">${fi.note}</div>`:''}${hint}</div>
       <div class="fixed-item-inputs">
         <input class="amt-input ${p==='p2'?'rose':''}" type="text" inputmode="decimal"
           placeholder="0.00" style="border-color:${bl}40"
@@ -760,7 +823,7 @@ function renderSummaryCommon(){
   const rem=(inc1+inc2)-totalOut;
   const isGood=rem>=0;
   // itemized per person
-  const utilTotal=f(md.sharedWater)+f(md.sharedElectric);
+  const utilTotal=f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet);
   const util1=utilTotal; // โฟมจ่ายก่อนทั้งหมด
   const util2=0;
   const foodP1actual=f(md.sharedFoodP1)||0;
@@ -940,6 +1003,14 @@ function setSavingsLink(p,fid,fundId){
   }
   _bpToast(fundId?'เชื่อมกับกองออมแล้ว ✓':'ยกเลิกการเชื่อมแล้ว');
 }
+// ผูก/ยกเลิกการดึง "รับสุทธิ" จากโมดูลภาษีเงินเดือน มาเป็นยอดเงินเดือนในงบประมาณ
+function setSalaryLink(p,fid,on){
+  const fi=cfg.fixedIncome[p].find(x=>x.id===fid);
+  if(!fi) return;
+  fi.salaryLinked=(on===true||on==='true');
+  persist();_bpRender();renderFixedListsInModal();
+  _bpToast(fi.salaryLinked?'เชื่อมกับภาษีเงินเดือนแล้ว ✓':'ยกเลิกการเชื่อมแล้ว');
+}
 function addExtraIncome(p){
   const name=document.getElementById(`extra-inc-name-${p}`).value.trim();
   const amt=f(document.getElementById(`extra-inc-amt-${p}`).value);
@@ -1087,9 +1158,20 @@ function renderFixedListsInModal(){
   document.getElementById('set-inc-p2-name').textContent=cfg.p2;
   document.getElementById('set-exp-p1-name').textContent=cfg.p1;
   document.getElementById('set-exp-p2-name').textContent=cfg.p2;
-  const chipStyle='display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--line2);margin:2px;background:var(--card2);color:var(--ink2)';
-  document.getElementById('fix-inc-p1-list').innerHTML=cfg.fixedIncome.p1.map(fi=>`<span style="${chipStyle}">${fi.name}<i class="ti ti-x" style="font-size:10px;cursor:pointer" onclick="delFixedTemplate('income','p1','${fi.id}')"></i></span>`).join('');
-  document.getElementById('fix-inc-p2-list').innerHTML=cfg.fixedIncome.p2.map(fi=>`<span style="${chipStyle}">${fi.name}<i class="ti ti-x" style="font-size:10px;cursor:pointer" onclick="delFixedTemplate('income','p2','${fi.id}')"></i></span>`).join('');
+  const incRow=(p,fi)=>{
+    const on=!!fi.salaryLinked;
+    const linkBtn=`<button onclick="setSalaryLink('${p}','${fi.id}',${on?'false':'true'})" title="เชื่อม/ยกเลิกการดึง รับสุทธิ จากภาษีเงินเดือน"
+      style="height:26px;padding:0 8px;font-size:11px;font-weight:600;border-radius:8px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px;border:1px solid ${on?'var(--sky-line)':'var(--line2)'};background:${on?'var(--sky-bg)':'var(--card)'};color:${on?'var(--sky)':'var(--ink2)'}"><i class="ti ti-${on?'link':'link-off'}" style="font-size:12px"></i> ${on?'ดึงจากภาษีเงินเดือน':'เชื่อมภาษีเงินเดือน'}</button>`;
+    return `<div class="goal-row">
+      <div class="goal-row-head"><span class="goal-name">${fi.name}</span></div>
+      <div class="goal-row-ctrl">
+        ${linkBtn}
+        <button class="del-item-btn del-icon" onclick="delFixedTemplate('income','${p}','${fi.id}')" title="ลบ"><i class="ti ti-trash" style="font-size:13px"></i></button>
+      </div>
+    </div>`;
+  };
+  document.getElementById('fix-inc-p1-list').innerHTML=cfg.fixedIncome.p1.map(fi=>incRow('p1',fi)).join('');
+  document.getElementById('fix-inc-p2-list').innerHTML=cfg.fixedIncome.p2.map(fi=>incRow('p2',fi)).join('');
   const goalRowStyle='display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:12px;border:1px solid var(--line);margin-bottom:5px';
   const funds=(typeof window.svGetFunds==='function')?window.svGetFunds():[];
   const linkSel=(p,fe)=>{
@@ -1245,9 +1327,9 @@ function restoreJSON(input){
 function exportCSV(){
   const md=getMD();
   const lines=['\uFEFFประเภท,เจ้าของ,ชื่อ,ประเภทย่อย,ตั้งงบ,จริง'];
-  cfg.fixedIncome.p1.forEach(fi=>{const v=md.incomes.p1.fixed[fi.id]||0;lines.push(`รายรับ,${cfg.p1},"${fi.name}",,${v},${v}`)});
+  cfg.fixedIncome.p1.forEach(fi=>{const v=resolveFixedIncome('p1',fi,md.incomes.p1.fixed[fi.id],curMonth);lines.push(`รายรับ,${cfg.p1},"${fi.name}",,${v},${v}`)});
   (md.incomes.p1.extras||[]).forEach(e=>lines.push(`รายรับ,${cfg.p1},"${e.name}",,${e.amt},${e.amt}`));
-  cfg.fixedIncome.p2.forEach(fi=>{const v=md.incomes.p2.fixed[fi.id]||0;lines.push(`รายรับ,${cfg.p2},"${fi.name}",,${v},${v}`)});
+  cfg.fixedIncome.p2.forEach(fi=>{const v=resolveFixedIncome('p2',fi,md.incomes.p2.fixed[fi.id],curMonth);lines.push(`รายรับ,${cfg.p2},"${fi.name}",,${v},${v}`)});
   (md.incomes.p2.extras||[]).forEach(e=>lines.push(`รายรับ,${cfg.p2},"${e.name}",,${e.amt},${e.amt}`));
   cfg.fixedExpense.p1.forEach(fe=>{const fd=md.expenses.p1.fixed[fe.id]||{};lines.push(`รายจ่าย,${cfg.p1},"${fe.name}",${fe.type},${getGoal(fe)},${fd.actual||0}`)});
   (md.expenses.p1.extras||[]).forEach(e=>lines.push(`รายจ่าย,${cfg.p1},"${e.name}",${e.type},${e.budget||0},${e.actual||0}`));
@@ -1289,6 +1371,8 @@ function toggleChart(){
     }
   }
   if(chartVisible){
+    const lblC=document.getElementById('month-label-chart');
+    if(lblC)lblC.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
     // default = ผลต่าง Goal — ใช้ setChartTab เพื่อให้ไฮไลต์ปุ่ม + เนื้อหาตรงกันเสมอ
     document.getElementById('chart-sec-overview').style.display='none';
     document.getElementById('chart-sec-compare').style.display='none';
@@ -1561,12 +1645,12 @@ function getItemActual(p,itemName,key){
   const md=months[key];
   if(!md) return 0;
   if(itemName==='ค่าบัตรเครดิต (รวม)') return getCCPersonTotalForKey(p,key);
-  if(itemName==='ค่าน้ำ-ไฟ (กองกลาง÷2)') return (f(md.sharedWater)+f(md.sharedElectric))/2;
+  if(itemName==='ค่าน้ำ-ไฟ (กองกลาง÷2)') return (f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
   const d=(md.expenses&&md.expenses[p])||{fixed:{},extras:[]};
   const fe=cfg.fixedExpense[p].find(x=>x.name===itemName);
   if(fe){
     if(fe.foodLinked) return f(md.sharedFood)/2;
-    if(fe.utilityLinked) return (f(md.sharedWater)+f(md.sharedElectric))/2;
+    if(fe.utilityLinked) return (f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
     return f((d.fixed[fe.id]||{}).actual);
   }
   const extra=(d.extras||[]).find(e=>e.name===itemName);
@@ -1655,7 +1739,8 @@ function getMonthStats(key,p){
   });
   const cc=md.cc?getCCPersonTotal(p):0;
   const incItems=(md.incomes&&md.incomes[p])||{fixed:{},extras:[]};
-  const inc=cfg.fixedIncome[p].reduce((s,fi)=>s+f(incItems.fixed[fi.id]),0)+(incItems.extras||[]).reduce((s,e)=>s+f(e.amt),0);
+  const mIdx=parseInt(String(key||'').split('-')[1],10);
+  const inc=cfg.fixedIncome[p].reduce((s,fi)=>s+resolveFixedIncome(p,fi,incItems.fixed[fi.id],isNaN(mIdx)?curMonth:mIdx),0)+(incItems.extras||[]).reduce((s,e)=>s+f(e.amt),0);
   const remain=inc-expense-cc-save-invest;
   return{inc,expense,cc,save,invest,remain};
 }
@@ -1713,7 +1798,7 @@ function _bpRenderCharts(){
   function getAct(itemName,p,key){
     const md=months[key];if(!md)return 0;
     if(itemName==='ค่าบัตรเครดิต') return getCCPersonTotalForKey(p,key);
-    if(itemName==='ค่าน้ำ-ไฟ (กองกลาง÷2)') return (f(md.sharedWater)+f(md.sharedElectric))/2;
+    if(itemName==='ค่าน้ำ-ไฟ (กองกลาง÷2)') return (f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
     const d=(md.expenses&&md.expenses[p])||{fixed:{},extras:[]};
     // find fe in this person's config
     const fe=cfg.fixedExpense[p].find(x=>x.name===itemName&&!x.ccLinked&&!x.utilityLinked);
@@ -1847,7 +1932,7 @@ function renderDiffTable(){
   function getActual(item,key){
     const md=months[key];if(!md)return null;
     if(item.ccLinked)return getCCPersonTotalForKey(p,key);
-    if(item.utilityLinked)return(f(md.sharedWater)+f(md.sharedElectric))/2;
+    if(item.utilityLinked)return(f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
     if(item.foodLinked){
       // Jan-Apr 26: ใช้ค่าที่กรอกตรงใน fixed expense
       const d=(md.expenses&&md.expenses[p])||{fixed:{},extras:[]};
@@ -2440,7 +2525,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

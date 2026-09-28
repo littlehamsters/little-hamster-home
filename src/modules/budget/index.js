@@ -8,7 +8,10 @@ export default {
   order: 3,
   storageKeys: ['bp3_months', 'bp3_cfg', 'bp3_theme'],
 
-  // no show() — budget renders itself on engine load and via onRemote
+  // re-pull linked "รับสุทธิ" from the salary module each time budget opens
+  show() {
+    if (typeof window._bpRender === 'function') window._bpRender();
+  },
 
   onRemote() {
     window._bpLoad();

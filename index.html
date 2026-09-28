@@ -419,7 +419,7 @@
       <div class="card-head">
         <div class="card-head-left">
           <div class="sicon" style="background:var(--amber-bg);border:1.5px solid var(--amber-line);font-size:17px;display:flex;align-items:center;justify-content:center">⚡</div>
-          <div><div class="stitle">ค่าน้ำ + ค่าไฟ (กองกลาง)</div><div class="ssub">กรอกแยก → รวม → หาร 2 → ดึงอัตโนมัติ</div></div>
+          <div><div class="stitle">ค่าน้ำ + ค่าไฟ + เน็ต (กองกลาง)</div><div class="ssub">กรอกแยก → รวม → หาร 2 → ดึงอัตโนมัติ</div></div>
         </div>
       </div>
       <div id="utility-display"></div>
@@ -431,6 +431,10 @@
         <div class="field narrow"><label>ค่าไฟ (฿)</label>
           <input id="utility-electric" type="text" inputmode="decimal" placeholder="0.00"
             onfocus="amtFocus(this)" onblur="amtBlur(this,v=>setSharedElectric(v))" onpaste="amtPaste(this,v=>setSharedElectric(v))" data-raw="">
+        </div>
+        <div class="field narrow"><label>ค่าเน็ต (฿)</label>
+          <input id="utility-internet" type="text" inputmode="decimal" placeholder="0.00"
+            onfocus="amtFocus(this)" onblur="amtBlur(this,v=>setSharedInternet(v))" onpaste="amtPaste(this,v=>setSharedInternet(v))" data-raw="">
         </div>
         <div style="display:flex;align-items:flex-end;padding-bottom:4px;gap:8px;flex-shrink:0">
           <div style="font-size:12px;color:var(--ink2)">รวม <strong id="utility-total-disp" style="color:var(--amber)">฿0.00</strong></div>
@@ -490,6 +494,11 @@
 
 <div id="chart-panel" style="display:none;padding:1rem 1rem 2rem;max-width:920px;margin:0 auto">
 
+  <div class="month-row">
+    <button class="month-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i> เดือนก่อน</button>
+    <div class="month-label" id="month-label-chart"></div>
+    <button class="month-btn" onclick="changeMonth(1)">เดือนถัดไป <i class="ti ti-chevron-right"></i></button>
+  </div>
 
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap">
     <div style="display:flex;background:var(--card2);border-radius:10px;padding:3px;border:1px solid var(--line);gap:0;flex-wrap:wrap">

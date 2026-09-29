@@ -222,6 +222,7 @@ function setSharedFood(v){
   getMD().sharedFood=total;
   getMD().sharedFoodP1=p1;
   getMD().sharedFoodP2=p2;
+  persist();   // ← เดิมลืมบันทึก → ค่ากินหายตอน refresh (ค่าน้ำ/ค่าไฟมี persist() ครบ)
   const pp=total/2;
   const tot=document.getElementById('food-total-disp');
   if(tot)tot.textContent='฿'+total.toLocaleString('en-US',{minimumFractionDigits:2});

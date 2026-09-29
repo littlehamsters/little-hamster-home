@@ -468,6 +468,22 @@
     </div>
 
 
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-head">
+        <div class="card-head-left">
+          <div class="sicon" style="background:var(--amber-bg);border:1.5px solid var(--amber-line);font-size:17px;display:flex;align-items:center;justify-content:center">🧾</div>
+          <div><div class="stitle">รายจ่ายอื่นๆ (กองกลาง)</div><div class="ssub">ตั้งชื่อเอง → รวม → หาร 2 → ดึงเข้าแต่ละคน</div></div>
+        </div>
+        <button class="add-btn" style="background:var(--amber);color:#fff" onclick="addSharedOther()"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
+      </div>
+      <div id="shared-other-list" class="fixed-list" style="margin-top:8px"></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
+        <div style="font-size:12px;color:var(--ink2)">รวม <strong id="shared-other-total-disp" style="color:var(--amber)">฿0.00</strong></div>
+        <div style="font-size:12px;color:var(--ink2)">÷ 2 = <strong id="shared-other-per-person" style="color:var(--amber)">฿0.00</strong> / คน</div>
+      </div>
+    </div>
+
+
     <div class="card">
       <div class="card-head">
         <div class="card-head-left">

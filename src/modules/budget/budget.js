@@ -73,7 +73,7 @@ function getMD(){
   if(!months[k]) months[k]={
     incomes:{p1:{fixed:{},extras:[]},p2:{fixed:{},extras:[]}},
     expenses:{p1:{fixed:{},extras:[]},p2:{fixed:{},extras:[]}},
-    cc:[],hidden:{p1:[],p2:[]},sharedUtility:0,sharedWater:0,sharedElectric:0,sharedInternet:0,sharedFood:0
+    cc:[],hidden:{p1:[],p2:[]},sharedUtility:0,sharedWater:0,sharedElectric:0,sharedInternet:0,sharedFood:0,sharedOther:[]
   };
   ['p1','p2'].forEach(p=>{
     if(!months[k].incomes[p]) months[k].incomes[p]={fixed:{},extras:[]};
@@ -87,6 +87,7 @@ function getMD(){
   if(months[k].sharedFood===undefined) months[k].sharedFood=0;
   if(months[k].sharedElectric===undefined) months[k].sharedElectric=0;
   if(months[k].sharedInternet===undefined) months[k].sharedInternet=0;
+  if(!Array.isArray(months[k].sharedOther)) months[k].sharedOther=[];
   return months[k];
 }
 
@@ -215,6 +216,74 @@ function getSharedUtilityPerPerson(){
   return (f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
 }
 function getSharedFoodPerPerson(){return f(getMD().sharedFood)/2;}
+// ── รายจ่ายอื่นๆ (กองกลาง): หลายรายการ ตั้งชื่อเอง → หาร 2 → ดึงเข้าแต่ละคน ──
+function getSharedOtherTotal(){return (getMD().sharedOther||[]).reduce((s,o)=>s+f(o.amt),0);}
+function getSharedOtherPerPerson(){return getSharedOtherTotal()/2;}
+function addSharedOther(){
+  const md=getMD();
+  if(!Array.isArray(md.sharedOther)) md.sharedOther=[];
+  md.sharedOther.push({id:Date.now(),name:'',amt:0,owner:'common'});
+  persist();renderSharedOther();
+  const rows=document.querySelectorAll('#shared-other-list .so-name');
+  if(rows.length) rows[rows.length-1].focus();
+}
+function setSharedOtherName(id,v){
+  const o=(getMD().sharedOther||[]).find(x=>x.id===id);
+  if(o){o.name=v;persist();}
+}
+function setSharedOtherOwner(id,v){
+  const o=(getMD().sharedOther||[]).find(x=>x.id===id);
+  if(o){o.owner=v;persist();}
+  renderSummaryCommon();   // owner กระทบเฉพาะการหารคืน (ใครจ่ายใคร) ไม่กระทบยอด ÷2
+}
+function setSharedOtherAmt(id,v){
+  const o=(getMD().sharedOther||[]).find(x=>x.id===id);
+  if(o){o.amt=f(v);}
+  persist();renderSharedOther();
+  ['p1','p2'].forEach(p=>{renderExpenseCard(p);renderSummaryPerson(p)});
+  renderBanner();renderSummaryCommon();
+}
+function delSharedOther(id){
+  const md=getMD();
+  md.sharedOther=(md.sharedOther||[]).filter(x=>x.id!==id);
+  persist();renderSharedOther();
+  ['p1','p2'].forEach(p=>{renderExpenseCard(p);renderSummaryPerson(p)});
+  renderBanner();renderSummaryCommon();
+}
+function renderSharedOther(){
+  const list=document.getElementById('shared-other-list');
+  if(!list) return;
+  const md=getMD();
+  const items=md.sharedOther||[];
+  const total=getSharedOtherTotal();
+  const per=total/2;
+  const ownerOpt=(o)=>{
+    const v=o.owner||'common';
+    const opt=(val,label)=>`<option value="${val}" ${v===val?'selected':''}>${label}</option>`;
+    return `<select class="so-owner mo-sel" onchange="setSharedOtherOwner(${o.id},this.value)" title="ใครเป็นคนจ่าย"
+      style="height:32px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);font-size:12px;font-family:inherit;cursor:pointer">
+      ${opt('common','🤝 จ่ายร่วม')}${opt('p1',cfg.p1)}${opt('p2',cfg.p2)}</select>`;
+  };
+  list.innerHTML=items.length?items.map(o=>`
+    <div class="fixed-item" style="border-color:var(--amber-line);flex-wrap:wrap;gap:6px">
+      <div style="flex:1;min-width:120px">
+        <input class="so-name" type="text" value="${(o.name||'').replace(/"/g,'&quot;')}" placeholder="ชื่อรายการ เช่น ค่าส่วนกลาง, ค่าขยะ"
+          style="width:100%;height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:13px;font-family:inherit"
+          onchange="setSharedOtherName(${o.id},this.value)">
+      </div>
+      <div class="fixed-item-inputs" style="gap:6px">
+        ${ownerOpt(o)}
+        <input class="amt-input" type="text" inputmode="decimal" placeholder="0.00" style="width:110px;text-align:right"
+          onfocus="amtFocus(this)" onblur="amtBlur(this,v=>setSharedOtherAmt(${o.id},v))" onpaste="amtPaste(this,v=>setSharedOtherAmt(${o.id},v))"
+          data-raw="${o.amt||''}" value="${o.amt?f(o.amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
+        <button class="del-item-btn del-icon" onclick="delSharedOther(${o.id})" title="ลบ"><i class="ti ti-trash" style="font-size:14px"></i></button>
+      </div>
+    </div>`).join(''):'<div class="empty-state"><i class="ti ti-inbox"></i>ยังไม่มีรายการ — กด “＋ เพิ่มรายการ”</div>';
+  const tot=document.getElementById('shared-other-total-disp');
+  if(tot) tot.textContent='฿'+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const perEl=document.getElementById('shared-other-per-person');
+  if(perEl) perEl.textContent='฿'+per.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function setSharedFood(v){
   const p1=f(document.getElementById('food-p1')?.dataset.raw||0);
   const p2=f(document.getElementById('food-p2')?.dataset.raw||0);
@@ -324,7 +393,7 @@ function getExpenseDisplayTotal(p){
     return s+f((d.fixed[fe.id]||{}).actual);
   },0);
   const extraTotal=(d.extras||[]).reduce((s,e)=>s+f(e.actual),0);
-  return fixedTotal+extraTotal;
+  return fixedTotal+extraTotal+getSharedOtherPerPerson();
 }
 function getGoal(fe){ return f(fe.goal); }
 
@@ -385,7 +454,7 @@ function switchPerson(p,btn){
 function _bpRender(){
   renderBanner();
   ['p1','p2'].forEach(p=>{renderIncomeCard(p);renderExpenseCard(p);renderSummaryPerson(p)});
-  renderCC();renderUtility();renderSummaryCommon();
+  renderCC();renderUtility();renderSharedOther();renderSummaryCommon();
   updateLabels();populateCCSelect();
   setTimeout(bindDecimalInputs,0);
 }
@@ -673,6 +742,13 @@ function renderExpenseCard(p){
       </thead>
       <tbody id="exp-tbody-${p}">
         ${trows}
+        ${getSharedOtherTotal()>0?`<tr style="background:var(--amber-bg)">
+          <td style="color:var(--amber);font-weight:700;text-align:center">•</td>
+          <td><span style="font-weight:600;color:var(--amber)">รายจ่ายอื่นๆ</span> <span style="font-size:10px;background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line);border-radius:8px;padding:1px 6px">ดึงจากกองกลาง ÷2</span></td>
+          <td style="text-align:right;color:var(--ink3)">-</td>
+          <td style="text-align:right"><input class="amt-input" type="text" value="${_bpFmt(getSharedOtherPerPerson()).replace('฿','')}" disabled style="width:120px;font-size:13px;text-align:right;background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line);font-weight:700;cursor:not-allowed;opacity:.85"></td>
+          <td></td><td></td>
+        </tr>`:''}
         <tr style="background:var(--amber-bg);border-top:2px solid var(--amber-line)">
           <td colspan="2" style="padding:9px 8px;font-weight:700;color:var(--amber);font-size:13px">รวม</td>
           <td style="text-align:right;font-weight:700;color:var(--teal);padding:9px 8px">${_bpFmt(totB)}</td>
@@ -785,6 +861,7 @@ function renderSummaryPerson(p){
     if(e.type==='invest'||e.type==='save') investSaveAmt+=f(e.actual);
     else expenseAmt+=f(e.actual);
   });
+  expenseAmt+=getSharedOtherPerPerson();   // รายจ่ายอื่นๆ (กองกลาง) ÷2
   const ccTotal=getCCPersonTotal(p);
   const totalOut=expenseAmt+ccTotal;
   const rem=inc-totalOut-investSaveAmt;
@@ -846,10 +923,18 @@ function renderSummaryCommon(){
       ccP1inP2card+=f(entry.p1); // โฟมในบัตรเข่ง
     }
   });
-  // p1Total = ยอดที่โฟมจ่ายจริง: น้ำไฟทั้งหมด + ค่ากิน + กองกลางบัตรโฟม + โฟมในบัตรเข่ง
-  const p1Total=util1+food1+ccCommonByP1+ccP1inP2card;
-  // p2Total = ยอดที่เข่งจ่ายจริง: ค่ากิน + กองกลางบัตรเข่ง + เข่งในบัตรโฟม
-  const p2Total=util2+food2+ccCommonByP2+ccP2inP1card;
+  // รายจ่ายอื่นๆ (กองกลาง) — แยกตามคนจ่าย (owner); 'common' = จ่ายร่วมคนละครึ่ง
+  let otherPaidP1=0,otherPaidP2=0;
+  (md.sharedOther||[]).forEach(o=>{
+    const a=f(o.amt); if(a<=0) return;
+    if(o.owner==='p1') otherPaidP1+=a;
+    else if(o.owner==='p2') otherPaidP2+=a;
+    else { otherPaidP1+=a/2; otherPaidP2+=a/2; }
+  });
+  // p1Total = ยอดที่โฟมจ่ายจริง: น้ำไฟทั้งหมด + ค่ากิน + กองกลางบัตรโฟม + โฟมในบัตรเข่ง + รายจ่ายอื่นๆที่โฟมจ่าย
+  const p1Total=util1+food1+ccCommonByP1+ccP1inP2card+otherPaidP1;
+  // p2Total = ยอดที่เข่งจ่ายจริง: ค่ากิน + กองกลางบัตรเข่ง + เข่งในบัตรโฟม + รายจ่ายอื่นๆที่เข่งจ่าย
+  const p2Total=util2+food2+ccCommonByP2+ccP2inP1card+otherPaidP2;
   const avg=(p1Total+p2Total)/2;
   const diff=p1Total-p2Total; // + = p1 จ่ายมากกว่า
 
@@ -865,6 +950,7 @@ function renderSummaryCommon(){
         <tr><td class="l"><i class="ti ti-bolt"></i>ค่าน้ำ-ไฟ</td><td class="num">${_bpFmt(util1)}</td><td class="num">${_bpFmt(util2)}</td></tr>
         <tr><td class="l"><i class="ti ti-tools-kitchen-2"></i>ค่ากิน</td><td class="num">${_bpFmt(food1)}</td><td class="num">${_bpFmt(food2)}</td></tr>
         <tr><td class="l"><i class="ti ti-credit-card"></i>บัตรเครดิต (กองกลาง)</td><td class="num">${_bpFmt(ccCommonByP1)}</td><td class="num">${_bpFmt(ccCommonByP2)}</td></tr>
+        <tr><td class="l"><i class="ti ti-receipt-2"></i>รายจ่ายอื่นๆ</td><td class="num">${_bpFmt(otherPaidP1)}</td><td class="num">${_bpFmt(otherPaidP2)}</td></tr>
         ${(ccP1inP2card>0||ccP2inP1card>0)?`<tr><td class="l"><i class="ti ti-arrows-exchange"></i>ส่วนตัวในบัตรอีกฝ่าย</td><td class="num">${_bpFmt(ccP1inP2card)}</td><td class="num">${_bpFmt(ccP2inP1card)}</td></tr>`:''}
       </tbody>
       <tfoot><tr><td class="l">รวมที่จ่ายจริง</td><td class="num tot sky">${_bpFmt(p1Total)}</td><td class="num tot rose">${_bpFmt(p2Total)}</td></tr></tfoot>
@@ -901,13 +987,21 @@ function renderSettlement(se,md,cfg,utilTotal,foodP1,foodP2,ccCommon,ccP1,ccP2,f
   });
   const ccCommonOwed=ccCommonP2owes-ccCommonP1owes; // net: + = p2 ค้าง p1
   const ccCrossOwed=ccP1inP2card-ccP2inP1card; // net: + = p1 ค้าง p2 (โฟมค้างเข่ง)
+  // รายจ่ายอื่นๆ: owner จ่ายก่อนเต็ม → อีกฝ่ายคืนครึ่ง. + = p2 ค้าง p1 (p1 จ่ายก่อน)
+  let otherOwed=0,otherOwnedTotal=0;
+  (md.sharedOther||[]).forEach(o=>{
+    const a=f(o.amt); if(a<=0) return;
+    if(o.owner==='p1'){ otherOwed+=a/2; otherOwnedTotal+=a; }
+    else if(o.owner==='p2'){ otherOwed-=a/2; otherOwnedTotal+=a; }
+  });
   // net: + = p2 ค้าง p1, - = p1 ค้าง p2
   // ccCommonOwed: กองกลาง net
   // ccCrossOwed: + = p1 ค้าง p2 (ลบออกจาก p2owesP1)
-  const netP2owesP1=utilOwed+foodP1Diff+ccCommonOwed-ccCrossOwed;
+  const netP2owesP1=utilOwed+foodP1Diff+ccCommonOwed-ccCrossOwed+otherOwed;
   const items=[];
   if(utilTotal>0)items.push({label:'⚡ ค่าน้ำ-ไฟ',desc:`${cfg.p1} จ่ายก่อน ${_bpFmt(utilTotal)} → ${cfg.p2} คืน ½`,amount:utilOwed,positive:true});
   if(foodTotal>0)items.push({label:'🍚 ค่ากิน',desc:`${cfg.p1} จ่าย ${_bpFmt(foodP1)} / ${cfg.p2} จ่าย ${_bpFmt(foodP2)} → ส่วนต่าง ÷2`,amount:Math.abs(foodP1Diff),positive:foodP1Diff>0,zero:Math.abs(foodP1Diff)<1});
+  if(otherOwnedTotal>0)items.push({label:'🧾 รายจ่ายอื่นๆ',desc:`ตามคนจ่าย → อีกฝ่ายคืนครึ่ง`,amount:Math.abs(otherOwed),positive:otherOwed>0,zero:Math.abs(otherOwed)<1});
   if(ccCommon>0){
     const netCommon=ccCommonOwed; // + = p2 ค้าง p1
     items.push({
@@ -2537,7 +2631,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

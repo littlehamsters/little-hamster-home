@@ -271,3 +271,22 @@
   #m-budget .goal-add-form .gaf-type,#m-budget .goal-add-form .gaf-goal{flex:1 1 calc(50% - 3px)}
   #m-budget .goal-add-form .add-btn{flex:1 1 100%;justify-content:center;height:34px}
 }
+
+/* card header wraps on mobile so the full-width add button drops below the title
+   (instead of overlapping it) — fixes รายจ่ายอื่นๆ (กองกลาง) & other add-btn cards */
+@media(max-width:580px){
+  #m-budget .card-head{flex-wrap:wrap;gap:8px}
+  #m-budget .card-head-left{flex:1 1 100%;min-width:0}
+  #m-budget .card-head .add-btn{justify-content:center}
+}
+
+/* รายจ่ายอื่นๆ (กองกลาง) — custom select fits + responsive item row */
+#m-budget #shared-other-list .mo-sel-wrap{display:block;min-width:0}
+#m-budget #shared-other-list .mo-sel-trigger{min-width:0;height:36px;border-radius:8px;font-size:12px}
+@media(max-width:560px){
+  #m-budget #shared-other-list .fixed-item-inputs{flex:1 1 100%;flex-wrap:nowrap}
+  #m-budget #shared-other-list .mo-sel-wrap{flex:1 1 auto}
+  #m-budget #shared-other-list .mo-sel-trigger{width:100%}
+  #m-budget #shared-other-list .amt-input{flex:0 0 96px;width:96px!important}
+  #m-budget #shared-other-list .del-item-btn{flex:0 0 auto}
+}

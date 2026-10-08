@@ -13,6 +13,7 @@ const STATUS_CYCLE = ['pending', 'done', 'deferred'];
 
 let debtState = { accounts: [], debts: [], sel: '' };
 let debtView = 'list'; // 'list' (overview) | 'detail' (one debt)
+let debtListTab = 'active'; // 'active' (กำลังผ่อน) | 'history' (ชำระหมดแล้ว)
 let _dPickColor = ACC_COLORS[0]; // scratch: colour chosen in the account modal
 
 /* ── helpers ─────────────────────────────────────────────────────── */
@@ -189,6 +190,14 @@ const _dDebtPct = (d) => {
   const t = _dDebtTotal(d);
   return t > 0 ? Math.min(100, Math.round((_dDebtPaid(d) / t) * 100)) : 0;
 };
+// ผ่อนเดือนละเท่าไหร่ — ยอดต่อหนึ่งงวด (เดือนละงวด) จากยอดรวม ÷ จำนวนงวด
+const _dDebtMonthly = (d) => {
+  const n = parseInt(d.count, 10) || (d.items || []).length;
+  return n > 0 ? Math.round(_dDebtTotal(d) / n) : 0;
+};
+// ชำระหมดแล้ว — มียอด และจ่ายครบ (คงเหลือ = 0) และมีงวดอย่างน้อยหนึ่งงวด
+const _dDebtDone = (d) =>
+  _dDebtTotal(d) > 0 && (d.items || []).length > 0 && _dDebtRemain(d) <= 0;
 
 /* ═══ MODALS ══════════════════════════════════════════════════════ */
 function _debtModal(title, bodyHtml, saveLabel, saveExpr, wide) {
@@ -499,33 +508,59 @@ function _debtAccBar() {
     <div class="acc-bar">${chips}</div>
   </div>`;
 }
+function _debtRow(d) {
+  const pct = _dDebtPct(d);
+  const remain = _dDebtRemain(d);
+  const monthly = _dDebtMonthly(d);
+  const done = (d.items || []).filter((i) => i.status === 'done').length;
+  const isDone = _dDebtDone(d);
+  return `<div class="debt-row${isDone ? ' done' : ''}" onclick="debtSelect('${d.id}')">
+    <span class="row-ic"><i class="ti ti-${isDone ? 'circle-check' : 'file-dollar'}"></i></span>
+    <div class="row-main">
+      <div class="row-name">${_dEsc(d.name)}${
+        isDone
+          ? ' <span class="drow-paid"><i class="ti ti-check"></i> ชำระครบแล้ว</span>'
+          : monthly
+            ? ` <span class="drow-monthly"><span class="drow-monthly-lbl">ผ่อนเดือนละ</span><span class="drow-monthly-val">${_dFmt(monthly)} ฿</span></span>`
+            : ''
+      }</div>
+      <div class="acc-flow">${_dAccChip(
+        d.debtor
+      )}<i class="ti ti-arrow-right"></i>${_dOwnerChip(d)}</div>
+      <div class="drow-prog"><div class="drow-track"><div class="drow-fill" style="width:${pct}%"></div></div>
+        <span class="drow-pct">${pct}%</span></div>
+      <div class="row-sub">${done}/${(d.items || []).length} งวด · เหลือ ${_dFmt(remain)} ฿</div>
+    </div>
+    <div class="drow-total">${_dFmt(_dDebtTotal(d))} ฿</div>
+    <span class="chev">›</span>
+  </div>`;
+}
 function _debtListSection() {
-  const rows = debtState.debts
-    .map((d) => {
-      const pct = _dDebtPct(d);
-      const remain = _dDebtRemain(d);
-      const done = (d.items || []).filter((i) => i.status === 'done').length;
-      return `<div class="debt-row" onclick="debtSelect('${d.id}')">
-        <span class="row-ic"><i class="ti ti-file-dollar"></i></span>
-        <div class="row-main">
-          <div class="row-name">${_dEsc(d.name)} <span class="acc-flow">${_dAccChip(
-            d.debtor
-          )}<i class="ti ti-arrow-right"></i>${_dOwnerChip(d)}</span></div>
-          <div class="drow-prog"><div class="drow-track"><div class="drow-fill" style="width:${pct}%"></div></div>
-            <span class="drow-pct">${pct}%</span></div>
-          <div class="row-sub">${done}/${(d.items || []).length} งวด · เหลือ ${_dFmt(remain)} ฿</div>
-        </div>
-        <div class="drow-total">${_dFmt(_dDebtTotal(d))} ฿</div>
-        <span class="chev">›</span>
-      </div>`;
-    })
-    .join('');
-  const empty = debtState.debts.length ? '' : '<div class="debt-empty">ยังไม่มีรายการหนี้</div>';
+  const active = debtState.debts.filter((d) => !_dDebtDone(d));
+  const history = debtState.debts.filter((d) => _dDebtDone(d));
+  const list = debtListTab === 'history' ? history : active;
+  const rows = list.map(_debtRow).join('');
+  const emptyMsg =
+    debtListTab === 'history'
+      ? 'ยังไม่มีหนี้ที่ชำระหมด — หนี้จะย้ายมาที่นี่เองเมื่อจ่ายครบทุกงวด'
+      : debtState.debts.length
+        ? 'ไม่มีหนี้ที่กำลังผ่อน 🎉'
+        : 'ยังไม่มีรายการหนี้';
+  const empty = list.length ? '' : `<div class="debt-empty">${emptyMsg}</div>`;
+  const seg = `<div class="debt-seg">
+    <button class="debt-seg-btn${debtListTab === 'active' ? ' on' : ''}" onclick="debtSetListTab('active')">กำลังผ่อน <span class="debt-seg-n">${active.length}</span></button>
+    <button class="debt-seg-btn${debtListTab === 'history' ? ' on' : ''}" onclick="debtSetListTab('history')">ประวัติ (ชำระหมด) <span class="debt-seg-n">${history.length}</span></button>
+  </div>`;
   return `<div class="debt-card">
     <div class="debt-card-head"><div class="debt-card-title"><i class="ti ti-list-details"></i> รายการหนี้ <span class="dst-sub">(กดเพื่อดูงวด)</span></div>
       <button class="debt-btn primary sm" onclick="debtOpenDebtModal()"><i class="ti ti-plus"></i> เพิ่มหนี้</button></div>
+    ${seg}
     <div class="debt-list">${rows}</div>${empty}
   </div>`;
+}
+function debtSetListTab(t) {
+  debtListTab = t === 'history' ? 'history' : 'active';
+  _debtRender();
 }
 
 /* ── detail view: one debt + installments table ──────────────────── */
@@ -579,7 +614,9 @@ function _debtDetail(d) {
       </div>
     </div>
     <div class="debt-strip">
-      <div class="ds"><span class="dstat-ic ic-blue"><i class="ti ti-report-money"></i></span><div class="ds-tx"><div class="ds-lbl">ยอดรวม</div><div class="ds-val">${_dFmt(total)} ฿</div><div class="ds-sub">ทั้งหมด</div></div></div>
+      <div class="ds"><span class="dstat-ic ic-blue"><i class="ti ti-report-money"></i></span><div class="ds-tx"><div class="ds-lbl">ยอดรวม</div><div class="ds-val">${_dFmt(total)} ฿</div><div class="ds-sub">${
+        _dDebtMonthly(d) ? 'ผ่อนเดือนละ ' + _dFmt(_dDebtMonthly(d)) + ' ฿' : 'ทั้งหมด'
+      }</div></div></div>
       <div class="ds"><span class="dstat-ic ic-green"><i class="ti ti-circle-check"></i></span><div class="ds-tx"><div class="ds-lbl">จ่ายแล้ว</div><div class="ds-val green">${_dFmt(paid)} ฿</div><div class="ds-sub">${pct}%</div></div></div>
       <div class="ds"><span class="dstat-ic ic-gold"><i class="ti ti-clock-dollar"></i></span><div class="ds-tx"><div class="ds-lbl">คงเหลือ</div><div class="ds-val red">${_dFmt(remain)} ฿</div><div class="ds-sub">ยังไม่จ่าย</div></div></div>
     </div>
@@ -628,6 +665,7 @@ Object.assign(window, {
   _debtLoad,
   _debtRender,
   debtSelect,
+  debtSetListTab,
   debtBack,
   debtOpenDebtModal,
   debtSetType,

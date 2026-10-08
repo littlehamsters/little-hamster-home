@@ -17,9 +17,19 @@ const DED_IDS=["stDSpouse","stDChild","stDChild2","stDParent","stDMaternity","st
 const DED_MAP={stDSpouse:"dSpouse",stDChild:"dChild",stDChild2:"dChild2",stDParent:"dParent",stDMaternity:"dMaternity",stDLife:"dLife",stDHealth:"dHealth",stDParentHealth:"dParentHealth",stDRMF:"dRMF",stDPension:"dPension",stDESG:"dESG",stDHome:"dHome",stDEreceipt:"dEreceipt",stDDonate:"dDonate",stDDonateEdu:"dDonateEdu"};
 
 // ── State ──
-let state={year:"2568",activeId:null,people:[]};
+// current Thai (Buddhist) year — the module always defaults to this, editable.
+// past years live frozen in state.history and are shown read-only ("ประวัติ").
+const CUR=String(new Date().getFullYear()+543);
+let state={year:CUR,activeId:null,people:[],history:{}};
+let viewHistKey=null;  // null = live current year; otherwise a key in state.history
+let histActiveId=null; // active person while viewing a history snapshot
 const newPerson=n=>({id:uid(),name:n||"คนใหม่",income:blank(),ded:{},xmas:[]});
-const active=()=>state.people.find(p=>p.id===state.activeId)||state.people[0];
+const isHist=()=>viewHistKey!==null;
+const histData=()=>isHist()?((state.history&&state.history[viewHistKey])||null):null;
+// people / activeId for the VIEW (live current-year, or a frozen history snapshot)
+const curPeople=()=>{if(!isHist())return state.people;const h=histData();return (h&&h.people)||[];};
+const curActiveId=()=>{if(!isHist())return state.activeId;return histActiveId||(curPeople()[0]&&curPeople()[0].id);};
+const active=()=>curPeople().find(p=>p.id===curActiveId())||curPeople()[0];
 
 // ── Tax engine ──
 const BRK=[[0,150000,0],[150000,300000,.05],[300000,500000,.10],[500000,750000,.15],[750000,1000000,.20],[1000000,2000000,.25],[2000000,5000000,.30],[5000000,Infinity,.35]];
@@ -54,8 +64,9 @@ function compute(p){
 // ── Auto-save (debounced localStorage → Firebase intercept picks it up) ──
 let _saveT=null;
 function autoSave(){
+  if(isHist())return; // viewing a past year — read-only, never write
   gatherDed();
-  state.year=document.getElementById("taxYear").value;
+  state.year=CUR;
   clearTimeout(_saveT);
   _saveT=setTimeout(()=>localStorage.setItem(ST_KEY,JSON.stringify(state)),800);
 }
@@ -64,43 +75,79 @@ function autoSave(){
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 function renderPeople(){
   const bar=document.getElementById("stPeoplebar");
+  const ppl=curPeople(),aid=curActiveId();
   let opts="";
-  state.people.forEach(p=>{opts+=`<option value="${p.id}"${p.id===state.activeId?" selected":""}>${esc(p.name||"—")}</option>`;});
-  opts+=`<option value="__add__">＋ เพิ่มคนใหม่…</option>`;
+  ppl.forEach(p=>{opts+=`<option value="${p.id}"${p.id===aid?" selected":""}>${esc(p.name||"—")}</option>`;});
+  if(!isHist())opts+=`<option value="__add__">＋ เพิ่มคนใหม่…</option>`;
   bar.innerHTML=`<span class="pl">บัญชีของ:</span>
     <select id="stPersonSelect" class="pselect mo-sel">${opts}</select>
-    <button class="btn" id="stAddPersonBtn">＋ เพิ่มคน</button>
-    <button class="btn" id="stRenameBtn"><i class="ti ti-pencil"></i> เปลี่ยนชื่อ</button>
-    <button class="btn danger" id="stDelPersonBtn"><i class="ti ti-trash"></i> ลบบัญชีนี้</button>`;
+    <button class="btn" id="stSettingsBtn"><i class="ti ti-settings"></i> ตั้งค่า</button>`;
   document.getElementById("stPersonSelect").addEventListener("change",async e=>{
     const v=e.target.value;
-    if(v==="__add__"){await addPerson();renderPeople();}else selPerson(v);
+    if(v==="__add__"){if(isHist()){renderPeople();return;}await addPerson();renderPeople();}else selPerson(v);
   });
-  document.getElementById("stAddPersonBtn").addEventListener("click",addPerson);
-  document.getElementById("stRenameBtn").addEventListener("click",()=>renamePerson(state.activeId));
-  document.getElementById("stDelPersonBtn").addEventListener("click",()=>delPerson(state.activeId));
-  document.getElementById("stViewingWho").textContent="ครัวเรือนทั้งหมด "+state.people.length+" คน";
+  document.getElementById("stSettingsBtn").addEventListener("click",stOpenSettings);
+  document.getElementById("stViewingWho").textContent="ครัวเรือนทั้งหมด "+ppl.length+" คน";
+  applyReadonly();
 }
-function selPerson(id){autoSave();state.activeId=id;loadUI();renderPeople();}
+function selPerson(id){
+  if(isHist()){histActiveId=id;loadUI();renderPeople();return;} // view only
+  autoSave();state.activeId=id;loadUI();renderPeople();
+}
 async function addPerson(){
+  if(isHist())return;
   const def="คนที่ "+(state.people.length+1);
   const name=await modal("ชื่อสมาชิก เช่น โฟม / เข่ง / สมชาย",{input:true,value:def,ok:"เพิ่ม"});
   if(name===null)return;
   const p=newPerson((name||"").trim()||def);
   state.people.push(p);state.activeId=p.id;loadUI();renderPeople();autoSave();
 }
-async function renamePerson(id){
-  const p=state.people.find(x=>x.id===id);if(!p)return;
-  const n=await modal("เปลี่ยนชื่อบัญชี",{input:true,value:p.name,ok:"บันทึก"});
-  if(n===null)return;p.name=(n||"").trim()||p.name;renderPeople();refresh();autoSave();
+// ── Member settings popup (add / rename / delete in one place) ──
+function stOpenSettings(){
+  if(isHist())return; // read-only while viewing history
+  stRenderSettings();
+  const o=document.getElementById("stSettingsOverlay");if(o)o.classList.add("show");
 }
-async function delPerson(id){
-  if(state.people.length<=1){await modal("ต้องมีบัญชีอย่างน้อย 1 คน",{ok:"เข้าใจแล้ว",cancel:""});return;}
+function stCloseSettings(){
+  const o=document.getElementById("stSettingsOverlay");if(o)o.classList.remove("show");
+}
+function stRenderSettings(){
+  const body=document.getElementById("stSettingsBody");if(!body)return;
+  const ppl=state.people,only=ppl.length<=1;
+  body.innerHTML=`
+    <div class="st-set-list">
+      ${ppl.map(p=>`<div class="st-set-row">
+        <input class="st-set-name" data-id="${p.id}" maxlength="40" value="${esc(p.name)}" placeholder="ชื่อสมาชิก">
+        <button class="btn danger sm st-set-del" data-id="${p.id}"${only?" disabled":""} title="ลบสมาชิก"><i class="ti ti-trash"></i></button>
+      </div>`).join("")}
+    </div>
+    <div class="st-set-add">
+      <input id="stSetNewName" maxlength="40" placeholder="เพิ่มสมาชิกใหม่ เช่น โฟม / เข่ง">
+      <button class="btn primary sm" id="stSetAddBtn"><i class="ti ti-plus"></i> เพิ่ม</button>
+    </div>`;
+  body.querySelectorAll(".st-set-name").forEach(inp=>inp.addEventListener("change",e=>{
+    const p=state.people.find(x=>x.id===e.target.dataset.id);if(!p)return;
+    p.name=(e.target.value||"").trim()||p.name;e.target.value=p.name;
+    autoSave();renderPeople();refresh();
+  }));
+  body.querySelectorAll(".st-set-del").forEach(b=>b.addEventListener("click",()=>stDelFromSettings(b.dataset.id)));
+  const add=()=>{
+    const el=document.getElementById("stSetNewName"),name=(el.value||"").trim();
+    if(!name)return;
+    const p=newPerson(name);state.people.push(p);state.activeId=p.id;
+    autoSave();renderPeople();loadUI();stRenderSettings();
+    const n=document.getElementById("stSetNewName");if(n)n.focus();
+  };
+  document.getElementById("stSetAddBtn").addEventListener("click",add);
+  document.getElementById("stSetNewName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add();}});
+}
+async function stDelFromSettings(id){
   const p=state.people.find(x=>x.id===id);if(!p)return;
+  if(state.people.length<=1){await modal("ต้องมีบัญชีอย่างน้อย 1 คน",{ok:"เข้าใจแล้ว",cancel:""});return;}
   if(!await modal("ลบบัญชีของ \""+p.name+"\" ?",{ok:"ลบ"}))return;
   state.people=state.people.filter(x=>x.id!==id);
   if(state.activeId===id)state.activeId=state.people[0].id;
-  loadUI();renderPeople();autoSave();
+  autoSave();renderPeople();loadUI();stRenderSettings();
 }
 
 // ── Income table ──
@@ -174,7 +221,8 @@ function refresh(){
   let bh="";r.detail.forEach(b=>{const span=b.hi===Infinity?1e6:(b.hi-b.lo);const pct=b.amt>0?Math.min(100,b.amt/span*100):0;bh+=`<div class="bracket-row${b.active?' br-row-active':''}"><div class="br-rate">${b.rate*100}%</div><div class="br-track"><div class="br-fill" style="width:${pct}%"></div></div><div class="br-amt">${fmt(b.lo)}–${b.hi===Infinity?"ขึ้นไป":fmt(b.hi)}</div><div class="br-tax">${b.t>0?fmt(b.t):"—"}</div></div>`;});
   bh+=`<div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:2px solid var(--st-line);font-weight:600"><span>รวมภาษี</span><span class="st-num" style="color:var(--st-clay)">${fmt(r.tax)}</span></div>`;
   document.getElementById("stBrackets").innerHTML=bh;
-  renderPlan(r);renderHouse();renderXmas();
+  renderPlan(r);renderHouse();renderXmas();renderHistory();
+  applyReadonly();
 }
 
 // ── Planner ──
@@ -198,7 +246,7 @@ function runSim(){
 function renderHouse(){
   const tb=document.getElementById("stHouseBody");tb.innerHTML="";
   let TI=0,TA=0,TN=0,TT=0,TW=0,TD=0;
-  state.people.forEach(p=>{
+  curPeople().forEach(p=>{
     const r=compute(p);TI+=r.income;TA+=r.totalAllow;TN+=r.net;TT+=r.tax;TW+=r.tWHT;TD+=r.diff;
     const diffTxt=(r.diff>=0?"+":" -")+fmt(Math.abs(r.diff)),diffCls=r.diff>=0?"good":"bad";
     const tr=document.createElement("tr");
@@ -305,6 +353,84 @@ function seed(){
   if(!state.people||!state.people.length)state.people=[newPerson("คนที่ 1")];
   state.people.forEach(p=>{if(!p.income||p.income.length!==12)p.income=blank();if(!p.ded)p.ded={};if(!Array.isArray(p.xmas))p.xmas=[];});
   if(!state.activeId||!state.people.find(p=>p.id===state.activeId))state.activeId=state.people[0].id;
+  if(!state.history||typeof state.history!=="object")state.history={};
+}
+// archive the previous year as a frozen, read-only snapshot when the year rolls over.
+// current-year data is carried forward as the editable starting point (nothing is lost).
+function rollYear(){
+  const prev=state.year;
+  let archived=false;
+  if(prev&&prev!==CUR&&state.people&&state.people.length){
+    if(!state.history[prev])state.history[prev]={people:JSON.parse(JSON.stringify(state.people)),activeId:state.activeId,ts:Date.now()};
+    archived=true;
+  }
+  state.year=CUR;
+  viewHistKey=null;histActiveId=null;
+  if(archived){try{localStorage.setItem(ST_KEY,JSON.stringify(state));}catch(e){}}
+}
+function setYearLabel(){
+  const el=document.getElementById("taxYearLabel");
+  if(el)el.textContent=isHist()?viewHistKey:CUR;
+}
+function viewHist(key){
+  if(!state.history[key])return;
+  viewHistKey=key;histActiveId=null;
+  setYearLabel();loadUI();renderPeople();applyReadonly();
+  const inc=document.querySelector('[data-stab="income"]');if(inc)inc.click();
+}
+function backToCurrent(){
+  viewHistKey=null;histActiveId=null;
+  setYearLabel();loadUI();renderPeople();applyReadonly();
+}
+async function delHist(key){
+  if(!state.history[key])return;
+  if(!await modal(`ลบประวัติปีภาษี ${key} ?`,{ok:"ลบ"}))return;
+  delete state.history[key];
+  if(viewHistKey===key)backToCurrent();
+  try{localStorage.setItem(ST_KEY,JSON.stringify(state));}catch(e){}
+  renderHistory();
+}
+// ── History tab ──
+function renderHistory(){
+  const box=document.getElementById("stHistList");if(!box)return;
+  // history = past years only (never the current year)
+  const keys=Object.keys(state.history||{}).filter(k=>k!==CUR).sort().reverse();
+  if(!keys.length){box.innerHTML=`<div class="st-hist-empty">ยังไม่มีประวัติ — เมื่อขึ้นปีภาษีใหม่ ระบบจะเก็บข้อมูลปี ${CUR} ไว้ที่นี่ให้อัตโนมัติ</div>`;return;}
+  box.innerHTML=keys.map(k=>{
+    const h=state.history[k],ppl=(h&&h.people)||[];
+    let inc=0,tax=0;ppl.forEach(p=>{const r=compute(p);inc+=r.income;tax+=r.tax;});
+    const on=viewHistKey===k;
+    return `<div class="st-hist-row${on?' on':''}">
+      <div class="st-hist-yr"><i class="ti ti-calendar"></i> ปีภาษี ${k}${on?' <span class="st-hist-now">กำลังดู</span>':''}</div>
+      <div class="st-hist-meta">${ppl.length} คน · รายได้รวม <b>${fmt(inc)}</b> · ภาษี <b>${fmt(tax)}</b></div>
+      <div class="st-hist-act">
+        <button class="btn" data-hist-ctl data-view="${k}"><i class="ti ti-eye"></i> ดู</button>
+        <button class="btn danger" data-hist-ctl data-del="${k}"><i class="ti ti-trash"></i> ลบ</button>
+      </div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>viewHist(b.dataset.view)));
+  box.querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>delHist(b.dataset.del)));
+}
+// toggle read-only mode across the module when viewing a history year
+function applyReadonly(){
+  const root=document.getElementById("m-salary");if(!root)return;
+  const ro=isHist();
+  root.classList.toggle("st-readonly",ro);
+  root.querySelectorAll("input,textarea,select,button").forEach(el=>{
+    if(el.id==="stPersonSelect"||el.id==="stPrintBtn")return;
+    if(el.hasAttribute("data-stab"))return;    // keep tab navigation usable
+    if(el.hasAttribute("data-hist-ctl"))return; // history view/back/delete controls stay active
+    el.disabled=ro;
+  });
+  let b=document.getElementById("stHistBanner");
+  if(ro){
+    if(!b){b=document.createElement("div");b.id="stHistBanner";b.className="st-hist-banner";
+      const top=root.querySelector(".top");if(top&&top.parentNode)top.parentNode.insertBefore(b,top.nextSibling);}
+    b.innerHTML=`<span><i class="ti ti-lock"></i> กำลังดูประวัติปีภาษี <b>${viewHistKey}</b> — ดูได้อย่างเดียว แก้ไขไม่ได้</span>
+      <button class="btn" data-hist-ctl id="stBackToCur"><i class="ti ti-arrow-left"></i> กลับปีปัจจุบัน (${CUR})</button>`;
+    const bk=b.querySelector("#stBackToCur");if(bk)bk.addEventListener("click",backToCurrent);
+  }else if(b){b.remove();}
 }
 
 // ── Modal engine (salary-scoped) ──
@@ -329,6 +455,10 @@ document.getElementById("stModalCancel").addEventListener("click",()=>closeModal
 document.getElementById("stModalOverlay").addEventListener("click",e=>{if(e.target.id==="stModalOverlay")closeModal(_mIsInput?null:false);});
 document.getElementById("stModalInput").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();closeModal(document.getElementById("stModalInput").value);}else if(e.key==="Escape")closeModal(null);});
 
+// Member settings popup — close button + click-outside
+document.getElementById("stSettingsClose").addEventListener("click",stCloseSettings);
+document.getElementById("stSettingsOverlay").addEventListener("click",e=>{if(e.target.id==="stSettingsOverlay")stCloseSettings();});
+
 // ── Tabs ──
 document.querySelectorAll("[data-stab]").forEach(t=>t.addEventListener("click",()=>{
   document.querySelectorAll("[data-stab]").forEach(x=>x.classList.remove("active"));
@@ -347,7 +477,6 @@ function setupDed(){
 }
 
 // ── Events ──
-document.getElementById("taxYear").addEventListener("change",refresh);
 document.getElementById("stAddPerson2").addEventListener("click",addPerson);
 document.getElementById("stPrintBtn").addEventListener("click",()=>window.print());
 document.getElementById("stXmasAdd").addEventListener("click",()=>xmasAddRow(""));
@@ -366,16 +495,16 @@ document.getElementById("stClearIncome").addEventListener("click",async()=>{
   active().income=blank();buildTable();refresh();
 });
 window.addEventListener("beforeunload",()=>{
-  gatherDed();state.year=document.getElementById("taxYear").value;
+  if(!isHist()){gatherDed();state.year=CUR;}
   localStorage.setItem(ST_KEY,JSON.stringify(state));
 });
 
 // ── Init (called by showModule once) ──
-function initUI(){document.getElementById("taxYear").value=state.year;renderPeople();loadUI();}
-window.stInit=function(){load();seed();setupDed();initUI();};
+function initUI(){viewHistKey=null;histActiveId=null;setYearLabel();renderPeople();loadUI();applyReadonly();}
+window.stInit=function(){load();seed();rollYear();setupDed();initUI();};
 // Called by fbApplyRemote when Firestore pushes new data
 window.stReloadFromStorage=function(){
-  try{load();seed();initUI();}catch(e){}
+  try{load();seed();rollYear();initUI();}catch(e){}
 };
 // Called by budget module: net-received (รับสุทธิ) of a person for a given month index (0=ม.ค.)
 // name matches a salary person by name (case-insensitive). Returns null if no such person,

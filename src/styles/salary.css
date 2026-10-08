@@ -102,6 +102,23 @@
 #m-salary .st-modal-input.num{text-align:right;font-family:'IBM Plex Mono';}
 #m-salary .st-modal-input:focus{outline:none;border-color:var(--st-sage-deep);background:#fff;box-shadow:0 0 0 3px var(--st-sage-soft);}
 #m-salary .st-modal-actions{display:flex;justify-content:flex-end;gap:8px;}
+/* member settings popup */
+#m-salary .st-set-overlay{z-index:9800;}
+#m-salary .st-set-modal{max-width:430px;}
+#m-salary .st-set-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#m-salary .st-set-head h3{margin:0;font-size:18px;font-weight:700;color:var(--st-ink);}
+#m-salary .st-set-x{border:none;background:none;color:var(--st-muted);cursor:pointer;font-size:20px;line-height:1;padding:4px;border-radius:8px;}
+#m-salary .st-set-x:hover{background:var(--st-surface-2);color:var(--st-ink);}
+#m-salary .st-set-sub{font-size:12.5px;color:var(--st-muted);margin:4px 0 16px;}
+#m-salary .st-set-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+#m-salary .st-set-row{display:flex;align-items:center;gap:8px;}
+#m-salary .st-set-name{flex:1 1 auto;min-width:0;height:40px;padding:0 12px;border:1px solid var(--st-line);border-radius:9px;background:var(--st-surface-2);color:var(--st-ink);font-family:'Inter','IBM Plex Sans Thai',sans-serif;font-size:14px;}
+#m-salary .st-set-name:focus{outline:none;border-color:var(--st-sage);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+#m-salary .btn.sm{height:38px;padding:0 12px;font-size:13px;}
+#m-salary .st-set-del{flex:0 0 auto;}
+#m-salary .st-set-add{display:flex;align-items:center;gap:8px;padding-top:14px;border-top:1px dashed var(--st-line);}
+#m-salary .st-set-add input{flex:1 1 auto;min-width:0;height:40px;padding:0 12px;border:1px solid var(--st-line);border-radius:9px;background:var(--st-surface-2);color:var(--st-ink);font-family:'Inter','IBM Plex Sans Thai',sans-serif;font-size:14px;}
+#m-salary .st-set-add input:focus{outline:none;border-color:var(--st-sage);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.2);}
 #m-salary .lever{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:10px;align-items:center;padding:11px 12px;border:1px solid var(--st-line-soft);border-radius:11px;margin-bottom:9px;background:var(--st-surface-2);}
 #m-salary .lever .name{font-weight:500;font-size:13.5px;}
 #m-salary .lever .name small{display:block;color:var(--st-faint);font-weight:400;font-size:11px;}
@@ -147,6 +164,18 @@
   font-family:'Inter','IBM Plex Sans Thai',sans-serif;
 }
 #m-salary .brand h1,#m-salary .card-h h2,#m-salary .group-title,#m-salary .sim h3{font-family:'Inter','IBM Plex Sans Thai',sans-serif;}
+/* numbers: use the shared app font (like car/debt) instead of IBM Plex Mono */
+#m-salary .st-num,
+#m-salary .scard .val,
+#m-salary .tinput,
+#m-salary .field input[type=number],#m-salary .field input[type=text],
+#m-salary .group-title span.no,
+#m-salary .br-rate,#m-salary .br-amt,#m-salary .br-tax,
+#m-salary .pill,
+#m-salary .st-modal-input.num,
+#m-salary .lever .col .v,
+#m-salary .sim select,#m-salary .sim input,
+#m-salary .sim .out .o .v{font-family:'Inter','IBM Plex Sans Thai',sans-serif;font-variant-numeric:tabular-nums;}
 #m-salary .brand h1{font-weight:700;letter-spacing:-.02em;}
 #m-salary .btn{border-radius:8px;}
 #m-salary .btn.primary{background:var(--st-sage);border-color:var(--st-sage);color:#fff;}
@@ -158,6 +187,27 @@
 #m-salary .yearbox select{border-radius:6px;}
 #m-salary .field input:hover,#m-salary .tinput:hover{border-color:var(--st-sage);}
 #m-salary .field input:focus,#m-salary .st-modal-input:focus,#m-salary .tinput:focus{outline:none;border-color:var(--st-sage);box-shadow:0 0 0 3px rgba(59,130,246,.2);}
+
+/* current-year badge */
+#m-salary .taxyear-badge{display:inline-block;background:var(--st-sage-soft);color:var(--st-sage-deep);font-weight:700;font-size:15px;border-radius:999px;padding:6px 16px;font-variant-numeric:tabular-nums;}
+
+/* history (read-only) mode */
+#m-salary .st-hist-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px;padding:10px 14px;border-radius:10px;background:var(--st-yellow-soft);border:1px solid var(--st-yellow-line);color:var(--st-clay);font-size:13.5px;font-weight:600;}
+#m-salary .st-hist-banner i{font-size:16px;}
+#m-salary .st-hist-banner .btn{color:var(--st-clay);border-color:var(--st-yellow-line);}
+#m-salary.st-readonly input:disabled,#m-salary.st-readonly select:disabled,#m-salary.st-readonly textarea:disabled{background:var(--st-surface-2);color:var(--st-muted);cursor:not-allowed;opacity:1;}
+#m-salary.st-readonly button:disabled{opacity:.45;cursor:not-allowed;}
+#m-salary.st-readonly .btn.danger:disabled{opacity:.35;}
+
+/* history tab list */
+#m-salary .st-hist-empty{padding:28px 12px;text-align:center;color:var(--st-muted);font-size:14px;}
+#m-salary .st-hist-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border:1px solid var(--st-line);border-radius:12px;margin-bottom:10px;background:var(--st-surface);}
+#m-salary .st-hist-row.on{border-color:var(--st-sage);box-shadow:0 0 0 2px rgba(59,130,246,.15);}
+#m-salary .st-hist-yr{font-weight:700;font-size:15px;display:flex;align-items:center;gap:7px;color:var(--st-ink);}
+#m-salary .st-hist-now{background:var(--st-sage-soft);color:var(--st-sage-deep);font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;}
+#m-salary .st-hist-meta{flex:1 1 220px;color:var(--st-muted);font-size:13px;font-variant-numeric:tabular-nums;}
+#m-salary .st-hist-meta b{color:var(--st-ink);}
+#m-salary .st-hist-act{display:flex;gap:8px;}
 
 /* header / toolbar — responsive */
 @media(max-width:680px){

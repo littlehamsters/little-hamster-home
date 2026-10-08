@@ -774,10 +774,7 @@
     </div>
     <div class="yearbox">
       <label>ปีภาษี</label>
-      <select id="taxYear" class="mo-sel">
-        <option value="2568">2568 (ยื่น 2569)</option>
-        <option value="2569">2569</option>
-      </select>
+      <span id="taxYearLabel" class="taxyear-badge">—</span>
     </div>
   </header>
   <div class="peoplebar" id="stPeoplebar"></div>
@@ -794,6 +791,7 @@
     <button class="tab" data-stab="plan"><i class="ti ti-target"></i> วางแผนลดหย่อน</button>
     <button class="tab" data-stab="xmas">🎄 คริสต์มาส</button>
     <button class="tab" data-stab="house">🏠 สรุปรายคน</button>
+    <button class="tab" data-stab="history">📁 ประวัติ</button>
   </div>
 
   <!-- TAB 1 -->
@@ -962,6 +960,19 @@
     <div class="callout" style="margin-top:2px"><span class="ic"><i class="ti ti-chart-bar"></i></span><div id="stHouseNote">เพิ่มสมาชิกในครัวเรือนเพื่อเทียบภาระภาษีของแต่ละคน</div></div>
   </section>
 
+  <!-- TAB: history -->
+  <section class="panel" id="stPanel-history">
+    <div class="card">
+      <div class="card-h">
+        <div><span class="eyebrow">ย้อนหลัง</span><h2>ประวัติปีภาษี</h2></div>
+      </div>
+      <div class="card-b">
+        <div class="hint" style="margin-bottom:10px">ข้อมูลปีเก่า (ไม่ใช่ปีปัจจุบัน) — เมื่อขึ้นปีภาษีใหม่ ระบบจะเก็บปีก่อนหน้าไว้ที่นี่ให้อัตโนมัติ ดูได้อย่างเดียว แก้ไขไม่ได้</div>
+        <div id="stHistList"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Print only -->
   <div style="justify-content:center;margin-top:6px;display:flex;gap:8px;">
     <button class="btn" id="stPrintBtn">🖨️ พิมพ์ / PDF</button>
@@ -982,6 +993,16 @@
         <button class="btn" id="stModalCancel">ยกเลิก</button>
         <button class="btn primary" id="stModalOk">ตกลง</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Salary settings popup (manage members) -->
+  <div class="st-modal-overlay st-set-overlay" id="stSettingsOverlay">
+    <div class="st-modal st-set-modal">
+      <div class="st-set-head"><h3>⚙️ ตั้งค่าสมาชิก</h3>
+        <button class="st-set-x" id="stSettingsClose" aria-label="ปิด"><i class="ti ti-x"></i></button></div>
+      <div class="st-set-sub">เพิ่ม เปลี่ยนชื่อ หรือลบสมาชิกในครัวเรือน</div>
+      <div id="stSettingsBody"></div>
     </div>
   </div>
 </div><!-- .wrap -->

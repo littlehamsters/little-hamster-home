@@ -266,6 +266,8 @@
 #m-budget .diff2-amt{font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 /* diff floats up & slanted like a superscript (เลขยกกำลัง) */
 #m-budget .diff2-delta{font-size:10px;font-weight:700;font-style:italic;font-variant-numeric:tabular-nums;white-space:nowrap;align-self:flex-start;position:relative;top:-3px}
+/* CC overview: vs-last-month diff, floats up & slanted like a superscript */
+#m-budget .cc-delta{font-size:10px;font-weight:700;font-style:italic;font-variant-numeric:tabular-nums;white-space:nowrap;position:relative;top:-4px}
 
 /* settings GOAL rows — clean 2-tier card (head + controls), responsive */
 #m-budget .goal-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}

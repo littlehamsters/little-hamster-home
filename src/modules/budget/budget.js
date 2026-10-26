@@ -1645,9 +1645,42 @@ function _ccCatColOutside(e){const p=document.getElementById('ccCatColPop');if(p
 function _ccCatCloseColPop(){const p=document.getElementById('ccCatColPop');if(p)p.remove();document.removeEventListener('click',_ccCatColOutside,true);}
 function ccCatColSet(col,val){_ccPopColF[col]=val;if(col==='owner')_ccCatCloseColPop();ccCatPopupFilter();}
 function ccCatPopupClose(){_ccCatCloseColPop();document.getElementById('cc-cat-modal').classList.remove('open');}
+// CC spending stats for a month key (read-only; no month creation)
+function _ccMonthStats(k){
+  const md=months[k];
+  const totals={};let grand=0,uncat=0,sp1=0,sp2=0,sother=0,scommon=0;
+  if(md&&Array.isArray(md.cc)){
+    md.cc.forEach(c=>{
+      if(c.txns&&c.txns.length){
+        c.txns.forEach(t=>{const cat=t.category||'อื่นๆ';const a=f(t.amt);totals[cat]=(totals[cat]||0)+a;grand+=a;});
+      }else{const a=f(c.total);uncat+=a;grand+=a;}
+      sp1+=f(c.p1);sp2+=f(c.p2);sother+=f(c.other);
+      scommon+=(f(c.total)-f(c.p1)-f(c.p2)-f(c.other));
+    });
+  }
+  if(uncat>0)totals['ไม่ระบุหมวด']=(totals['ไม่ระบุหมวด']||0)+uncat;
+  return {grand,totals,person1:sp1+scommon/2,person2:sp2+scommon/2,scommon,sother};
+}
+function _ccPrevKey(){
+  let m=curMonth-1,y=curYear;if(m<0){m=11;y--;}
+  return `${y}-${String(m).padStart(2,'0')}`;
+}
 function renderCCCategory(){
   const box=document.getElementById('cc-cat-container');if(!box)return;
-  const sub=document.getElementById('cc-cat-sub');if(sub)sub.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`;
+  const prevKey=_ccPrevKey();
+  const [py,pm]=prevKey.split('-').map(Number);
+  const prev=_ccMonthStats(prevKey);
+  const hasPrev=prev.grand>0;
+  const sub=document.getElementById('cc-cat-sub');
+  if(sub)sub.textContent=`${MONTHS_TH[curMonth]} ${curYear+543}`+(hasPrev?` · เทียบ ${MONTHS_TH[pm]} ${py+543}`:'');
+  // floating (superscript-style) diff vs last month
+  const ccDelta=(cur,prevVal)=>{
+    if(!hasPrev)return '';
+    const diff=f(cur-(prevVal||0));
+    if(diff===0)return `<span class="cc-delta" style="color:var(--ink3)">±0</span>`;
+    const col=diff>0?'#E24B4A':'#3d7a52';
+    return `<span class="cc-delta" style="color:${col}">${diff>0?'+':'−'}${_bpFmt(Math.abs(diff))}</span>`;
+  };
   const md=getMD();
   const totals={};let grand=0,uncat=0;
   _ccCatItems={};
@@ -1672,10 +1705,10 @@ function renderCCCategory(){
     scommon+=(f(c.total)-f(c.p1)-f(c.p2)-f(c.other));
   });
   const person1=sp1+scommon/2, person2=sp2+scommon/2;
-  const personRow=(name,amt,col)=>`
-    <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 10px;border-radius:9px;background:var(--card2);margin-bottom:5px">
+  const personRow=(name,amt,col,prevAmt)=>`
+    <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:13px;padding:6px 10px;border-radius:9px;background:var(--card2);margin-bottom:5px">
       <span style="font-weight:600;color:${col}">${name}</span>
-      <span style="font-variant-numeric:tabular-nums;font-weight:700">${_bpFmt(amt)}</span>
+      <span style="font-variant-numeric:tabular-nums;font-weight:700;display:inline-flex;align-items:baseline;gap:3px">${_bpFmt(amt)}${ccDelta(amt,prevAmt)}</span>
     </div>`;
   const rows=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
   if(uncat>0)rows.push(['ไม่ระบุหมวด',uncat]);
@@ -1685,13 +1718,13 @@ function renderCCCategory(){
   box.innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid var(--line2)">
       <span style="font-size:13px;color:var(--ink2)">รวมค่าบัตรทั้งเดือน</span>
-      <span style="font-size:22px;font-weight:700;color:var(--lilac)">${_bpFmt(grand)}</span>
+      <span style="font-size:22px;font-weight:700;color:var(--lilac);display:inline-flex;align-items:baseline;gap:4px">${_bpFmt(grand)}${ccDelta(grand,prev.grand)}</span>
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">แยกรายคน</div>
-    ${personRow('👤 '+cfg.p1,person1,'var(--sky)')}
-    ${personRow('👤 '+cfg.p2,person2,'var(--rose)')}
-    ${personRow('🤝 กองกลาง (รวมก่อนหาร)',scommon,'var(--ink2)')}
-    ${sother>0?personRow('— อื่นๆ (ไม่นับ)',sother,'var(--ink3)'):''}
+    ${personRow('👤 '+cfg.p1,person1,'var(--sky)',prev.person1)}
+    ${personRow('👤 '+cfg.p2,person2,'var(--rose)',prev.person2)}
+    ${personRow('🤝 กองกลาง (รวมก่อนหาร)',scommon,'var(--ink2)',prev.scommon)}
+    ${sother>0?personRow('— อื่นๆ (ไม่นับ)',sother,'var(--ink3)',prev.sother):''}
     <div style="font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 10px">แยกหมวด</div>`+
     rows.map(([cat,amt],i)=>{
       const pct=grand?Math.round(amt/grand*100):0;const col=colors[cat]||'var(--ink3)';
@@ -1701,8 +1734,8 @@ function renderCCCategory(){
           <span style="font-weight:600;display:flex;align-items:center;gap:6px">${cat}
             <span style="color:var(--ink3);font-size:11px;font-weight:500">(${n})</span>
           </span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span style="font-variant-numeric:tabular-nums"><b>${_bpFmt(amt)}</b> <span style="color:var(--ink3);font-size:11px">${pct}%</span></span>
+          <span style="display:flex;align-items:baseline;gap:8px">
+            <span style="font-variant-numeric:tabular-nums;display:inline-flex;align-items:baseline;gap:3px"><b>${_bpFmt(amt)}</b>${ccDelta(amt,prev.totals[cat])} <span style="color:var(--ink3);font-size:11px">${pct}%</span></span>
             <button class="cc-cat-i" onclick="ccCatPopup(${i})" title="ดูรายการหมวดนี้">i</button>
           </span>
         </div>

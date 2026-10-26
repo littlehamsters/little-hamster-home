@@ -1,6 +1,15 @@
 /* Savings module — jar funds, deposits/withdrawals */
 const _SV_KEY='savings_jars_v1';
 const EMOJIS=['🫙','🎯','✈️','🏠','🚗','🎓','💍','🏥','🎁','🐱','🌿','🍃','💻','📦','🛟','💰'];
+// country flags for travel funds (flag emoji + Thai name)
+const FLAGS=[
+  {f:'🇯🇵',n:'ญี่ปุ่น'},{f:'🇰🇷',n:'เกาหลี'},{f:'🇨🇳',n:'จีน'},{f:'🇹🇼',n:'ไต้หวัน'},
+  {f:'🇭🇰',n:'ฮ่องกง'},{f:'🇸🇬',n:'สิงคโปร์'},{f:'🇲🇾',n:'มาเลเซีย'},{f:'🇻🇳',n:'เวียดนาม'},
+  {f:'🇮🇩',n:'อินโดนีเซีย'},{f:'🇮🇳',n:'อินเดีย'},{f:'🇦🇪',n:'ดูไบ'},{f:'🇬🇧',n:'อังกฤษ'},
+  {f:'🇫🇷',n:'ฝรั่งเศส'},{f:'🇮🇹',n:'อิตาลี'},{f:'🇩🇪',n:'เยอรมนี'},{f:'🇨🇭',n:'สวิส'},
+  {f:'🇪🇸',n:'สเปน'},{f:'🇺🇸',n:'สหรัฐฯ'},{f:'🇦🇺',n:'ออสเตรเลีย'},{f:'🇳🇿',n:'นิวซีแลนด์'},
+  {f:'🇹🇭',n:'ไทย'},
+];
 const CATEGORIES=[
   {id:'travel',    name:'ท่องเที่ยว',  emoji:'✈️', color:'#5BA9C4'},
   {id:'emergency', name:'ฉุกเฉิน',     emoji:'🛟', color:'#C76A4E'},
@@ -26,6 +35,11 @@ function _svLoad(){
   // migrate: pull any names already used in transactions into the people list
   state.funds.forEach(f=>{
     if(!f.createdAt)f.createdAt=f.tx.length?Math.min(...f.tx.map(t=>t.ts)):Date.now();
+    // repair legacy targetDate: old bug saved it as display text "DD/MM/YYYY" → turn back
+    // into ISO so the deadline/monthly target reappear; drop only if truly unrecoverable.
+    f.targetDate=_svNormDate(f.targetDate);
+    // migrate: flags used to live in a separate field → now merged into the icon
+    if(f.flag){f.emoji=f.flag;delete f.flag;}
     f.tx.forEach(t=>{if(t.who&&!state.people.includes(t.who))state.people.push(t.who);});
   });
   applyTheme('island');
@@ -43,10 +57,20 @@ const parseNum=s=>{const v=parseFloat(String(s).replace(/,/g,'').trim());return 
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function balance(f){return f.tx.reduce((s,t)=>s+(t.type==='in'?t.amt:-t.amt),0);}
 function dateStr(ts){const d=new Date(ts);if(isNaN(d))return '—';return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}
-function shortDate(iso){if(!iso)return '';const d=new Date(iso+'T00:00:00');return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});}
+// normalise a targetDate to clean ISO (YYYY-MM-DD); recover the old "DD/MM/YYYY"
+// display format that an earlier bug saved; '' if unrecoverable.
+function _svNormDate(td){
+  if(!td)return '';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(td))return td;
+  const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(td).trim());
+  if(m){const dd=m[1].padStart(2,'0'),mm=m[2].padStart(2,'0');return `${m[3]}-${mm}-${dd}`;}
+  return '';
+}
+function shortDate(iso){if(!iso)return '';const d=new Date(iso+'T00:00:00');if(isNaN(d))return '';return d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'});}
 function daysLeft(iso){
   if(!iso)return null;
-  const t=new Date(iso+'T00:00:00');const now=new Date();
+  const t=new Date(iso+'T00:00:00');if(isNaN(t))return null;
+  const now=new Date();
   const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   return Math.round((t-today)/86400000);
 }
@@ -65,6 +89,7 @@ function planMonthly(f){
   if(f.goal<=0||!f.targetDate||bal>=f.goal)return 0;
   const today=new Date();
   const end=new Date(f.targetDate+'T00:00:00');
+  if(isNaN(end))return 0;
   const months=Math.max(1,Math.round((end-today)/(86400000*30.44)));
   return (f.goal-bal)/months;
 }
@@ -74,8 +99,8 @@ function fundStatus(f){
   if(f.goal<=0)return{tone:'neutral',label:'⚪ ยังไม่ตั้งเป้า'};
   if(bal>=f.goal)return{tone:'ok',label:'✅ ถึงเป้าแล้ว 🎉'};
   const net=monthNet(f);
-  if(f.targetDate){
-    const dl=daysLeft(f.targetDate);
+  const dl=f.targetDate?daysLeft(f.targetDate):null;
+  if(dl!=null){
     if(dl<0)return{tone:'over',label:`🔴 เลยกำหนด ${monthsLabel(dl)}`};
     if(dl===0)return{tone:'warn',label:'🟠 ครบกำหนดวันนี้'};
     const req=planMonthly(f);
@@ -102,7 +127,7 @@ function jarCard(f){
   const tags=catChip+ownerChip;
   // deadline / countdown
   let deadline='';
-  if(f.targetDate&&!f.closed){
+  if(f.targetDate&&!f.closed&&daysLeft(f.targetDate)!=null){
     const dl=daysLeft(f.targetDate);
     const dateTxt=shortDate(f.targetDate);
     if(done){
@@ -219,13 +244,16 @@ function openFund(id){
   document.getElementById('fName').value=f?f.name:'';
   document.getElementById('fDesc').value=f&&f.desc?f.desc:'';
   document.getElementById('fGoal').value=f&&f.goal?f.goal:'';
-  document.getElementById('fDate').value=f&&f.targetDate?f.targetDate:'';
+  // fDate is an mo-dp picker: keep the ISO in dataset.iso, display stays formatted.
+  // only accept a valid YYYY-MM-DD (drops any legacy bad value → empty field).
+  const _td=f&&/^\d{4}-\d{2}-\d{2}$/.test(f.targetDate||'')?f.targetDate:'';
+  if(window.moSetDate)window.moSetDate('fDate',_td);else document.getElementById('fDate').value=_td;
   document.getElementById('fStart').value='';
   document.getElementById('fStart').parentElement.style.display=f?'none':'block';
-  pickedEmoji=f?f.emoji:EMOJIS[0];
-  buildEmoji();
   pickedCat=f&&f.category?f.category:'other';
+  pickedEmoji=f?f.emoji:EMOJIS[0];
   buildCat();
+  buildEmoji(); // includes flags when category is travel
   fillOwnerSelect(f?f.owner:'');
   document.getElementById('fundErr').style.display='none';
   // delete button
@@ -252,8 +280,10 @@ function openFund(id){
   document.getElementById('fName').focus();
 }
 function buildEmoji(){
-  document.getElementById('emojiRow').innerHTML=EMOJIS.map(e=>
-    `<button class="emoji-pick ${e===pickedEmoji?'active':''}" onclick="pickEmoji('${e}')">${e}</button>`).join('');
+  // country flags are merged into the icon picker for every fund (all categories)
+  const items=EMOJIS.map(e=>({e,t:''})).concat(FLAGS.map(x=>({e:x.f,t:x.n})));
+  document.getElementById('emojiRow').innerHTML=items.map(it=>
+    `<button class="emoji-pick${it.e===pickedEmoji?' active':''}" onclick="pickEmoji('${it.e}')"${it.t?` title="${it.t}"`:''}>${it.e}</button>`).join('');
 }
 function pickEmoji(e){pickedEmoji=e;buildEmoji();}
 function buildCat(){
@@ -275,7 +305,9 @@ function saveFund(){
   const desc=document.getElementById('fDesc').value.trim();
   const goal=parseNum(document.getElementById('fGoal').value)||0;
   const start=parseNum(document.getElementById('fStart').value)||0;
-  const targetDate=document.getElementById('fDate').value||'';
+  // read the ISO from the picker (dataset.iso), not the formatted display value
+  const _rawDate=(window.moGetDate?window.moGetDate('fDate'):document.getElementById('fDate').value)||'';
+  const targetDate=/^\d{4}-\d{2}-\d{2}$/.test(_rawDate)?_rawDate:'';
   const owner=document.getElementById('fOwner').value||'';
   const err=document.getElementById('fundErr');
   if(!name){err.textContent='ใส่ชื่อกองก่อนนะ';err.style.display='block';return;}

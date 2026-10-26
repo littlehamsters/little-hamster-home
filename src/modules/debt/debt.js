@@ -13,7 +13,7 @@ const STATUS_CYCLE = ['pending', 'done', 'deferred'];
 
 let debtState = { accounts: [], debts: [], sel: '' };
 let debtView = 'list'; // 'list' (overview) | 'detail' (one debt)
-let debtListTab = 'active'; // 'active' (กำลังผ่อน) | 'history' (ชำระหมดแล้ว)
+let debtFilter = { from: '', to: '' }; // กรองตามบัญชีต้นทาง (ลูกหนี้) / ปลายทาง (เจ้าของหนี้)
 let _dPickColor = ACC_COLORS[0]; // scratch: colour chosen in the account modal
 
 /* ── helpers ─────────────────────────────────────────────────────── */
@@ -179,6 +179,16 @@ function _dAccOptions(sel) {
       .join('')
   );
 }
+// options for the filter dropdowns (empty = ทุกบัญชี)
+function _dAccFilterOptions(sel, allLabel) {
+  const first = `<option value="">${allLabel}</option>`;
+  return (
+    first +
+    debtState.accounts
+      .map((a) => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${_dEsc(a.name)}</option>`)
+      .join('')
+  );
+}
 
 /* ── totals ──────────────────────────────────────────────────────── */
 const _dItemsSum = (d) => (d.items || []).reduce((s, i) => s + _dNum(i.amount), 0);
@@ -198,6 +208,14 @@ const _dDebtMonthly = (d) => {
 // ชำระหมดแล้ว — มียอด และจ่ายครบ (คงเหลือ = 0) และมีงวดอย่างน้อยหนึ่งงวด
 const _dDebtDone = (d) =>
   _dDebtTotal(d) > 0 && (d.items || []).length > 0 && _dDebtRemain(d) <= 0;
+// วันที่ชำระเสร็จ = เดือนของงวดที่จ่ายล่าสุด
+const _dDebtDoneDate = (d) => {
+  const dates = (d.items || [])
+    .filter((i) => i.status === 'done' && i.date)
+    .map((i) => i.date)
+    .sort();
+  return dates.length ? _dMonthYear(dates[dates.length - 1]) : '—';
+};
 
 /* ═══ MODALS ══════════════════════════════════════════════════════ */
 function _debtModal(title, bodyHtml, saveLabel, saveExpr, wide) {
@@ -535,31 +553,82 @@ function _debtRow(d) {
     <span class="chev">›</span>
   </div>`;
 }
+const _dDebtMatchFilter = (d) =>
+  (!debtFilter.from || d.debtor === debtFilter.from) &&
+  (!debtFilter.to || d.owner === debtFilter.to);
 function _debtListSection() {
-  const active = debtState.debts.filter((d) => !_dDebtDone(d));
-  const history = debtState.debts.filter((d) => _dDebtDone(d));
-  const list = debtListTab === 'history' ? history : active;
+  const base = debtState.debts.filter(_dDebtMatchFilter);
+  const list = base.filter((d) => !_dDebtDone(d)); // show only debts still being paid
+  const doneCount = debtState.debts.filter(_dDebtDone).length;
   const rows = list.map(_debtRow).join('');
-  const emptyMsg =
-    debtListTab === 'history'
-      ? 'ยังไม่มีหนี้ที่ชำระหมด — หนี้จะย้ายมาที่นี่เองเมื่อจ่ายครบทุกงวด'
-      : debtState.debts.length
-        ? 'ไม่มีหนี้ที่กำลังผ่อน 🎉'
-        : 'ยังไม่มีรายการหนี้';
+  const hasFilter = !!(debtFilter.from || debtFilter.to);
+  const emptyMsg = hasFilter
+    ? 'ไม่มีหนี้ที่กำลังผ่อนตามตัวกรอง'
+    : debtState.debts.length
+      ? 'ไม่มีหนี้ที่กำลังผ่อน 🎉'
+      : 'ยังไม่มีรายการหนี้';
   const empty = list.length ? '' : `<div class="debt-empty">${emptyMsg}</div>`;
-  const seg = `<div class="debt-seg">
-    <button class="debt-seg-btn${debtListTab === 'active' ? ' on' : ''}" onclick="debtSetListTab('active')">กำลังผ่อน <span class="debt-seg-n">${active.length}</span></button>
-    <button class="debt-seg-btn${debtListTab === 'history' ? ' on' : ''}" onclick="debtSetListTab('history')">ประวัติ (ชำระหมด) <span class="debt-seg-n">${history.length}</span></button>
+  // filter bar (only when there are accounts to filter by)
+  const filterBar = debtState.accounts.length
+    ? `<div class="debt-filter">
+        <i class="ti ti-filter debt-filter-ic"></i>
+        <select class="mo-sel" onchange="debtSetFilter('from',this.value)">${_dAccFilterOptions(debtFilter.from, 'ต้นทาง: ทุกบัญชี')}</select>
+        <i class="ti ti-arrow-right debt-filter-arrow"></i>
+        <select class="mo-sel" onchange="debtSetFilter('to',this.value)">${_dAccFilterOptions(debtFilter.to, 'ปลายทาง: ทุกบัญชี')}</select>
+        ${hasFilter ? `<button class="debt-icon-btn debt-filter-clear" onclick="debtClearFilter()" title="ล้างตัวกรอง"><i class="ti ti-x"></i></button>` : ''}
+      </div>`
+    : '';
+  // summary of the active (currently-paying) debts shown
+  const sTotal = list.reduce((s, d) => s + _dDebtTotal(d), 0);
+  const sPaid = list.reduce((s, d) => s + _dDebtPaid(d), 0);
+  const sRemain = Math.max(0, sTotal - sPaid);
+  const sMonthly = list.reduce((s, d) => s + _dDebtMonthly(d), 0);
+  const summary = `<div class="debt-filter-sum">
+    <span class="dfs-cell"><span class="dfs-lbl">รายการ</span><span class="dfs-val">${list.length}</span></span>
+    <span class="dfs-cell"><span class="dfs-lbl">ยอดรวม</span><span class="dfs-val">${_dFmt(sTotal)} ฿</span></span>
+    <span class="dfs-cell"><span class="dfs-lbl">จ่ายแล้ว</span><span class="dfs-val green">${_dFmt(sPaid)} ฿</span></span>
+    <span class="dfs-cell"><span class="dfs-lbl">คงเหลือ</span><span class="dfs-val red">${_dFmt(sRemain)} ฿</span></span>
+    ${sMonthly ? `<span class="dfs-cell"><span class="dfs-lbl">ผ่อน/เดือน</span><span class="dfs-val">${_dFmt(sMonthly)} ฿</span></span>` : ''}
   </div>`;
   return `<div class="debt-card">
     <div class="debt-card-head"><div class="debt-card-title"><i class="ti ti-list-details"></i> รายการหนี้ <span class="dst-sub">(กดเพื่อดูงวด)</span></div>
-      <button class="debt-btn primary sm" onclick="debtOpenDebtModal()"><i class="ti ti-plus"></i> เพิ่มหนี้</button></div>
-    ${seg}
+      <div class="debt-head-act">
+        <button class="debt-btn sm" onclick="debtOpenHistory()"><i class="ti ti-history"></i> ประวัติ${doneCount ? ` <span class="debt-seg-n">${doneCount}</span>` : ''}</button>
+        <button class="debt-btn primary sm" onclick="debtOpenDebtModal()"><i class="ti ti-plus"></i> เพิ่มหนี้</button>
+      </div></div>
+    ${filterBar}
+    ${summary}
     <div class="debt-list">${rows}</div>${empty}
   </div>`;
 }
-function debtSetListTab(t) {
-  debtListTab = t === 'history' ? 'history' : 'active';
+// ประวัติหนี้ที่ชำระหมด — popup อ่านอย่างเดียว: ต้นทาง → ปลายทาง · ยอด · เสร็จเมื่อไหร่
+function debtOpenHistory() {
+  const done = debtState.debts.filter(_dDebtDone);
+  const rows = done.length
+    ? done
+        .map(
+          (d) => `<div class="dh-row">
+            <div class="dh-main">
+              <div class="dh-name">${_dEsc(d.name)}</div>
+              <div class="acc-flow">${_dAccChip(d.debtor)}<i class="ti ti-arrow-right"></i>${_dOwnerChip(d)}</div>
+            </div>
+            <div class="dh-meta">
+              <div class="dh-amt">${_dFmt(_dDebtTotal(d))} ฿</div>
+              <div class="dh-date"><i class="ti ti-circle-check"></i> ${_dDebtDoneDate(d)}</div>
+            </div>
+          </div>`
+        )
+        .join('')
+    : '<div class="debt-empty">ยังไม่มีหนี้ที่ชำระหมด</div>';
+  _debtModal('ประวัติหนี้ที่ชำระหมด', `<div class="dh-list">${rows}</div>`, '', '');
+}
+function debtSetFilter(which, val) {
+  if (which === 'from') debtFilter.from = val || '';
+  else if (which === 'to') debtFilter.to = val || '';
+  _debtRender();
+}
+function debtClearFilter() {
+  debtFilter = { from: '', to: '' };
   _debtRender();
 }
 
@@ -665,7 +734,9 @@ Object.assign(window, {
   _debtLoad,
   _debtRender,
   debtSelect,
-  debtSetListTab,
+  debtOpenHistory,
+  debtSetFilter,
+  debtClearFilter,
   debtBack,
   debtOpenDebtModal,
   debtSetType,

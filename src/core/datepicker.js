@@ -18,6 +18,24 @@ function fmtDisp(s) {
   const d = parseIso(s);
   return d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : '';
 }
+// does an ISO (YYYY-MM-DD) refer to a real calendar date?
+function isoValid(iso) {
+  const [y, mo, d] = String(iso).split('-').map(Number);
+  if (!y || !mo || !d) return false;
+  const dt = new Date(y, mo - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+}
+// parse typed text → ISO; accepts "YYYY-MM-DD" and "DD/MM/YYYY" (/, -, . separators)
+function parseLoose(s) {
+  s = String(s || '').trim();
+  if (!s) return null;
+  let m;
+  if ((m = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(s)))
+    return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  if ((m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(s)))
+    return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  return null;
+}
 
 let _pop = null;
 let _anchor = null;
@@ -135,13 +153,14 @@ function openFor(inp) {
 export function moInitDatePickers(root) {
   (root || document).querySelectorAll('input.mo-dp:not([data-dp])').forEach((inp) => {
     inp.dataset.dp = '1';
+    const editable = inp.hasAttribute('data-editable');
     const initial = inp.getAttribute('value') || inp.value || '';
     inp.type = 'text';
-    inp.readOnly = true;
+    inp.readOnly = !editable;
     inp.autocomplete = 'off';
     inp.dataset.iso = initial;
     inp.value = initial ? fmtDisp(initial) : '';
-    if (!inp.placeholder) inp.placeholder = 'วว/ดด/ปปปป';
+    if (!inp.placeholder) inp.placeholder = editable ? 'วว/ดด/ปปปป (พิมพ์หรือเลือก)' : 'วว/ดด/ปปปป';
     let field = inp.parentElement;
     if (!field || !field.classList.contains('mo-dp-field')) {
       field = document.createElement('div');
@@ -159,7 +178,23 @@ export function moInitDatePickers(root) {
       if (_pop && field.contains(_pop)) closePop();
       else openFor(inp);
     };
-    inp.addEventListener('click', toggle);
+    // editable: typing allowed; calendar opens only via the icon, and typed text
+    // is parsed on blur/Enter. Non-editable: click anywhere opens the calendar.
+    if (editable) {
+      const commit = () => {
+        const raw = inp.value.trim();
+        if (!raw) { setVal(inp, ''); return; }
+        const iso = parseLoose(raw);
+        if (iso && isoValid(iso)) setVal(inp, iso);
+        else inp.value = inp.dataset.iso ? fmtDisp(inp.dataset.iso) : ''; // revert invalid
+      };
+      inp.addEventListener('blur', commit);
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); inp.blur(); }
+      });
+    } else {
+      inp.addEventListener('click', toggle);
+    }
     icon.addEventListener('click', toggle);
   });
 }

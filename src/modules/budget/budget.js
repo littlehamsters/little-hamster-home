@@ -1978,6 +1978,12 @@ function _bpRenderCharts(){
 }
 let diffPerson='p1';
 let mainDiffPerson='p1';
+let diffItem=''; // selected item id in the ผลต่าง Goal รายเดือน view ('' → first item)
+
+function setDiffItem(id){
+  diffItem=id||'';
+  renderDiffTable();
+}
 
 function setMainDiffPerson(p,btn){
   mainDiffPerson=p;
@@ -2018,103 +2024,109 @@ function setDiffPerson(p,btn){
 }
 
 function renderDiffTable(){
-  const dp1=document.getElementById('dp1-name');if(dp1)dp1.textContent=cfg.p1;
-  const dp2=document.getElementById('dp2-name');if(dp2)dp2.textContent=cfg.p2;
   const container=document.getElementById('diff-table-container');
   if(!container)return;
-  const p=diffPerson;
+  const escHtml=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const keys=getAllMonthKeys();
-  const clr=p==='p1'?'var(--sky)':'var(--rose)';
-  const bg=p==='p1'?'var(--sky-bg)':'var(--rose-bg)';
-  const bl=p==='p1'?'var(--sky-line)':'var(--rose-line)';
 
-  const items=[];
-  cfg.fixedExpense[p].forEach(fe=>{
-    const name=fe.ccLinked?'ค่าบัตรเครดิต':fe.utilityLinked?'ค่าน้ำ-ไฟ':fe.foodLinked?'ค่ากิน':fe.name;
-    items.push({name,goal:getGoal(fe),type:fe.type,ccLinked:fe.ccLinked,utilityLinked:fe.utilityLinked,foodLinked:fe.foodLinked,id:fe.id});
+  // unify the two persons' fixed expenses by display name → one row, two columns
+  const byName=new Map();
+  ['p1','p2'].forEach(pp=>{
+    (cfg.fixedExpense[pp]||[]).forEach(fe=>{
+      const name=fe.ccLinked?'ค่าบัตรเครดิต':fe.utilityLinked?'ค่าน้ำ-ไฟ':fe.foodLinked?'ค่ากิน':fe.name;
+      if(!byName.has(name))byName.set(name,{name});
+      byName.get(name)[pp]={goal:getGoal(fe),type:fe.type,ccLinked:fe.ccLinked,utilityLinked:fe.utilityLinked,foodLinked:fe.foodLinked,id:fe.id};
+    });
   });
+  const items=[...byName.values()];
   if(!items.length){container.innerHTML='<div class="empty-state">ไม่มีรายการ</div>';return;}
 
-  function getActual(item,key){
-    const md=months[key];if(!md)return null;
-    if(item.ccLinked)return getCCPersonTotalForKey(p,key);
-    if(item.utilityLinked)return(f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
-    if(item.foodLinked){
-      // Jan-Apr 26: ใช้ค่าที่กรอกตรงใน fixed expense
+  function getActual(sub,key,p){
+    const md=months[key];if(!md||!sub)return null;
+    if(sub.ccLinked)return getCCPersonTotalForKey(p,key);
+    if(sub.utilityLinked)return(f(md.sharedWater)+f(md.sharedElectric)+f(md.sharedInternet))/2;
+    if(sub.foodLinked){
       const d=(md.expenses&&md.expenses[p])||{fixed:{},extras:[]};
-      const fixedV=f((d.fixed[item.id]||{}).actual);
-      if(fixedV>0) return fixedV;
-      // พ.ค. 26 เป็นต้นไป: ดึงจาก sharedFoodP1/P2
+      const fixedV=f((d.fixed[sub.id]||{}).actual);
+      if(fixedV>0)return fixedV;
       const v=p==='p1'?f(md.sharedFoodP1):f(md.sharedFoodP2);
       return v>0?v:null;
     }
     const d=(md.expenses&&md.expenses[p])||{fixed:{},extras:[]};
-    const v=f((d.fixed[item.id]||{}).actual);
+    const v=f((d.fixed[sub.id]||{}).actual);
     return v||null;
   }
-
   function fmtAmt(v){return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
-  let html='<div style="display:flex;flex-direction:column;gap:1.5rem">';
+  // default to the first item; keep selection (by name) if it still exists
+  const selItem=items.find(it=>it.name===diffItem)||items[0];
+  diffItem=selItem.name;
 
-  items.forEach(item=>{
-    const tc=TYPES[item.type]||TYPES.expense;
-    const isExpType=(item.type==='expense'||item.ccLinked);
+  // one amount cell: payment amount with the vs-previous-month diff floating beside it
+  function amtCell(sub,actual,prev){
+    const isExpType=sub&&(sub.type==='expense'||sub.ccLinked);
+    const hasData=actual!==null&&actual>0;
+    let diffHtml='';
+    if(hasData&&prev!==null){
+      const diff=f(actual-prev);
+      const col=diff===0?'var(--ink3)':(isExpType?(diff>0?'#E24B4A':'#3d7a52'):(diff>0?'#3d7a52':'#E24B4A'));
+      const txt=diff===0?'±0':(diff>0?'+':'')+fmtAmt(diff);
+      diffHtml=`<span class="diff2-delta" style="color:${col}">${txt}</span>`;
+    }
+    return `<div class="diff2-cell${hasData?'':' nodata'}">
+      <span class="diff2-amt">${hasData?fmtAmt(actual):'-'}</span>${diffHtml}
+    </div>`;
+  }
 
-    // build month rows
-    let monthRows='';
-    let prevActual=null;
+  function renderOne(item){
+    const sub=item.p1||item.p2;
+    const tc=TYPES[(sub&&sub.type)||'expense']||TYPES.expense;
+    const emoji=({'ค่าบ้าน':'🏠','ค่ารถ':'🚗','ค่าน้ำไฟ':'💡','ค่าน้ำ-ไฟ':'💡','ค่ากิน':'🍚','ค่าบัตรเครดิต':'💳','เก็บเงิน':'🐷','เก็บเงิน/ออม':'🐷','ออม':'🐷','ลงทุน':'📈','ซื้อ Dime':'🪙','ซื้อ XRP,Bitcoin':'₿','ค่าซับตะไคร้':'📺','ค่า internet+mobile':'📱','กองกลาง':'🤝','ใส่เข้ากองกลาง':'🤝'}[item.name])||'💰';
+    const g1=item.p1&&item.p1.goal, g2=item.p2&&item.p2.goal;
+    const goalLine=(g1||g2)
+      ? `<div class="diff2-goal">Goal ${item.p1?`${escHtml(cfg.p1)} ฿${fmtAmt(g1||0)}`:''}${item.p1&&item.p2?' · ':''}${item.p2?`${escHtml(cfg.p2)} ฿${fmtAmt(g2||0)}`:''} /เดือน</div>`
+      : '<div class="diff2-goal none">ยังไม่ได้ตั้ง Goal</div>';
+
+    let prev1=null, prev2=null, rows='';
     keys.forEach(k=>{
-      const actual=getActual(item,k);
-      const hasData=actual!==null&&actual>0;
-
-      // diff vs previous month
-      let diffText='-';
-      let diffColor='var(--ink3)';
-      if(hasData&&prevActual!==null){
-        const diff=f(actual-prevActual);
-        const sign=diff>0?'+':'';
-        diffColor=diff===0?'var(--ink2)'
-          :(isExpType?(diff>0?'#E24B4A':'#3d7a52'):(diff>0?'#3d7a52':'#E24B4A'));
-        diffText=diff===0?'±0.00':sign+fmtAmt(diff);
-      }
-
+      const a1=getActual(item.p1,k,'p1');
+      const a2=getActual(item.p2,k,'p2');
       const [y,m]=k.split('-').map(Number);
       const mshort=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][m];
       const mlabel=mshort+' '+(y+543).toString().slice(2);
-
-      monthRows+=`
-        <div style="display:flex;align-items:center;background:var(--card);border-radius:14px;padding:14px 18px;border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.05);opacity:${hasData?1:0.45}">
-          <div style="width:52px;font-size:12px;font-weight:700;color:${clr};flex-shrink:0">${mlabel}</div>
-          <div style="flex:1;font-size:15px;font-weight:500;color:var(--ink);text-align:right;padding-right:24px">${hasData?fmtAmt(actual):'-'}</div>
-          <div style="min-width:90px;text-align:right;font-size:15px;font-weight:700;color:${diffColor}">${diffText}</div>
-        </div>`;
-
-      if(hasData) prevActual=actual;
+      const dim=((a1===null||a1<=0)&&(a2===null||a2<=0))?0.45:1;
+      rows+=`<div class="diff2-row" style="opacity:${dim}">
+        <div class="diff2-m">${mlabel}</div>
+        ${amtCell(item.p1,a1,prev1)}
+        ${amtCell(item.p2,a2,prev2)}
+      </div>`;
+      if(a1!==null&&a1>0)prev1=a1;
+      if(a2!==null&&a2>0)prev2=a2;
     });
 
-    if(!monthRows) return;
-
-    html+=`<div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 4px">
-        <div style="background:${bg};border:1.5px solid ${bl};color:${clr};width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">
-          ${({'ค่าบ้าน':'🏠','ค่ารถ':'🚗','ค่าน้ำไฟ':'💡','ค่าน้ำ-ไฟ':'💡','ค่ากิน':'🍚','ค่าบัตรเครดิต':'💳','เก็บเงิน':'🐷','ออม':'🐷','ลงทุน':'📈','ซื้อ Dime':'🪙','ซื้อ XRP,Bitcoin':'₿','ค่าซับตะไคร้':'📺','ค่า internet+mobile':'📱','กองกลาง':'🤝','ใส่เข้ากองกลาง':'🤝'}[item.name])||'💰'}
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px">${item.name} <span class="type-tag" style="${tc.style}">${tc.label}</span></div>
-          ${item.goal?`<div style="font-size:11px;color:var(--teal)">Goal ฿${fmtAmt(item.goal)} / เดือน</div>`:'<div style="font-size:11px;color:var(--ink3)">ยังไม่ได้ตั้ง Goal</div>'}
-        </div>
-        <div style="margin-left:auto;display:flex;gap:16px;font-size:10px;color:var(--ink2)">
-          <span>Payment Amount (THB)</span>
-          <span style="min-width:90px;text-align:right">vs เดือนก่อน</span>
-        </div>
+    return `<div>
+      <div class="diff2-head-item">
+        <div class="diff2-emoji">${emoji}</div>
+        <div><div class="diff2-name">${escHtml(item.name)} <span class="type-tag" style="${tc.style}">${tc.label}</span></div>${goalLine}</div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">${monthRows}</div>
+      <div class="diff2-colhead">
+        <div class="diff2-m"></div>
+        <div class="diff2-ch p1">${escHtml(cfg.p1)}</div>
+        <div class="diff2-ch p2">${escHtml(cfg.p2)}</div>
+      </div>
+      <div class="diff2-rows">${rows}</div>
     </div>`;
-  });
+  }
 
-  html+='</div>';
-  container.innerHTML=html;
+  const filterHtml=`<div class="diff-item-filter">
+    <label class="diff-item-lbl"><i class="ti ti-list-search"></i> รายการ</label>
+    <select class="mo-sel" onchange="setDiffItem(this.value)">${
+      items.map(it=>`<option value="${escHtml(it.name)}"${it.name===selItem.name?' selected':''}>${escHtml(it.name)}</option>`).join('')
+    }</select>
+  </div>`;
+
+  container.innerHTML=filterHtml+'<div style="display:flex;flex-direction:column;gap:1.5rem">'+renderOne(selItem)+'</div>';
+  if(window.moInitSelects)window.moInitSelects(container);
 }
 const HAM_MSGS=['อย่าลืมบันทึกค่าใช้จ่าย! 🌿','ออมเงินทุกเดือนนะ 🌱','Good job! คุมงบได้ดีมาก 💚','อย่าซื้อของเกินงบล่ะ 🐹','วันนี้กินอะไรอร่อยๆ ไหม? 🥜','ลงทุนสม่ำเสมอนะ 📈','เก่งมาก! บันทึกครบเลย ⭐','น้องเชียร์ให้ประหยัดนะ 🤍'];
 let hamIdx=0;
@@ -2631,7 +2643,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, setDiffItem, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

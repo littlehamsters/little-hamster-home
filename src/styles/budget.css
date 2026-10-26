@@ -241,6 +241,32 @@
   #m-budget .exp-table thead th{font-size:10px}
 }
 
+/* ผลต่าง Goal รายเดือน — item filter (minimal) */
+#m-budget .diff-item-filter{display:inline-flex;align-items:center;gap:6px;margin-bottom:14px}
+#m-budget .diff-item-lbl{font-size:11px;font-weight:600;color:var(--ink3);display:inline-flex;align-items:center;gap:4px;flex:0 0 auto}
+#m-budget .diff-item-lbl i{font-size:13px}
+#m-budget .diff-item-filter .mo-sel-wrap{flex:0 0 auto;min-width:0;display:inline-block}
+#m-budget .diff-item-filter .mo-sel-trigger{min-width:0;height:30px;padding:0 8px 0 10px;font-size:12.5px;font-weight:600;border-radius:8px;gap:5px}
+#m-budget .diff-item-filter .mo-sel-caret{font-size:14px}
+/* ผลต่าง Goal รายเดือน — 2-column (โฟม/เข่ง), diff floats beside the amount */
+#m-budget .diff2-head-item{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 4px}
+#m-budget .diff2-emoji{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--teal-bg);border:1.5px solid var(--teal-line)}
+#m-budget .diff2-name{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+#m-budget .diff2-goal{font-size:11px;color:var(--teal)}
+#m-budget .diff2-goal.none{color:var(--ink3)}
+#m-budget .diff2-colhead{display:flex;align-items:center;gap:8px;padding:0 18px 6px;margin-bottom:2px}
+#m-budget .diff2-colhead .diff2-ch{flex:1;text-align:right;font-size:11px;font-weight:700}
+#m-budget .diff2-colhead .diff2-ch.p1{color:var(--sky)}
+#m-budget .diff2-colhead .diff2-ch.p2{color:var(--rose)}
+#m-budget .diff2-rows{display:flex;flex-direction:column;gap:6px}
+#m-budget .diff2-row{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:12px 18px;border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.05)}
+#m-budget .diff2-m{width:52px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--ink2)}
+#m-budget .diff2-cell{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:flex-end;gap:3px}
+#m-budget .diff2-cell.nodata{opacity:.5}
+#m-budget .diff2-amt{font-size:15px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+/* diff floats up & slanted like a superscript (เลขยกกำลัง) */
+#m-budget .diff2-delta{font-size:10px;font-weight:700;font-style:italic;font-variant-numeric:tabular-nums;white-space:nowrap;align-self:flex-start;position:relative;top:-3px}
+
 /* settings GOAL rows — clean 2-tier card (head + controls), responsive */
 #m-budget .goal-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}
 #m-budget .goal-row-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;flex-wrap:wrap}

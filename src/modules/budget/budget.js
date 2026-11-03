@@ -132,9 +132,32 @@ function _bpLoad(){
         });
       });
     }
+    if(s.estimate&&Array.isArray(s.estimate.items)) cfg.estimate={month:s.estimate.month||'',items:s.estimate.items};
   }catch(e){}
 }
+// เดือนนี้มีข้อมูลงบประมาณจริงหรือยัง (ไม่นับ "ประมาณการ")
+function _monthHasData(md){
+  if(!md) return false;
+  const nz=v=>f(v)!==0;
+  for(const p of ['p1','p2']){
+    const inc=md.incomes&&md.incomes[p], exp=md.expenses&&md.expenses[p];
+    if(inc&&(Object.values(inc.fixed||{}).some(nz)||(inc.extras||[]).some(e=>nz(e.amt)))) return true;
+    if(exp&&(Object.values(exp.fixed||{}).some(o=>o&&(nz(o.actual)||nz(o.budget)))||(exp.extras||[]).some(e=>nz(e.actual)||nz(e.budget)))) return true;
+  }
+  if((md.cc||[]).length) return true;
+  if([md.sharedWater,md.sharedElectric,md.sharedInternet,md.sharedFood].some(nz)) return true;
+  return (md.sharedOther||[]).some(o=>nz(o.amt));
+}
+// ประมาณการ: เก็บชุดเดียว (เดือนล่าสุดที่กรอก) → กรอกประมาณการเดือนอื่น = ทับของเดิม,
+// และล้างทิ้งเมื่อ "กำลังกรอก" ข้อมูลงบประมาณจริงของเดือนที่ใหม่กว่า
+// (ไม่ดูข้อมูลเดือนอนาคตที่มีอยู่ก่อนแล้ว เช่น ผ่อนบัตรล่วงหน้า — ไม่งั้นจะล้างทันทีที่กรอก)
+function _syncEstimateMonth(){
+  if(!cfg.estimate) cfg.estimate={month:'',items:[]};
+}
 function persist(){
+  _syncEstimateMonth();
+  const e=cfg.estimate;
+  if(e.month&&e.items.length&&mkey()>e.month&&_monthHasData(months[mkey()])) e.items=[];
   localStorage.setItem('bp3_months',JSON.stringify(months));
   localStorage.setItem('bp3_cfg',JSON.stringify(cfg));
 }
@@ -284,6 +307,93 @@ function renderSharedOther(){
   const perEl=document.getElementById('shared-other-per-person');
   if(perEl) perEl.textContent='฿'+per.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
+// ── ประมาณการ: เหมือนรายจ่ายอื่นๆ (กองกลาง) แต่ใช้ประมาณการเท่านั้น ไม่ดึงเข้ายอดงบประมาณ ──
+// รายการของเดือนที่กำลังดู (เดือนอื่น = ว่าง)
+function _estItems(){
+  _syncEstimateMonth();
+  return cfg.estimate.month===mkey()?cfg.estimate.items:[];
+}
+// ก่อนแก้ไข: ถ้าเป็นเดือนอื่น → ทับของเดิม เริ่มชุดใหม่ของเดือนนี้
+function _estItemsForWrite(){
+  _syncEstimateMonth();
+  if(cfg.estimate.month!==mkey()) cfg.estimate={month:mkey(),items:[]};
+  return cfg.estimate.items;
+}
+function getEstimateTotal(){return _estItems().reduce((s,o)=>s+f(o.amt),0);}
+function addEstimate(){
+  const prev=cfg.estimate&&cfg.estimate.month!==mkey()&&cfg.estimate.items.length?cfg.estimate.month:'';
+  if(prev&&!confirm(`มีประมาณการของเดือน ${_estMonthLabel(prev)} อยู่\nเพิ่มรายการเดือนนี้จะทับของเดิม — ต้องการดำเนินการต่อ?`)) return;
+  _estItemsForWrite().push({id:Date.now(),name:'',amt:0,owner:'common'});
+  persist();renderEstimate();
+  const rows=document.querySelectorAll('#estimate-list .es-name');
+  if(rows.length) rows[rows.length-1].focus();
+}
+function setEstimateName(id,v){
+  const o=_estItems().find(x=>x.id===id);
+  if(o){o.name=v;persist();}
+}
+function setEstimateOwner(id,v){
+  const o=_estItems().find(x=>x.id===id);
+  if(o){o.owner=v;persist();}
+  renderEstimate();
+}
+function setEstimateAmt(id,v){
+  const o=_estItems().find(x=>x.id===id);
+  if(o){o.amt=f(v);}
+  persist();renderEstimate();
+}
+function delEstimate(id){
+  if(cfg.estimate.month!==mkey()) return;
+  cfg.estimate.items=cfg.estimate.items.filter(x=>x.id!==id);
+  persist();renderEstimate();
+}
+function _estMonthLabel(k){const [y,m]=k.split('-').map(Number);return `${MONTHS_TH[m]} ${y+543}`;}
+function renderEstimate(){
+  const list=document.getElementById('estimate-list');
+  if(!list) return;
+  const items=_estItems();
+  const total=getEstimateTotal();
+  const fmt=v=>'฿'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const ownerOpt=(o)=>{
+    const v=o.owner||'common';
+    const opt=(val,label)=>`<option value="${val}" ${v===val?'selected':''}>${label}</option>`;
+    return `<select class="es-owner mo-sel" onchange="setEstimateOwner(${o.id},this.value)" title="ใครเป็นคนจ่าย"
+      style="height:32px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);font-size:12px;font-family:inherit;cursor:pointer">
+      ${opt('common','🤝 จ่ายร่วม')}${opt('p1',cfg.p1)}${opt('p2',cfg.p2)}</select>`;
+  };
+  list.innerHTML=items.length?items.map(o=>`
+    <div class="fixed-item" style="border-color:var(--sky-line);flex-wrap:wrap;gap:6px">
+      <div style="flex:1;min-width:120px">
+        <input class="es-name" type="text" value="${(o.name||'').replace(/"/g,'&quot;')}" placeholder="ชื่อรายการ เช่น ค่าเที่ยว, ค่าซ่อมบ้าน"
+          style="width:100%;height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:13px;font-family:inherit"
+          onchange="setEstimateName(${o.id},this.value)">
+      </div>
+      <div class="fixed-item-inputs" style="gap:6px">
+        ${ownerOpt(o)}
+        <input class="amt-input" type="text" inputmode="decimal" placeholder="0.00" style="width:110px;text-align:right"
+          onfocus="amtFocus(this)" onblur="amtBlur(this,v=>setEstimateAmt(${o.id},v))" onpaste="amtPaste(this,v=>setEstimateAmt(${o.id},v))"
+          data-raw="${o.amt||''}" value="${o.amt?f(o.amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
+        <button class="del-item-btn del-icon" onclick="delEstimate(${o.id})" title="ลบ"><i class="ti ti-trash" style="font-size:14px"></i></button>
+      </div>
+    </div>`).join(''):'<div class="empty-state"><i class="ti ti-inbox"></i>ยังไม่มีรายการ — กด “＋ เพิ่มรายการ”</div>';
+  const tot=document.getElementById('estimate-total-disp');
+  if(tot) tot.textContent=fmt(total);
+  const perEl=document.getElementById('estimate-per-person');
+  if(perEl) perEl.textContent=fmt(total/2);
+  // แยกตามคนจ่าย: ภาระจริงต่อคน = ครึ่งหนึ่งของทุกรายการ, ส่วนนี้แสดงว่าใครออกเงินก่อนเท่าไหร่
+  const by={common:0,p1:0,p2:0};
+  items.forEach(o=>{by[o.owner||'common']+=f(o.amt);});
+  const sumEl=document.getElementById('estimate-owner-sum');
+  const lbl=document.getElementById('month-label-estimate');
+  if(lbl) lbl.textContent=_estMonthLabel(mkey());
+  const note=document.getElementById('estimate-note');
+  const e=cfg.estimate;
+  if(note) note.innerHTML=e.month&&e.month!==mkey()&&e.items.length
+    ?`<i class="ti ti-info-circle"></i> ประมาณการที่เก็บไว้อยู่ที่เดือน <strong>${_estMonthLabel(e.month)}</strong> — เพิ่มรายการเดือนนี้จะทับของเดิม`:'';
+  if(sumEl) sumEl.innerHTML=total>0
+    ?`จ่ายร่วม <strong>${fmt(by.common)}</strong> · ${cfg.p1}จ่าย <strong>${fmt(by.p1)}</strong> · ${cfg.p2}จ่าย <strong>${fmt(by.p2)}</strong>`
+    :'';
+}
 function setSharedFood(v){
   const p1=f(document.getElementById('food-p1')?.dataset.raw||0);
   const p2=f(document.getElementById('food-p2')?.dataset.raw||0);
@@ -426,6 +536,7 @@ function changeMonth(d){
   const lbl=`${MONTHS_TH[curMonth]} ${curYear+543}`;
   document.getElementById('month-label').textContent=lbl;
   const lblC=document.getElementById('month-label-chart');if(lblC)lblC.textContent=lbl;
+  const lblE=document.getElementById('month-label-estimate-nav');if(lblE)lblE.textContent=lbl;
   _bpRender();
   if(chartVisible)_bpRerenderChart();
 }
@@ -454,7 +565,7 @@ function switchPerson(p,btn){
 function _bpRender(){
   renderBanner();
   ['p1','p2'].forEach(p=>{renderIncomeCard(p);renderExpenseCard(p);renderSummaryPerson(p)});
-  renderCC();renderUtility();renderSharedOther();renderSummaryCommon();
+  renderCC();renderUtility();renderSharedOther();renderEstimate();renderSummaryCommon();
   updateLabels();populateCCSelect();
   setTimeout(bindDecimalInputs,0);
 }
@@ -1453,7 +1564,37 @@ function _bpShowMain(){
   if(wrap)wrap.style.display='block';
   const btn=document.getElementById('chart-btn');
   if(btn){btn.style.background='';btn.style.color='';}
+  estimateVisible=false;
+  const ep=document.getElementById('estimate-panel');
+  if(ep)ep.style.display='none';
   if(window.updateBreadcrumb)window.updateBreadcrumb('budget');
+}
+// ── ประมาณการ view (แยกจากภาพรวม) ──
+let estimateVisible=false;
+function toggleEstimate(){
+  estimateVisible=!estimateVisible;
+  const panel=document.getElementById('estimate-panel');
+  const wrap=document.querySelector('#m-budget .wrap');
+  panel.style.display=estimateVisible?'block':'none';
+  wrap.style.display=estimateVisible?'none':'block';
+  const bc=document.getElementById('breadcrumb');
+  if(bc){
+    if(estimateVisible){
+      bc.innerHTML='<button class="bc-item" onclick="showModule(\'home\')"><i class="ti ti-home"></i> หน้าหลัก</button>'+
+        '<span class="bc-sep"><i class="ti ti-chevron-right"></i></span>'+
+        '<button class="bc-item" onclick="toggleEstimate()"><i class="ti ti-wallet"></i> งบประมาณ</button>'+
+        '<span class="bc-sep"><i class="ti ti-chevron-right"></i></span>'+
+        '<span class="bc-item bc-current"><i class="ti ti-calculator"></i> ประมาณการ</span>';
+    } else if(window.updateBreadcrumb){
+      window.updateBreadcrumb('budget');
+    }
+  }
+  if(estimateVisible){
+    const lblE=document.getElementById('month-label-estimate-nav');
+    if(lblE)lblE.textContent=_estMonthLabel(mkey());
+    renderEstimate();
+    setTimeout(bindDecimalInputs,0);
+  }
 }
 function toggleChart(){
   chartVisible=!chartVisible;
@@ -2676,7 +2817,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, setDiffItem, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getEstimateTotal, renderEstimate, addEstimate, setEstimateName, setEstimateAmt, setEstimateOwner, delEstimate, toggleEstimate,getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, setDiffItem, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

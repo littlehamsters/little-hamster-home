@@ -375,6 +375,7 @@
   </div>
   <div class="tools">
     <button class="btn" onclick="toggleChart()" id="chart-btn"><i class="ti ti-chart-bar"></i> ภาพรวม</button>
+    <button class="btn" onclick="toggleEstimate()" id="estimate-btn"><i class="ti ti-calculator"></i> ประมาณการ</button>
     <button class="btn" onclick="_bpOpenSettings()"><i class="ti ti-settings"></i> ตั้งค่า</button>
   </div>
 </header>
@@ -606,6 +607,33 @@
       <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.5">เลือกร้านจาก dropdown (จัดกลุ่มตาม prefix ชื่อร้าน เช่น "TOPS PIN KLAO" + "TOPS RAMA 2" → TOPS) เพื่อดูว่ารูดร้านนั้นไปกี่ครั้ง แต่ละยอดเท่าไหร่ และรวมทั้งหมด</div>
       <div id="group-container" style="overflow-x:auto"></div>
     </div>
+  </div>
+
+</div>
+
+<div id="estimate-panel" style="display:none;padding:1rem 1rem 2rem;max-width:920px;margin:0 auto">
+
+  <div class="month-row">
+    <button class="month-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i> เดือนก่อน</button>
+    <div class="month-label" id="month-label-estimate-nav"></div>
+    <button class="month-btn" onclick="changeMonth(1)">เดือนถัดไป <i class="ti ti-chevron-right"></i></button>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-left">
+        <div class="sicon" style="background:var(--sky-bg);border:1.5px solid var(--sky-line);font-size:17px;display:flex;align-items:center;justify-content:center">🧮</div>
+        <div><div class="stitle">ประมาณการ · <span id="month-label-estimate"></span></div><div class="ssub">เก็บเฉพาะเดือนล่าสุดที่กรอก — กรอกเดือนอื่นจะทับของเดิม · ไม่ดึงเข้างบประมาณ</div></div>
+      </div>
+      <button class="add-btn" style="background:var(--sky);color:#fff" onclick="addEstimate()"><i class="ti ti-plus"></i> เพิ่มรายการ</button>
+    </div>
+    <div id="estimate-note" style="font-size:12px;color:var(--amber);margin-top:6px"></div>
+    <div id="estimate-list" class="fixed-list" style="margin-top:8px"></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
+      <div style="font-size:12px;color:var(--ink2)">รวม <strong id="estimate-total-disp" style="color:var(--sky)">฿0.00</strong></div>
+      <div style="font-size:12px;color:var(--ink2)">÷ 2 = <strong id="estimate-per-person" style="color:var(--sky)">฿0.00</strong> / คน</div>
+    </div>
+    <div id="estimate-owner-sum" style="font-size:12px;color:var(--ink2);margin-top:6px"></div>
   </div>
 
 </div>

@@ -9,9 +9,15 @@ var FB_CFG_KEY  = 'fb_config_v1';
 var FB_HH_KEY   = 'fb_household_id';
 
 var _fbAuth=null, _fbDb=null, _fbUser=null, _fbUnsub=null, _fbTimer=null;
-var _fbIgnoreNext = false;
 var _fbSyncing = false;
 var _fbDirty = {};   // keys changed locally, waiting to be pushed (upload only these — same doc, merge)
+// keys แก้ในเครื่องแต่ cloud ยังไม่ยืนยัน → เก็บลง localStorage (sync, รอดแม้ Safari iOS ฆ่าแท็บกลางทาง)
+// key → เลข version; ลบออกเมื่อ write ของ version นั้นสำเร็จ. ระหว่างนี้ห้ามเอาข้อมูล cloud มาทับ
+var FB_PENDING_KEY = 'fb_pending_v1';
+var _fbPending = {};
+var _fbReady = false;   // true หลังดึง cloud รอบแรกเสร็จ — ก่อนหน้านั้น (ตอนบูต/ยังไม่ล็อกอิน) ไม่นับเป็น pending
+try{ _fbPending = JSON.parse(localStorage.getItem(FB_PENDING_KEY)||'{}')||{}; }catch(e){ _fbPending = {}; }
+function _fbSavePending(){ try{ _origLS(FB_PENDING_KEY, JSON.stringify(_fbPending)); }catch(e){} }
 var _fbBusyAt = 0;   // when "กำลังบันทึก..." first shown → keep visible ≥500ms
 var _fbFlushScheduled = false;
 
@@ -65,6 +71,7 @@ function fbSignIn(){
 }
 function fbSignOut(){
   if(_fbUnsub){ _fbUnsub(); _fbUnsub=null; }
+  _fbReady=false;
   if(_fbAuth) _fbAuth.signOut();
 }
 
@@ -78,18 +85,22 @@ function fbDocRef(){
 function fbStartSync(){
   fbSetSync('busy','กำลังโหลด...');
   fbDocRef().get().then(function(snap){
-    if(snap.exists){ var d=snap.data(); _fbSyncing=true; SYNC_KEYS.forEach(function(k){ if(d[k]) _origLS(k,d[k]); }); _fbSyncing=false; }
+    // key ที่ยังส่งไม่สำเร็จ (เช่น ปิดแอปก่อนส่งเสร็จ) → ไม่เอาข้อมูล cloud ที่เก่ากว่ามาทับ แล้วส่งขึ้นใหม่
+    if(snap.exists){ var d=snap.data(); _fbSyncing=true; SYNC_KEYS.forEach(function(k){ if(d[k]&&!_fbPending[k]) _origLS(k,d[k]); }); _fbSyncing=false; }
+    Object.keys(_fbPending).forEach(function(k){ if(SYNC_KEYS.indexOf(k)!==-1) _fbDirty[k]=true; });
+    _fbReady=true;
     fbInitAllApps();
     fbSetSync('ok','ซิงค์แล้ว');
+    fbSaveToCloud();
     _fbUnsub = fbDocRef().onSnapshot(function(snap){
-      if(!snap.exists||snap.metadata.hasPendingWrites||_fbIgnoreNext) return;
+      if(!snap.exists||snap.metadata.hasPendingWrites) return;
       var d=snap.data(); var chg=false;
       _fbSyncing=true;
-      SYNC_KEYS.forEach(function(k){ if(d[k]&&d[k]!==localStorage.getItem(k)){ _origLS(k,d[k]); chg=true; } });
+      SYNC_KEYS.forEach(function(k){ if(d[k]&&!_fbPending[k]&&!_fbDirty[k]&&d[k]!==localStorage.getItem(k)){ _origLS(k,d[k]); chg=true; } });
       _fbSyncing=false;
       if(chg){ fbSetSync('ok','ซิงค์แล้ว'); fbRefreshApps(); }
     }, function(){ fbSetSync('err','ออฟไลน์'); });
-  }).catch(function(){ fbSetSync('err','โหลดไม่ได้'); fbInitAllApps(); });
+  }).catch(function(){ _fbReady=true; fbSetSync('err','โหลดไม่ได้'); fbInitAllApps(); });   // ออฟไลน์: สิ่งที่แก้ต่อจากนี้ยังนับ pending → ไม่หายตอนออนไลน์
 }
 
 function fbSaveToCloud(){
@@ -100,15 +111,17 @@ function fbSaveToCloud(){
   // same single doc as before — write ONLY changed fields (merge keeps the rest intact)
   var p={updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:_fbUser.displayName||_fbUser.email};
   keys.forEach(function(k){ p[k]=localStorage.getItem(k)||''; });
-  _fbIgnoreNext=true;
+  var sent={}; keys.forEach(function(k){ sent[k]=_fbPending[k]; });
   fbDocRef().set(p,{merge:true})
     .then(function(){
+      // ยืนยันแล้ว → ปลด pending (ถ้าระหว่างนั้นแก้ต่อ version จะเปลี่ยน → คงไว้รอรอบถัดไป)
+      keys.forEach(function(k){ if(_fbPending[k]===sent[k]) delete _fbPending[k]; });
+      _fbSavePending();
       // keep "กำลังบันทึก..." visible long enough to notice, even when the write is instant
       var wait=Math.max(0,500-(Date.now()-_fbBusyAt));
       setTimeout(function(){ fbSetSync('ok','ซิงค์แล้ว'); },wait);
-      setTimeout(function(){_fbIgnoreNext=false;},2000);
     })
-    .catch(function(){ fbSetSync('err','บันทึกไม่สำเร็จ'); keys.forEach(function(k){_fbDirty[k]=true;}); _fbIgnoreNext=false; });
+    .catch(function(){ fbSetSync('err','บันทึกไม่สำเร็จ'); keys.forEach(function(k){_fbDirty[k]=true;}); });
 }
 
 function fbDebounce(){
@@ -124,14 +137,33 @@ function fbDebounce(){
 var _origLS = localStorage.setItem.bind(localStorage);
 localStorage.setItem = function(key, value){
   _origLS(key, value);
-  if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1){ _fbDirty[key]=true; fbDebounce(); }
+  if(!_fbSyncing && SYNC_KEYS.indexOf(key) !== -1){
+    _fbDirty[key]=true;
+    if(_fbReady){ _fbPending[key]=(_fbPending[key]||0)+1; _fbSavePending(); }
+    fbDebounce();
+  }
 };
 
-// flush any pending change before the page unloads (queues the write to Firestore's
-// offline cache → next load reads it back, closing the "edit then quick refresh" gap)
-window.addEventListener('beforeunload', function(){
+// flush ก่อนออกจากหน้า — Safari iOS แทบไม่ยิง beforeunload (สลับแอป/ล็อกจอ/ปัดทิ้ง)
+// จึงต้องฟัง pagehide + visibilitychange ด้วย. ช่องที่กำลังพิมพ์อยู่: ยิง change + blur เอง
+// ให้ handler onchange/onblur ของช่องนั้นบันทึกค่าลง localStorage — a.blur() อย่างเดียวไม่พอ
+// เพราะตอนหน้าเสีย focus (สลับแอป) เบราว์เซอร์ไม่ยิง blur event ให้ (handler ต่างๆ idempotent ยิงซ้ำได้)
+function _fbFlushOnLeave(){
+  try{
+    var a=document.activeElement;
+    if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')){
+      a.dispatchEvent(new Event('change',{bubbles:true}));
+      a.dispatchEvent(new FocusEvent('blur'));
+      a.dispatchEvent(new FocusEvent('focusout',{bubbles:true}));
+      a.blur();
+    }
+  }catch(e){}
+  try{ window.dispatchEvent(new Event('lh:flush')); }catch(e){}   // ให้โมดูลที่ debounce ไว้ เขียนทันที
   if(_fbUser && Object.keys(_fbDirty).length) fbSaveToCloud();
-});
+}
+window.addEventListener('beforeunload', _fbFlushOnLeave);
+window.addEventListener('pagehide', _fbFlushOnLeave);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _fbFlushOnLeave(); });
 
 function fbApplyRemote(){ applyRemote(); }
 function fbInitAllApps(){ fbApplyRemote(); }

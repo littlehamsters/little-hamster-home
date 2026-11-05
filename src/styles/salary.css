@@ -227,15 +227,32 @@
 }
 
 /* ── คริสต์มาส: จัดสรรเงินได้เดือน ธ.ค. ─────────────────────────── */
-#m-salary .xmas-inc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-#m-salary .xmas-inc .xi{background:var(--st-surface-2);border:1px solid var(--st-line-soft);border-radius:12px;padding:11px 14px;}
-#m-salary .xmas-inc .xi .k{font-size:12px;color:var(--st-muted);margin-bottom:4px;}
-#m-salary .xmas-inc .xi .v{font-size:17px;font-weight:700;color:var(--st-ink);}
-#m-salary .xmas-inc .xi.total{background:var(--st-sage-soft);border-color:var(--st-sage-line);}
-#m-salary .xmas-inc .xi.total .v{color:var(--st-sage-deep);}
-#m-salary .xmas-inc .xi.net{background:var(--st-clay-soft);border-color:var(--st-clay);grid-column:span 2;}
-#m-salary .xmas-inc .xi.net .v{color:var(--st-clay);font-size:20px;}
-@media(max-width:600px){#m-salary .xmas-inc{grid-template-columns:1fr 1fr;}#m-salary .xmas-inc .xi.net{grid-column:span 2;}}
+/* summary เงินก้อน ธ.ค.: hero สุทธิ + แถบสัดส่วน + 2 คอลัมน์ รายรับ | รายการหัก */
+#m-salary .xs-hero{background:linear-gradient(135deg,var(--st-sage-soft),var(--st-surface-2));border:1px solid var(--st-sage-line);border-radius:14px;padding:16px 18px 14px;margin-bottom:12px;}
+#m-salary .xs-hero .k{font-size:13px;font-weight:600;color:var(--st-muted);}
+#m-salary .xs-hero .v{font-size:32px;font-weight:800;color:var(--st-sage-deep);line-height:1.15;margin:2px 0 4px;letter-spacing:-.5px;}
+#m-salary .xs-hero .v.neg{color:var(--st-bad);}
+#m-salary .xs-hero .s{font-size:12.5px;color:var(--st-muted);}
+#m-salary .xs-hero .s b{color:var(--st-ink);}
+#m-salary .xs-bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--st-line-soft);margin:12px 0 6px;}
+#m-salary .xs-bar .seg{height:100%;width:0;transition:width .4s cubic-bezier(.22,1,.36,1);}
+#m-salary .xs-bar .seg.net,#m-salary .xs-legend .dot.net{background:var(--st-sage);}
+#m-salary .xs-bar .seg.ded,#m-salary .xs-legend .dot.ded{background:var(--st-bad);opacity:.75;}
+#m-salary .xs-legend{display:flex;gap:14px;font-size:11.5px;color:var(--st-muted);}
+#m-salary .xs-legend span{display:inline-flex;align-items:center;gap:5px;}
+#m-salary .xs-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+#m-salary .xs-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#m-salary .xs-col{background:var(--st-surface-2);border:1px solid var(--st-line-soft);border-radius:12px;padding:10px 14px;}
+#m-salary .xs-h{font-size:12.5px;font-weight:700;color:var(--st-muted);margin-bottom:4px;}
+#m-salary .xs-r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;color:var(--st-ink);padding:5px 0;border-bottom:1px dashed var(--st-line-soft);}
+#m-salary .xs-r small{font-size:11px;color:var(--st-faint);}
+#m-salary .xs-r .st-num{font-weight:600;}
+#m-salary .xs-r.hl .st-num{color:var(--st-clay);font-weight:700;}
+#m-salary .xs-r.tot{border-bottom:none;border-top:1px solid var(--st-line);margin-top:4px;padding-top:8px;font-weight:700;}
+#m-salary .xs-r.tot .st-num{font-weight:800;color:var(--st-sage-deep);}
+#m-salary .xs-col.ded .xs-r:not(.tot) .st-num{color:var(--st-muted);}
+#m-salary .xs-col.ded .xs-r.tot .st-num{color:var(--st-bad);}
+@media(max-width:600px){#m-salary .xs-cols{grid-template-columns:1fr;}#m-salary .xs-hero .v{font-size:28px;}}
 
 #m-salary .xmas-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
 #m-salary .xmas-chip{border:1px solid var(--st-line);background:var(--st-surface);color:var(--st-ink);border-radius:999px;padding:7px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
@@ -264,6 +281,27 @@
 #m-salary .xmas-srow{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
 #m-salary .xmas-fund-sel{flex:1 1 auto;min-width:0;height:36px;border:1px solid var(--st-line);border-radius:8px;background:var(--st-surface);color:var(--st-ink);font-family:inherit;font-size:13.5px;font-weight:600;padding:0 10px;cursor:pointer;}
 #m-salary .xmas-fund-sel:focus{outline:none;border-color:var(--st-sage);}
+/* แถวกองออมบรรทัดเดียว */
+#m-salary .xmas-srow.one{margin-bottom:0;}
+#m-salary .xmas-srow.one .xmas-fund-sel{flex:0 1 220px;height:44px;}
+#m-salary .xmas-srow.one .xmas-3col{flex:1 1 auto;min-width:0;}
+/* จอแคบ: ยังบรรทัดเดียว — ย่อ dropdown / ตัวเลข / ช่องไฟ */
+@media(max-width:600px){
+  #m-salary #stPanel-xmas .card-b{padding-left:10px;padding-right:10px;}
+  #m-salary .xmas-row-wrap.sav{padding:6px;}
+  #m-salary .xmas-srow.one{gap:4px;}
+  #m-salary .xmas-srow.one .xmas-3col .c3.mid{flex-grow:.9;}
+  #m-salary .xmas-srow.one .xmas-fund-sel{flex:0 0 66px;min-width:0;width:66px;height:40px;font-size:12px;padding:0 2px 0 6px;}
+  #m-salary .xmas-srow.one .xmas-3col{gap:2px;}
+  #m-salary .xmas-srow.one .xmas-3col .c3{padding:4px;border-radius:7px;}
+  #m-salary .xmas-srow.one .xmas-3col .c3 .k{font-size:9px;}
+  #m-salary .xmas-srow.one .xmas-3col .c3 .v,
+  #m-salary .xmas-srow.one .xmas-3col .c3.mid input{font-size:12px;}
+  #m-salary .xmas-srow.one .xmas-3col .c3 .v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #m-salary .xmas-srow.one .xmas-3col .c3.op{display:none;}
+  #m-salary .xmas-srow.one .xmas-del{width:26px;height:32px;font-size:14px;}
+  #m-salary .xmas-srow.one .xmas-3col .xd{display:none;}
+}
 #m-salary .xf-warn{flex:1 1 auto;color:var(--st-clay);font-size:12.5px;}
 #m-salary .xmas-3col{display:flex;align-items:stretch;gap:5px;}
 #m-salary .xmas-3col .c3{flex:1 1 0;min-width:0;background:var(--st-surface);border:1px solid var(--st-line);border-radius:9px;padding:6px 10px;display:flex;flex-direction:column;gap:1px;}

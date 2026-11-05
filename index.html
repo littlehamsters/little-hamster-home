@@ -922,13 +922,28 @@
       <div class="card-h"><div><span class="eyebrow">🎄 เงินได้เดือนธันวาคม</span><h2>โบนัส/เงินเดือนก้อนคริสต์มาส</h2></div></div>
       <div class="card-b">
         <div class="callout"><span class="ic">💡</span><div>ยอดดึงจากแถว <b>ธ.ค.</b> ในตารางรายได้ — ใส่โบนัสคริสต์มาสในช่อง “โบนัส” ของเดือน ธ.ค. แล้วมาวางแผนที่นี่</div></div>
-        <div class="xmas-inc">
-          <div class="xi"><div class="k">เงินเดือน</div><div class="v st-num" id="stXmasSalary">0</div></div>
-          <div class="xi"><div class="k">OT</div><div class="v st-num" id="stXmasOT">0</div></div>
-          <div class="xi"><div class="k">โบนัส 🎄</div><div class="v st-num" id="stXmasBonus">0</div></div>
-          <div class="xi total"><div class="k">รวมก่อนหัก</div><div class="v st-num" id="stXmasGross">0</div></div>
-          <div class="xi"><div class="k">หัก ปกส./ภาษี/PVD</div><div class="v st-num" id="stXmasDeduct">0</div></div>
-          <div class="xi net"><div class="k">คงเหลือสุทธิ (เอาไปใช้)</div><div class="v st-num" id="stXmasNet">0</div></div>
+        <div class="xs-hero">
+          <div class="k">💰 คงเหลือสุทธิ (เอาไปใช้)</div>
+          <div class="v st-num" id="stXmasNet">0</div>
+          <div class="s">จากรวมก่อนหัก <b class="st-num" id="stXmasGross2">0</b> · ถูกหักไป <b id="stXmasDedPct">0%</b></div>
+          <div class="xs-bar"><span class="seg net" id="stXmasBarNet"></span><span class="seg ded" id="stXmasBarDed"></span></div>
+          <div class="xs-legend"><span><i class="dot net"></i>สุทธิ</span><span><i class="dot ded"></i>ถูกหัก</span></div>
+        </div>
+        <div class="xs-cols">
+          <div class="xs-col">
+            <div class="xs-h">📥 รายรับเดือน ธ.ค.</div>
+            <div class="xs-r"><span>เงินเดือน</span><span class="st-num" id="stXmasSalary">0</span></div>
+            <div class="xs-r"><span>OT</span><span class="st-num" id="stXmasOT">0</span></div>
+            <div class="xs-r hl"><span>โบนัส 🎄</span><span class="st-num" id="stXmasBonus">0</span></div>
+            <div class="xs-r tot"><span>รวมก่อนหัก</span><span class="st-num" id="stXmasGross">0</span></div>
+          </div>
+          <div class="xs-col ded">
+            <div class="xs-h">➖ รายการหัก</div>
+            <div class="xs-r"><span>ประกันสังคม</span><span class="st-num" id="stXmasSSO">0</span></div>
+            <div class="xs-r"><span>ภาษีหัก ณ ที่จ่าย</span><span class="st-num" id="stXmasWHT">0</span></div>
+            <div class="xs-r"><span>PVD <small id="stXmasPvdPct"></small></span><span class="st-num" id="stXmasPVD">0</span></div>
+            <div class="xs-r tot"><span>รวมหัก</span><span class="st-num" id="stXmasDeduct">0</span></div>
+          </div>
         </div>
       </div>
     </div>

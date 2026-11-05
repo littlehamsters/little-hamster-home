@@ -68,7 +68,7 @@ function autoSave(){
   gatherDed();
   state.year=CUR;
   clearTimeout(_saveT);
-  _saveT=setTimeout(()=>localStorage.setItem(ST_KEY,JSON.stringify(state)),800);
+  _saveT=setTimeout(()=>{_saveT=null;localStorage.setItem(ST_KEY,JSON.stringify(state));},800);
 }
 
 // ── People selector ──
@@ -269,7 +269,15 @@ function renderXmas(){
   const sal=num(d.salary),ot=num(d.ot),bon=num(d.bonus),pa=sal*num(d.pvdPct)/100;
   const deduct=num(d.sso)+num(d.wht)+pa,gross=sal+ot+bon,net=gross-deduct;
   const S=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
-  S("stXmasSalary",sal);S("stXmasOT",ot);S("stXmasBonus",bon);S("stXmasGross",gross);S("stXmasDeduct",deduct);S("stXmasNet",net);
+  S("stXmasSalary",sal);S("stXmasOT",ot);S("stXmasBonus",bon);S("stXmasGross",gross);S("stXmasGross2",gross);S("stXmasDeduct",deduct);S("stXmasNet",net);
+  S("stXmasSSO",num(d.sso));S("stXmasWHT",num(d.wht));S("stXmasPVD",pa);
+  const pvdEl=document.getElementById("stXmasPvdPct");if(pvdEl)pvdEl.textContent=num(d.pvdPct)?`(${num(d.pvdPct)}%)`:"";
+  // แถบ สุทธิ vs ถูกหัก (สัดส่วนจากรวมก่อนหัก)
+  const dedPct=gross>0?Math.min(100,Math.max(0,deduct/gross*100)):0;
+  const dp=document.getElementById("stXmasDedPct");if(dp)dp.textContent=dedPct.toFixed(dedPct&&dedPct<10?1:0)+"%";
+  const bn=document.getElementById("stXmasBarNet"),bd=document.getElementById("stXmasBarDed");
+  if(bn)bn.style.width=(gross>0?100-dedPct:0)+"%";if(bd)bd.style.width=(gross>0?dedPct:0)+"%";
+  const netEl=document.getElementById("stXmasNet");if(netEl)netEl.classList.toggle("neg",net<0);
   const list=document.getElementById("stXmasList");if(!list)return;
   const jars=_xmasJars();
   // เฉพาะกองของเจ้าของคนนี้ + กองกลาง (owner ว่าง)
@@ -284,17 +292,18 @@ function renderXmas(){
       if(x.fundId&&!myJars.some(f=>f.id===x.fundId)){const ex=jars.find(f=>f.id===x.fundId);if(ex)optJars=[ex].concat(myJars);}
       if(!optJars.length) return `<div class="xmas-row-wrap sav"><div class="xmas-srow"><span class="xf-warn">ยังไม่มีกองออมของ ${esc(p.name)} — สร้างกองในเมนู “กองออม” ก่อน</span>${del}</div></div>`;
       const j=x.fundId?jars.find(f=>f.id===x.fundId):null;
+      // บรรทัดเดียว: กอง | เดิม + เติม = ใหม่ | ลบ  (จอแคบ → 3 คอลัมน์ขึ้นบรรทัดล่าง)
       return `<div class="xmas-row-wrap sav">
-        <div class="xmas-srow">
+        <div class="xmas-srow one">
           <select class="xmas-fund-sel" data-i="${i}"><option value="">— เลือกกอง —</option>${optJars.map(f=>`<option value="${f.id}" ${x.fundId===f.id?"selected":""}>${esc((f.emoji?f.emoji+" ":"")+f.name)}${f.owner?"":" · กองกลาง"}</option>`).join("")}</select>
-          ${del}
-        </div>
         <div class="xmas-3col">
-          <div class="c3"><span class="k">เดิม</span><span class="v st-num" data-cur="${i}">${j?fmt(j.bal):"—"}</span></div>
+          <div class="c3"><span class="k">เดิม</span><span class="v st-num" data-cur="${i}">${j?fmtXv(j.bal):"—"}</span></div>
           <div class="c3 op">+</div>
-          <div class="c3 mid"><span class="k">เติม</span><input class="xmas-amt st-num" data-i="${i}" inputmode="numeric" value="${fmtIn(x.amt)}" placeholder="0"></div>
+          <div class="c3 mid"><span class="k">เติม</span><input class="xmas-amt st-num" data-i="${i}" inputmode="numeric" value="${fmtXin(x.amt)}" placeholder="0"></div>
           <div class="c3 op">=</div>
-          <div class="c3 to"><span class="k">ใหม่</span><span class="v st-num xf-new" data-new="${i}">${j?fmt(j.bal+num(x.amt)):"—"}</span></div>
+          <div class="c3 to"><span class="k">ใหม่</span><span class="v st-num xf-new" data-new="${i}">${j?fmtXv(j.bal+num(x.amt)):"—"}</span></div>
+        </div>
+          ${del}
         </div>
       </div>`;
     }
@@ -310,18 +319,22 @@ function renderXmas(){
   list.querySelectorAll(".xmas-name").forEach(inp=>inp.addEventListener("input",e=>{active().xmas[+e.target.dataset.i].label=e.target.value;autoSave();}));
   list.querySelectorAll(".xmas-amt").forEach(inp=>{
     inp.addEventListener("input",e=>{const i=+e.target.dataset.i;active().xmas[i].amt=num(e.target.value);autoSave();updateXmasTotals();updateXmasNew(i);});
-    inp.addEventListener("blur",e=>{e.target.value=fmtIn(e.target.value);});
+    inp.addEventListener("blur",e=>{e.target.value=e.target.closest(".c3.mid")?fmtXin(e.target.value):fmtIn(e.target.value);});
   });
   list.querySelectorAll(".xmas-fund-sel").forEach(sel=>sel.addEventListener("change",e=>{const i=+e.target.dataset.i;active().xmas[i].fundId=e.target.value||"";autoSave();renderXmas();}));
   list.querySelectorAll(".xmas-del").forEach(b=>b.addEventListener("click",()=>{active().xmas.splice(+b.dataset.i,1);autoSave();renderXmas();}));
   updateXmasTotals();
 }
 // อัปเดตช่อง "ใหม่" ของแถวกองออม เมื่อพิมพ์จำนวน (ไม่ re-render เพื่อคงโฟกัส)
+// ยอดในช่อง เดิม/ใหม่: แยกทศนิยมเป็น span → จอมือถือซ่อน .xd ให้ตัวเลขเต็มพอดีบรรทัดเดียว
+const fmtXv=n=>{const t=fmt(n),k=t.lastIndexOf(".");return k<0?t:t.slice(0,k)+'<span class="xd">'+t.slice(k)+'</span>';};
+// ช่อง "เติม" บนมือถือ: จำนวนเต็มไม่แสดง .00 (ช่องแคบ)
+const fmtXin=v=>{const n=num(v);if(n&&Number.isInteger(n)&&matchMedia("(max-width:600px)").matches)return n.toLocaleString("en-US");return fmtIn(v);};
 function updateXmasNew(i){
   const p=active();if(!p||!p.xmas[i])return;const x=p.xmas[i];if(!x.sav)return;
   const el=document.querySelector('#stXmasList [data-new="'+i+'"]');if(!el)return;
   const j=x.fundId?_xmasJars().find(f=>f.id===x.fundId):null;
-  el.textContent=j?fmt(j.bal+num(x.amt)):"—";
+  el.innerHTML=j?fmtXv(j.bal+num(x.amt)):"—";
 }
 function updateXmasTotals(){
   const p=active();if(!p)return;
@@ -494,10 +507,16 @@ document.getElementById("stClearIncome").addEventListener("click",async()=>{
   if(!await modal("ล้างข้อมูลรายได้ของ "+active().name+" ?",{ok:"ล้าง"}))return;
   active().income=blank();buildTable();refresh();
 });
-window.addEventListener("beforeunload",()=>{
+// เขียนทันที (ข้าม debounce 800ms) ตอนออกจากหน้า — Safari iOS ไม่ยิง beforeunload จึงฟัง lh:flush
+// (firebase.js ส่งมาตอน pagehide / visibilitychange) ด้วย
+function _stFlush(){
+  if(!_saveT)return;   // ไม่มีอะไรค้าง
+  clearTimeout(_saveT);_saveT=null;
   if(!isHist()){gatherDed();state.year=CUR;}
   localStorage.setItem(ST_KEY,JSON.stringify(state));
-});
+}
+window.addEventListener("beforeunload",_stFlush);
+window.addEventListener("lh:flush",_stFlush);
 
 // ── Init (called by showModule once) ──
 function initUI(){viewHistKey=null;histActiveId=null;setYearLabel();renderPeople();loadUI();applyReadonly();}

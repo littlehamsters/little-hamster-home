@@ -280,22 +280,23 @@ function renderXmas(){
   const netEl=document.getElementById("stXmasNet");if(netEl)netEl.classList.toggle("neg",net<0);
   const list=document.getElementById("stXmasList");if(!list)return;
   const jars=_xmasJars();
-  // เฉพาะกองของเจ้าของคนนี้ + กองกลาง (owner ว่าง)
+  // เลือกได้ทุกกอง — จัดกลุ่ม: กองของคนนี้ → กองกลาง → กองของคนอื่น (ตามชื่อเจ้าของ)
   const pname=(p.name||"").trim().toLowerCase();
-  const myJars=jars.filter(j=>!j.owner||String(j.owner).trim().toLowerCase()===pname);
+  const isMine=j=>j.owner&&String(j.owner).trim().toLowerCase()===pname;
+  const grp=(label,arr)=>arr.length?{label,arr}:null;
+  const others={};jars.filter(j=>j.owner&&!isMine(j)).forEach(j=>{(others[j.owner]=others[j.owner]||[]).push(j);});
+  const fundGroups=[grp("กองของ "+(p.name||"ฉัน"),jars.filter(isMine)),grp("กองกลาง",jars.filter(j=>!j.owner))]
+    .concat(Object.keys(others).map(o=>grp("กองของ "+o,others[o]))).filter(Boolean);
   list.innerHTML=p.xmas.length?p.xmas.map((x,i)=>{
     const del=`<button class="xmas-del" data-i="${i}" title="ลบ"><i class="ti ti-trash"></i></button>`;
     if(x.sav){
-      // แถวกองออม: dropdown เลือกกอง (กรองตาม owner) + 3 คอลัมน์ เดิม | เติม(กรอก) | ใหม่
-      // คงตัวเลือกเดิมไว้แม้กองนั้นจะไม่ตรง owner (กันหลุด)
-      let optJars=myJars;
-      if(x.fundId&&!myJars.some(f=>f.id===x.fundId)){const ex=jars.find(f=>f.id===x.fundId);if(ex)optJars=[ex].concat(myJars);}
-      if(!optJars.length) return `<div class="xmas-row-wrap sav"><div class="xmas-srow"><span class="xf-warn">ยังไม่มีกองออมของ ${esc(p.name)} — สร้างกองในเมนู “กองออม” ก่อน</span>${del}</div></div>`;
+      // แถวกองออม: dropdown เลือกกอง (ทุกกอง แบ่งกลุ่มตามเจ้าของ) + 3 คอลัมน์ เดิม | เติม(กรอก) | ใหม่
+      if(!jars.length) return `<div class="xmas-row-wrap sav"><div class="xmas-srow"><span class="xf-warn">ยังไม่มีกองออม — สร้างกองในเมนู “กองออม” ก่อน</span>${del}</div></div>`;
       const j=x.fundId?jars.find(f=>f.id===x.fundId):null;
       // บรรทัดเดียว: กอง | เดิม + เติม = ใหม่ | ลบ  (จอแคบ → 3 คอลัมน์ขึ้นบรรทัดล่าง)
       return `<div class="xmas-row-wrap sav">
         <div class="xmas-srow one">
-          <select class="xmas-fund-sel" data-i="${i}"><option value="">— เลือกกอง —</option>${optJars.map(f=>`<option value="${f.id}" ${x.fundId===f.id?"selected":""}>${esc((f.emoji?f.emoji+" ":"")+f.name)}${f.owner?"":" · กองกลาง"}</option>`).join("")}</select>
+          <select class="xmas-fund-sel" data-i="${i}"><option value="">— เลือกกอง —</option>${fundGroups.map(g=>`<optgroup label="${esc(g.label)}">${g.arr.map(f=>`<option value="${f.id}" ${x.fundId===f.id?"selected":""}>${esc((f.emoji?f.emoji+" ":"")+f.name)}</option>`).join("")}</optgroup>`).join("")}</select>
         <div class="xmas-3col">
           <div class="c3"><span class="k">เดิม</span><span class="v st-num" data-cur="${i}">${j?fmtXv(j.bal):"—"}</span></div>
           <div class="c3 op">+</div>

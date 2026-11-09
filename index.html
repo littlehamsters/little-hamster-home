@@ -918,10 +918,25 @@
 
   <!-- TAB: คริสต์มาส — จัดสรรเงินได้เดือน ธ.ค. -->
   <section class="panel" id="stPanel-xmas">
+    <!-- subtab แผน: แผนจริง (ดึงจากรายได้เงินเดือน) + แผนสมมติอื่นๆ -->
+    <div class="xmas-plans" id="stXmasPlans"></div>
     <div class="card">
-      <div class="card-h"><div><span class="eyebrow">🎄 เงินได้เดือนธันวาคม</span><h2>โบนัส/เงินเดือนก้อนคริสต์มาส</h2></div></div>
+      <div class="card-h"><div><span class="eyebrow">🎄 เงินได้เดือนธันวาคม</span><h2 id="stXmasTitle">โบนัส/เงินเดือนก้อนคริสต์มาส</h2></div>
+        <div class="toolbar" id="stXmasPlanTools" hidden>
+          <button class="btn" id="stXmasPlanRename"><i class="ti ti-pencil"></i> เปลี่ยนชื่อ</button>
+          <button class="btn" id="stXmasPlanDel"><i class="ti ti-trash"></i> ลบแผน</button>
+        </div></div>
       <div class="card-b">
-        <div class="callout"><span class="ic">💡</span><div>ยอดดึงจากแถว <b>ธ.ค.</b> ในตารางรายได้ — ใส่โบนัสคริสต์มาสในช่อง “โบนัส” ของเดือน ธ.ค. แล้วมาวางแผนที่นี่</div></div>
+        <div class="callout" id="stXmasCalloutReal"><span class="ic">💡</span><div>ยอดดึงจากแถว <b>ธ.ค.</b> ในตารางรายได้ — ใส่โบนัสคริสต์มาสในช่อง “โบนัส” ของเดือน ธ.ค. แล้วมาวางแผนที่นี่</div></div>
+        <div class="callout" id="stXmasCalloutAlt" hidden><span class="ic">🧪</span><div>แผนสมมติ — กรอกตัวเลขเองได้ ไม่กระทบตารางรายได้จริง (ค่าเริ่มต้นคัดลอกจากแถว <b>ธ.ค.</b>)</div></div>
+        <div class="xmas-whatif" id="stXmasWhatIf" hidden>
+          <label><span>เงินเดือน</span><input class="st-num" data-xf="salary" inputmode="decimal"></label>
+          <label><span>OT</span><input class="st-num" data-xf="ot" inputmode="decimal"></label>
+          <label><span>โบนัส 🎄</span><input class="st-num" data-xf="bonus" inputmode="decimal"></label>
+          <label><span>ประกันสังคม</span><input class="st-num" data-xf="sso" inputmode="decimal"></label>
+          <label><span>ภาษีหัก ณ ที่จ่าย</span><input class="st-num" data-xf="wht" inputmode="decimal"></label>
+          <label><span>PVD %</span><input class="st-num" data-xf="pvdPct" inputmode="decimal"></label>
+        </div>
         <div class="xs-hero">
           <div class="k">💰 คงเหลือสุทธิ (เอาไปใช้)</div>
           <div class="v st-num" id="stXmasNet">0</div>

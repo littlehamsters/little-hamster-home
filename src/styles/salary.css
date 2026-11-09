@@ -227,6 +227,19 @@
 }
 
 /* ── คริสต์มาส: จัดสรรเงินได้เดือน ธ.ค. ─────────────────────────── */
+#m-salary #stPanel-xmas [hidden]{display:none!important;}
+/* subtab แผน: แผนจริง | แผนสมมติ… | ＋ เพิ่มแผน */
+#m-salary .xmas-plans{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+#m-salary .xmas-ptab{border:1px solid var(--st-line);background:var(--st-surface);color:var(--st-muted);border-radius:999px;padding:7px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
+#m-salary .xmas-ptab:hover{border-color:var(--st-sage);color:var(--st-sage-deep);}
+#m-salary .xmas-ptab.active{background:var(--st-sage);border-color:var(--st-sage);color:#fff;}
+#m-salary .xmas-ptab.add{border-style:dashed;}
+/* แผนสมมติ: ช่องกรอกตัวเลขเดือน ธ.ค. */
+#m-salary .xmas-whatif{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+#m-salary .xmas-whatif label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:600;color:var(--st-muted);}
+#m-salary .xmas-whatif input{height:38px;padding:0 11px;border:1px solid var(--st-line);border-radius:9px;background:var(--st-surface);color:var(--st-ink);font-family:inherit;font-size:14px;font-weight:600;text-align:right;}
+#m-salary .xmas-whatif input:focus{outline:none;border-color:var(--st-sage);box-shadow:0 0 0 3px var(--st-sage-soft);}
+@media(max-width:600px){#m-salary .xmas-whatif{grid-template-columns:1fr 1fr;}}
 /* summary เงินก้อน ธ.ค.: hero สุทธิ + แถบสัดส่วน + 2 คอลัมน์ รายรับ | รายการหัก */
 #m-salary .xs-hero{background:linear-gradient(135deg,var(--st-sage-soft),var(--st-surface-2));border:1px solid var(--st-sage-line);border-radius:14px;padding:16px 18px 14px;margin-bottom:12px;}
 #m-salary .xs-hero .k{font-size:13px;font-weight:600;color:var(--st-muted);}

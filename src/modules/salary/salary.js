@@ -260,12 +260,54 @@ function renderHouse(){
 }
 
 // ── คริสต์มาส: จัดสรรเงินได้เดือน ธ.ค. ──
-const _decNet=p=>{const d=(p.income&&p.income[11])||{};return num(d.salary)+num(d.ot)+num(d.bonus)-num(d.sso)-num(d.wht)-num(d.salary)*num(d.pvdPct)/100;};
+// หลายแผน: แผนจริง (xmasPlanId=null) ดึงจากแถว ธ.ค. + รายการใน p.xmas
+//          แผนสมมติ อยู่ใน p.xmasPlans [{id,name,salary,ot,bonus,sso,wht,pvdPct,items}]
+let xmasPlanId=null;
+const xmasPlan=p=>xmasPlanId&&Array.isArray(p.xmasPlans)?p.xmasPlans.find(x=>x.id===xmasPlanId)||null:null;
+const xmasSrc=p=>xmasPlan(p)||(p.income&&p.income[11])||{};
+const xmasItems=p=>{const pl=xmasPlan(p);if(pl){if(!Array.isArray(pl.items))pl.items=[];return pl.items;}if(!Array.isArray(p.xmas))p.xmas=[];return p.xmas;};
+const _decNet=p=>{const d=xmasSrc(p);return num(d.salary)+num(d.ot)+num(d.bonus)-num(d.sso)-num(d.wht)-num(d.salary)*num(d.pvdPct)/100;};
 // ดึงกองออมยอดจริง (อ่านอย่างเดียว — ไม่ผูก/ไม่เติมจริง)
 function _xmasJars(){try{if(window._svLoad)window._svLoad();return window.svGetFunds?window.svGetFunds():[];}catch(e){return[];}}
-function renderXmas(){
-  const p=active();if(!p)return;if(!Array.isArray(p.xmas))p.xmas=[];
+function renderXmasPlans(p){
+  if(!Array.isArray(p.xmasPlans))p.xmasPlans=[];
+  if(xmasPlanId&&!xmasPlan(p))xmasPlanId=null;
+  const pl=xmasPlan(p);
+  const bar=document.getElementById("stXmasPlans");
+  if(bar){
+    bar.innerHTML=`<button class="xmas-ptab${pl?"":" active"}" data-xplan="">📥 แผนจริง</button>`
+      +p.xmasPlans.map(x=>`<button class="xmas-ptab${pl===x?" active":""}" data-xplan="${x.id}">🧪 ${esc(x.name||"แผน")}</button>`).join("")
+      +`<button class="xmas-ptab add" id="stXmasPlanAdd">＋ เพิ่มแผน</button>`;
+    bar.querySelectorAll("[data-xplan]").forEach(b=>b.addEventListener("click",()=>{xmasPlanId=b.dataset.xplan||null;renderXmas();}));
+    bar.querySelector("#stXmasPlanAdd").addEventListener("click",xmasAddPlan);
+  }
+  const show=(id,on)=>{const e=document.getElementById(id);if(e)e.hidden=!on;};
+  show("stXmasPlanTools",!!pl);show("stXmasCalloutReal",!pl);show("stXmasCalloutAlt",!!pl);show("stXmasWhatIf",!!pl);
+  const t=document.getElementById("stXmasTitle");if(t)t.textContent=pl?"แผนสมมติ: "+(pl.name||"แผน"):"โบนัส/เงินเดือนก้อนคริสต์มาส";
+  if(pl)document.querySelectorAll("#stXmasWhatIf [data-xf]").forEach(inp=>{if(document.activeElement!==inp)inp.value=inp.dataset.xf==="pvdPct"?(num(pl.pvdPct)||""):fmtIn(pl[inp.dataset.xf]);});
+}
+async function xmasAddPlan(){
+  const p=active();if(!p||isHist())return;if(!Array.isArray(p.xmasPlans))p.xmasPlans=[];
+  const name=await modal("ชื่อแผนใหม่",{input:true,value:"แผน "+(p.xmasPlans.length+2),ok:"สร้างแผน"});if(name===null)return;
   const d=(p.income&&p.income[11])||{};
+  const pl={id:uid(),name:String(name).trim()||"แผน "+(p.xmasPlans.length+2),salary:num(d.salary),ot:num(d.ot),bonus:num(d.bonus),sso:num(d.sso),wht:num(d.wht),pvdPct:num(d.pvdPct),items:[]};
+  p.xmasPlans.push(pl);xmasPlanId=pl.id;autoSave();renderXmas();
+}
+async function xmasRenamePlan(){
+  const p=active(),pl=p&&xmasPlan(p);if(!pl)return;
+  const name=await modal("เปลี่ยนชื่อแผน",{input:true,value:pl.name||"",ok:"บันทึก"});if(name===null||!String(name).trim())return;
+  pl.name=String(name).trim();autoSave();renderXmas();
+}
+async function xmasDelPlan(){
+  const p=active(),pl=p&&xmasPlan(p);if(!pl)return;
+  if(!await modal(`ลบแผน “${pl.name||"แผน"}” ?`,{ok:"ลบ"}))return;
+  p.xmasPlans=p.xmasPlans.filter(x=>x!==pl);xmasPlanId=null;autoSave();renderXmas();
+}
+function renderXmas(){
+  const p=active();if(!p)return;
+  renderXmasPlans(p);
+  const items=xmasItems(p);
+  const d=xmasSrc(p);
   const sal=num(d.salary),ot=num(d.ot),bon=num(d.bonus),pa=sal*num(d.pvdPct)/100;
   const deduct=num(d.sso)+num(d.wht)+pa,gross=sal+ot+bon,net=gross-deduct;
   const S=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
@@ -287,7 +329,7 @@ function renderXmas(){
   const others={};jars.filter(j=>j.owner&&!isMine(j)).forEach(j=>{(others[j.owner]=others[j.owner]||[]).push(j);});
   const fundGroups=[grp("กองของ "+(p.name||"ฉัน"),jars.filter(isMine)),grp("กองกลาง",jars.filter(j=>!j.owner))]
     .concat(Object.keys(others).map(o=>grp("กองของ "+o,others[o]))).filter(Boolean);
-  list.innerHTML=p.xmas.length?p.xmas.map((x,i)=>{
+  list.innerHTML=items.length?items.map((x,i)=>{
     const del=`<button class="xmas-del" data-i="${i}" title="ลบ"><i class="ti ti-trash"></i></button>`;
     if(x.sav){
       // แถวกองออม: dropdown เลือกกอง (ทุกกอง แบ่งกลุ่มตามเจ้าของ) + 3 คอลัมน์ เดิม | เติม(กรอก) | ใหม่
@@ -317,14 +359,15 @@ function renderXmas(){
       </div>
     </div>`;
   }).join(""):'<div class="xmas-empty">ยังไม่มีรายการ — กดปุ่มด้านบน หรือ “＋ เพิ่มรายการ” เพื่อจัดสรร</div>';
-  list.querySelectorAll(".xmas-name").forEach(inp=>inp.addEventListener("input",e=>{active().xmas[+e.target.dataset.i].label=e.target.value;autoSave();}));
+  list.querySelectorAll(".xmas-name").forEach(inp=>inp.addEventListener("input",e=>{xmasItems(active())[+e.target.dataset.i].label=e.target.value;autoSave();}));
   list.querySelectorAll(".xmas-amt").forEach(inp=>{
-    inp.addEventListener("input",e=>{const i=+e.target.dataset.i;active().xmas[i].amt=num(e.target.value);autoSave();updateXmasTotals();updateXmasNew(i);});
+    inp.addEventListener("input",e=>{const i=+e.target.dataset.i;xmasItems(active())[i].amt=num(e.target.value);autoSave();updateXmasTotals();updateXmasNew(i);});
     inp.addEventListener("blur",e=>{e.target.value=e.target.closest(".c3.mid")?fmtXin(e.target.value):fmtIn(e.target.value);});
   });
-  list.querySelectorAll(".xmas-fund-sel").forEach(sel=>sel.addEventListener("change",e=>{const i=+e.target.dataset.i;active().xmas[i].fundId=e.target.value||"";autoSave();renderXmas();}));
-  list.querySelectorAll(".xmas-del").forEach(b=>b.addEventListener("click",()=>{active().xmas.splice(+b.dataset.i,1);autoSave();renderXmas();}));
+  list.querySelectorAll(".xmas-fund-sel").forEach(sel=>sel.addEventListener("change",e=>{const i=+e.target.dataset.i;xmasItems(active())[i].fundId=e.target.value||"";autoSave();renderXmas();}));
+  list.querySelectorAll(".xmas-del").forEach(b=>b.addEventListener("click",()=>{xmasItems(active()).splice(+b.dataset.i,1);autoSave();renderXmas();}));
   updateXmasTotals();
+  if(isHist())applyReadonly(); // ปุ่มที่เพิ่ง re-render ต้องถูกล็อกด้วยตอนดูประวัติ
 }
 // อัปเดตช่อง "ใหม่" ของแถวกองออม เมื่อพิมพ์จำนวน (ไม่ re-render เพื่อคงโฟกัส)
 // ยอดในช่อง เดิม/ใหม่: แยกทศนิยมเป็น span → จอมือถือซ่อน .xd ให้ตัวเลขเต็มพอดีบรรทัดเดียว
@@ -332,15 +375,15 @@ const fmtXv=n=>{const t=fmt(n),k=t.lastIndexOf(".");return k<0?t:t.slice(0,k)+'<
 // ช่อง "เติม" บนมือถือ: จำนวนเต็มไม่แสดง .00 (ช่องแคบ)
 const fmtXin=v=>{const n=num(v);if(n&&Number.isInteger(n)&&matchMedia("(max-width:600px)").matches)return n.toLocaleString("en-US");return fmtIn(v);};
 function updateXmasNew(i){
-  const p=active();if(!p||!p.xmas[i])return;const x=p.xmas[i];if(!x.sav)return;
+  const p=active();if(!p||!xmasItems(p)[i])return;const x=xmasItems(p)[i];if(!x.sav)return;
   const el=document.querySelector('#stXmasList [data-new="'+i+'"]');if(!el)return;
   const j=x.fundId?_xmasJars().find(f=>f.id===x.fundId):null;
   el.innerHTML=j?fmtXv(j.bal+num(x.amt)):"—";
 }
 function updateXmasTotals(){
   const p=active();if(!p)return;
-  const net=_decNet(p),alloc=(p.xmas||[]).reduce((s,x)=>s+num(x.amt),0),remain=net-alloc;
-  const toSav=(p.xmas||[]).filter(x=>x.fundId).reduce((s,x)=>s+num(x.amt),0);
+  const net=_decNet(p),alloc=xmasItems(p).reduce((s,x)=>s+num(x.amt),0),remain=net-alloc;
+  const toSav=xmasItems(p).filter(x=>x.fundId).reduce((s,x)=>s+num(x.amt),0);
   const a=document.getElementById("stXmasAlloc");if(a)a.textContent=fmt(alloc);
   const ts=document.getElementById("stXmasToSavings");if(ts)ts.textContent=fmt(toSav);
   const rEl=document.getElementById("stXmasRemain");if(rEl){rEl.textContent=(remain<0?"-":"")+fmt(Math.abs(remain));rEl.className="st-num "+(remain<0?"bad":(remain>0?"good":""));}
@@ -348,8 +391,8 @@ function updateXmasTotals(){
   if(bar){const pct=net>0?Math.min(100,Math.max(0,alloc/net*100)):0;bar.style.width=pct+"%";bar.style.background=remain<0?"var(--st-clay)":"var(--st-sage)";}
 }
 function xmasAddRow(label,sav){
-  const p=active();if(!p)return;if(!Array.isArray(p.xmas))p.xmas=[];
-  p.xmas.push({label:label||"",amt:0,sav:!!sav,fundId:""});autoSave();renderXmas();
+  const p=active();if(!p)return;
+  xmasItems(p).push({label:label||"",amt:0,sav:!!sav,fundId:""});autoSave();renderXmas();
   const names=document.querySelectorAll("#stXmasList .xmas-name");
   if(names.length&&!label)names[names.length-1].focus();
 }
@@ -365,7 +408,7 @@ function load(){
 }
 function seed(){
   if(!state.people||!state.people.length)state.people=[newPerson("คนที่ 1")];
-  state.people.forEach(p=>{if(!p.income||p.income.length!==12)p.income=blank();if(!p.ded)p.ded={};if(!Array.isArray(p.xmas))p.xmas=[];});
+  state.people.forEach(p=>{if(!p.income||p.income.length!==12)p.income=blank();if(!p.ded)p.ded={};if(!Array.isArray(p.xmas))p.xmas=[];if(!Array.isArray(p.xmasPlans))p.xmasPlans=[];});
   if(!state.activeId||!state.people.find(p=>p.id===state.activeId))state.activeId=state.people[0].id;
   if(!state.history||typeof state.history!=="object")state.history={};
 }
@@ -494,6 +537,12 @@ function setupDed(){
 document.getElementById("stAddPerson2").addEventListener("click",addPerson);
 document.getElementById("stPrintBtn").addEventListener("click",()=>window.print());
 document.getElementById("stXmasAdd").addEventListener("click",()=>xmasAddRow(""));
+document.getElementById("stXmasPlanRename").addEventListener("click",xmasRenamePlan);
+document.getElementById("stXmasPlanDel").addEventListener("click",xmasDelPlan);
+document.querySelectorAll("#stXmasWhatIf [data-xf]").forEach(inp=>{
+  inp.addEventListener("input",e=>{const pl=xmasPlan(active());if(!pl)return;pl[e.target.dataset.xf]=num(e.target.value);autoSave();renderXmas();});
+  inp.addEventListener("blur",e=>{if(e.target.dataset.xf!=="pvdPct")e.target.value=fmtIn(e.target.value);});
+});
 document.querySelectorAll("#stXmasPresets .xmas-chip").forEach(b=>b.addEventListener("click",()=>xmasAddRow(b.dataset.preset,b.dataset.sav==="1")));
 document.getElementById("stFillAll").addEventListener("click",async()=>{
   const who=active().name;

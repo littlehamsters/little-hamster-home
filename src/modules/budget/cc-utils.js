@@ -37,6 +37,41 @@ const MONEY = /-?\d{1,3}(?:,\d{3})*\.\d{2}/g; // optional leading minus = refund
 // trailing year is taken only when NOT immediately followed by another month
 // (so "15 JUN 14 JUN" stays two dates, but "21 ก.ค. 69 22 ก.ค." keeps the year)
 const reDate = () => new RegExp('\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{2,4}|\\d{1,2}\\s?(?:' + MONTH + ')\\.?(?:\\s?\\d{2,4}(?!\\s?(?:' + MONTH + ')))?', 'gi');
+// statement date text → ISO 'YYYY-MM-DD' ('' when unparseable / invalid).
+// Accepts ISO, D/M/Y (2- or 4-digit, พ.ศ. or ค.ศ.), D/M, "15 JUN [26]", "21 ก.ค. 69".
+// Missing year → refYear; a month later than refMonth+1 (0-based) is taken as last year
+// (e.g. December items on a January statement).
+const MON_IDX = [/^jan/, /^feb/, /^mar/, /^apr/, /^may/, /^jun/, /^jul/, /^aug/, /^sep/, /^oct/, /^nov/, /^dec/];
+const MON_TH = ['มค', 'กพ', 'มีค', 'เมย', 'พค', 'มิย', 'กค', 'สค', 'กย', 'ตค', 'พย', 'ธค'];
+function _monthFromName(s) {
+  const k = String(s).toLowerCase().replace(/\./g, '');
+  const i = MON_IDX.findIndex((re) => re.test(k));
+  return i >= 0 ? i : MON_TH.indexOf(k);
+}
+function _fullYear(y) {
+  if (y >= 2400) return y - 543;            // พ.ศ. 4 หลัก
+  if (y >= 100) return y;
+  return y >= 60 ? 2500 + y - 543 : 2000 + y; // 2 หลัก: 69 = พ.ศ. 2569, 26 = ค.ศ. 2026
+}
+export function toIsoDate(s, refYear, refMonth) {
+  s = String(s || '').trim();
+  if (!s) return '';
+  let d, m, y = null, mm;
+  if ((mm = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s))) { y = +mm[1]; m = +mm[2] - 1; d = +mm[3]; }
+  else if ((mm = /^(\d{1,2})[/.\-](\d{1,2})(?:[/.\-](\d{2,4}))?$/.exec(s))) { d = +mm[1]; m = +mm[2] - 1; if (mm[3]) y = _fullYear(+mm[3]); }
+  else if ((mm = /^(\d{1,2})\s?([a-zA-Z฀-๿.]+?)\.?(?:\s?(\d{2,4}))?$/.exec(s))) {
+    d = +mm[1]; m = _monthFromName(mm[2]); if (mm[3]) y = _fullYear(+mm[3]);
+  } else return '';
+  if (m < 0 || m > 11 || !d) return '';
+  if (y == null) {
+    y = refYear || new Date().getFullYear();
+    if (refMonth != null && m > refMonth + 1) y -= 1;
+  }
+  const dt = new Date(y, m, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== m || dt.getDate() !== d) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${y}-${p(m + 1)}-${p(d)}`;
+}
 const SKIP = /subtotal|transaction amount|posting date|description|installment|statement|credit limit|available|minimum|ยอดรวม|ยอดชำระ|ยอดยกมา|ผ่อนชำระ|วันที่ทำรายการ|จำนวนเงิน/i;
 const CREDIT = /cashback|cash back|เงินคืน|คืนเงิน|refund|reversal|เครดิตเงินคืน|credit voucher/i;
 

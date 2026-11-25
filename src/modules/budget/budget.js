@@ -1,5 +1,5 @@
 /* Budget module — monthly budget, credit cards */
-import { CC_CATEGORIES, deriveCC, ccCategoryTotals, parseOCR, merchKey, pdfItemsToLines } from './cc-utils.js';
+import { CC_CATEGORIES, deriveCC, ccCategoryTotals, parseOCR, merchKey, pdfItemsToLines, toIsoDate } from './cc-utils.js';
 const CC_COLORS=['#6a52c4','#3a6890','#2e7878','#8a5e20','#5a7a62','#a0485c','#4a7a9a'];
 // CC statement-import: per-transaction owner options (categories come from cc-utils/cfg)
 const CC_OWNERS=[
@@ -1813,7 +1813,7 @@ function renderGroupDetail(){
     (items.length?items.map(it=>`
       <div class="cc-cat-txn">
         <div class="cctx-main"><span class="cctx-merch">${_bpEsc(it.name||'(รายการ)')}</span></div>
-        <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(it.date)}</span>`:''}</div>
+        <div class="cctx-meta"><span class="cctx-card">${_bpEsc(it.card)}</span>${it.date?`<span class="cctx-date">${_bpEsc(_ccDateDisp(it.date))}</span>`:''}</div>
         <div class="cctx-amt ${f(it.amt)<0?'cci-credit':''}">${_bpFmt(it.amt)}</div>
       </div>`).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">ไม่มีรายการ</div>');
 }
@@ -1845,10 +1845,10 @@ function ccCatPopupFilter(){
   const cf=_ccPopColF;
   const all=_ccPopItems;
   const shown=all.filter(it=>{
-    if(q){const hay=((it.merchant||'')+' '+(it.note||'')+' '+(it.card||'')+' '+(it.date||'')).toLowerCase();if(!hay.includes(q))return false;}
+    if(q){const hay=((it.merchant||'')+' '+(it.note||'')+' '+(it.card||'')+' '+_ccDateDisp(it.date)).toLowerCase();if(!hay.includes(q))return false;}
     if(cf.merch&&!((it.merchant||'')+' '+(it.note||'')).toLowerCase().includes(cf.merch.toLowerCase()))return false;
     if(cf.card&&!String(it.card||'').toLowerCase().includes(cf.card.toLowerCase()))return false;
-    if(cf.date&&!String(it.date||'').toLowerCase().includes(cf.date.toLowerCase()))return false;
+    if(cf.date&&!_ccDateDisp(it.date).toLowerCase().includes(cf.date.toLowerCase()))return false;
     if(cf.owner&&cf.owner!=='all'&&(it.owner||'common')!==cf.owner)return false;
     if(cf.amt){const a=String(Math.round(Math.abs(it.amt)));if(!a.includes(cf.amt.replace(/[^0-9]/g,'')))return false;}
     return true;
@@ -1861,7 +1861,7 @@ function ccCatPopupFilter(){
   const rows=shown.map(it=>`<tr>
       <td class="l"><span class="ccv-merch-tx">${_bpEsc(it.merchant||'(รายการ)')}</span>${it.note?`<span class="ccv-note"> · ${_bpEsc(it.note)}</span>`:''}</td>
       <td class="l"><span class="cc-chip" style="color:var(--sky);border-color:var(--sky-line);background:var(--sky-bg)">${_bpEsc(it.card)}</span></td>
-      <td class="l ccv-date">${_bpEsc(it.date)||'—'}</td>
+      <td class="l ccv-date">${_bpEsc(_ccDateDisp(it.date))||'—'}</td>
       <td class="l"><span class="cc-chip">${_bpEsc(ownerLabel(it.owner))}</span></td>
       <td class="num ${it.amt<0?'cci-credit':''}">${_bpFmt(it.amt)}</td>
     </tr>`).join('');
@@ -2585,11 +2585,11 @@ function _ccvRenderList() {
   const cf = _ccvColF;
   const shown = txns.filter((t) => {
     if (q) {
-      const hay = ((t.merchant || '') + ' ' + (t.note || '') + ' ' + (t.category || '') + ' ' + (t.date || '')).toLowerCase();
+      const hay = ((t.merchant || '') + ' ' + (t.note || '') + ' ' + (t.category || '') + ' ' + _ccDateDisp(t.date)).toLowerCase();
       if (!hay.includes(q)) return false;
     }
     if (cf.merch && !((t.merchant || '') + ' ' + (t.note || '')).toLowerCase().includes(cf.merch.toLowerCase())) return false;
-    if (cf.date && !String(t.date || '').toLowerCase().includes(cf.date.toLowerCase())) return false;
+    if (cf.date && !_ccDateDisp(t.date).toLowerCase().includes(cf.date.toLowerCase())) return false;
     if (cf.owner && cf.owner !== 'all' && (t.owner || 'common') !== cf.owner) return false;
     if (cf.amt) { const a = String(Math.round(Math.abs(f(t.amt)))); if (!a.includes(cf.amt.replace(/[^0-9]/g, ''))) return false; }
     return true;
@@ -2603,7 +2603,7 @@ function _ccvRenderList() {
   shown.forEach((t) => { const k = t.category || 'อื่นๆ'; (groups[k] = groups[k] || []).push(t); });
   const cats = Object.keys(groups).sort();
   const rowHtml = (t) => `<tr>
-      <td class="l ccv-date">${_bpEsc(t.date) || '—'}</td>
+      <td class="l ccv-date">${_bpEsc(_ccDateDisp(t.date)) || '—'}</td>
       <td class="l"><span class="ccv-merch-tx">${_bpEsc(t.merchant) || '(รายการ)'}</span>${t.note ? `<span class="ccv-note"> · ${_bpEsc(t.note)}</span>` : ''}</td>
       <td class="l"><span class="cc-chip">${_bpEsc(_ccvOwnLabel(t.owner))}</span></td>
       <td class="num ${f(t.amt) < 0 ? 'cci-credit' : ''}">${_bpFmt(t.amt)}</td>
@@ -2707,7 +2707,7 @@ function ccViewEdit() {
   if (!c || !(c.txns && c.txns.length)) return;
   ccViewClose();
   _cciEditId = c.id;
-  _cciTxns = c.txns.map((t) => ({ id: _cciUid(), date: t.date || '', merchant: t.merchant || '', amt: String(t.amt), owner: t.owner || 'common', category: t.category || '', note: t.note || '' }));
+  _cciTxns = c.txns.map((t) => ({ id: _cciUid(), date: _cciIso(t.date), merchant: t.merchant || '', amt: String(t.amt), owner: t.owner || 'common', category: t.category || '', note: t.note || '' }));
   _cciFillCardSelect(c.cardId);
   const t = document.getElementById('cci-title'); if (t) t.textContent = '✏️ แก้ไขรายการบัตร';
   const photo = document.getElementById('cci-photo'); if (photo) photo.style.display = 'none'; // editing existing rows, no re-import
@@ -2760,7 +2760,14 @@ function _cciLoadTesseract() {
   return _tessLoading;
 }
 // OCR parsing lives in ./cc-utils.js (unit-tested); wrap to use budget's id gen
-function _cciParseOCR(text) { return parseOCR(text, _cciUid); }
+function _cciParseOCR(text) {
+  return parseOCR(text, _cciUid).map((t) => ({ ...t, date: _cciIso(t.date) }));
+}
+// statement date text → ISO for the date picker (year defaults to the budget month being viewed)
+function _cciIso(d) { return toIsoDate(d, curYear, curMonth) || d || ''; }
+const _isIso = (d) => /^\d{4}-\d{2}-\d{2}$/.test(d || '');
+// ISO → DD/MM/YYYY for display; anything else (old free-text dates) shown as-is
+function _ccDateDisp(d) { if (!_isIso(d)) return d || ''; const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; }
 // decode any browser-supported image (png/jpg/webp/gif/bmp) via canvas →
 // normalises format for Tesseract and rejects undecodable files (e.g. HEIC)
 function _cciFileToCanvas(file) {
@@ -2848,7 +2855,7 @@ function ccImportRenderRows() {
   document.getElementById('cci-rows').innerHTML =
     shown.map((t) => `
       <div class="cci-row">
-        <input class="cci-in cci-date" type="text" value="${_bpEsc(t.date)}" placeholder="วันที่" oninput="ccImportField('${t.id}','date',this.value)">
+        <input class="cci-in cci-date mo-dp" data-editable value="${_isIso(t.date) ? t.date : ''}" placeholder="${_isIso(t.date) ? 'วว/ดด/ปปปป' : (_bpEsc(t.date) || 'วว/ดด/ปปปป')}" onchange="ccImportField('${t.id}','date',window.moGetDate(this))">
         <input class="cci-in cci-merchant" type="text" value="${_bpEsc(t.merchant)}" placeholder="ร้าน/รายการ" oninput="ccImportField('${t.id}','merchant',this.value)">
         <input class="cci-in cci-amt ${f(t.amt) < 0 ? 'cci-credit' : ''}" type="text" inputmode="decimal" value="${_bpEsc(t.amt)}" placeholder="ยอด" title="ใส่ค่าติดลบสำหรับเงินคืน/cashback" oninput="ccImportField('${t.id}','amt',this.value)">
         <select class="cci-in cci-owner" onchange="ccImportField('${t.id}','owner',this.value)">${_cciOwnerOpts(t.owner)}</select>
@@ -2857,6 +2864,7 @@ function ccImportRenderRows() {
         <input class="cci-in cci-note" type="text" value="${_bpEsc(t.note)}" placeholder="โน้ต" title="โน้ต (ไม่บังคับ)" oninput="ccImportField('${t.id}','note',this.value)">
       </div>`).join('') ||
     `<div style="color:var(--ink3);font-size:12px;padding:8px">${empty}</div>`;
+  if (window.moInitDatePickers) window.moInitDatePickers(document.getElementById('cci-rows'));
 }
 // new rows adopt the active filter's owner so they stay visible
 function ccImportAddRow() {

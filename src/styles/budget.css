@@ -19,12 +19,16 @@
 }
 
 /* CC statement-import modal — responsive rows */
-#m-budget #cc-import-modal .modal{width:min(720px,95vw)}
-#m-budget .cci-row{display:grid;gap:6px;align-items:center;margin-bottom:8px;grid-template-columns:66px minmax(84px,1.1fr) 70px 90px 98px minmax(72px,.9fr) 26px;grid-template-areas:"date merchant amt owner cat note del"}
+#m-budget #cc-import-modal .modal{width:min(780px,95vw)}
+#m-budget .cci-row{display:grid;gap:6px;align-items:center;margin-bottom:8px;grid-template-columns:124px minmax(84px,1.1fr) 70px 90px 98px minmax(72px,.9fr) 26px;grid-template-areas:"date merchant amt owner cat note del"}
 #m-budget .cci-in{height:36px;padding:0 10px;border:1px solid var(--line2);border-radius:6px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit;width:100%;box-sizing:border-box;transition:border-color .15s,box-shadow .15s}
 #m-budget .cci-in:hover{border-color:var(--sky)}
 #m-budget .cci-in:focus{outline:none;border-color:var(--sky);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
 #m-budget .cci-date{grid-area:date}
+/* date = shared calendar picker (wraps the input in .mo-dp-field) */
+#m-budget .cci-row>.mo-dp-field{grid-area:date;height:36px}
+#m-budget .cci-row .mo-dp-field .cci-date{padding:0 6px;font-variant-numeric:tabular-nums}
+#m-budget .cci-row .mo-dp-icon{width:30px;flex:0 0 30px;border-color:var(--line2);background:var(--card2);color:var(--ink2)}
 #m-budget .cci-merchant{grid-area:merchant}
 #m-budget .cci-amt{grid-area:amt;text-align:right;font-variant-numeric:tabular-nums}
 #m-budget .cci-owner{grid-area:owner}

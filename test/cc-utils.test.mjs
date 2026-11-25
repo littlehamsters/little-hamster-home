@@ -149,3 +149,20 @@ test('pdfItemsToLines rebuilds rows (top→down, left→right) → parseable', (
 });
 
 function round(v) { return Math.round(v * 100) / 100; }
+
+test('toIsoDate normalizes statement dates (ISO, D/M/Y, EN/TH month names, BE years)', async () => {
+  const { toIsoDate } = await import('../src/modules/budget/cc-utils.js');
+  assert.equal(toIsoDate('2026-06-15'), '2026-06-15');
+  assert.equal(toIsoDate('15/06/2026'), '2026-06-15');
+  assert.equal(toIsoDate('15/06/69'), '2026-06-15');      // พ.ศ. 2 หลัก
+  assert.equal(toIsoDate('15/06/2569'), '2026-06-15');    // พ.ศ. 4 หลัก
+  assert.equal(toIsoDate('15/06/26'), '2026-06-15');      // ค.ศ. 2 หลัก
+  assert.equal(toIsoDate('15 JUN', 2026, 5), '2026-06-15');
+  assert.equal(toIsoDate('15JUN 26'), '2026-06-15');
+  assert.equal(toIsoDate('21 ก.ค. 69'), '2026-07-21');
+  assert.equal(toIsoDate('3 ธ.ค.', 2027, 0), '2026-12-03'); // Dec item on a Jan statement → last year
+  assert.equal(toIsoDate('14/06', 2026, 5), '2026-06-14');
+  assert.equal(toIsoDate('31/02/2026'), '');
+  assert.equal(toIsoDate('hello'), '');
+  assert.equal(toIsoDate(''), '');
+});

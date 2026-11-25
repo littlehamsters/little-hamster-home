@@ -308,13 +308,29 @@
   #m-budget .card-head .add-btn{justify-content:center}
 }
 
-/* รายจ่ายอื่นๆ (กองกลาง) — custom select fits + responsive item row */
-#m-budget #shared-other-list .mo-sel-wrap{display:block;min-width:0}
-#m-budget #shared-other-list .mo-sel-trigger{min-width:0;height:36px;border-radius:8px;font-size:12px}
+/* รายจ่ายอื่นๆ (กองกลาง) — บรรทัดเดียวทุกขนาดจอ: ชื่อ | บัญชี | หมวด | คนจ่าย | ยอด | ลบ */
+#m-budget #shared-other-list{gap:4px}
+#m-budget #shared-other-list .so-row{flex-wrap:nowrap;gap:4px;padding:4px 6px;border-radius:10px;border-width:1px}
+#m-budget #shared-other-list .so-inputs{display:contents}
+#m-budget #shared-other-list .so-name-wrap{flex:2 1 0;min-width:0}
+#m-budget #shared-other-list .so-name{height:30px!important;padding:0 8px!important;font-size:12px!important}
+#m-budget #shared-other-list .mo-sel-wrap{display:block;flex:1 1 0;min-width:0}
+#m-budget #shared-other-list .mo-sel-trigger{width:100%;min-width:0;height:30px;padding:0 6px;border-radius:8px;font-size:12px}
+#m-budget #shared-other-list .amt-input{flex:0 0 96px;width:96px!important;height:30px;padding:0 8px;font-size:12px}
+#m-budget #shared-other-list .del-item-btn{flex:0 0 30px;height:30px;padding:0;justify-content:center}
+/* มือถือ (จอแคบเกินกว่าจะใส่ 6 ช่องในบรรทัดเดียว): ชื่อ | ยอด | ลบ  →  บัญชี | หมวด | คนจ่าย */
 @media(max-width:560px){
-  #m-budget #shared-other-list .fixed-item-inputs{flex:1 1 100%;flex-wrap:nowrap}
-  #m-budget #shared-other-list .mo-sel-wrap{flex:1 1 auto}
-  #m-budget #shared-other-list .mo-sel-trigger{width:100%}
-  #m-budget #shared-other-list .amt-input{flex:0 0 96px;width:96px!important}
-  #m-budget #shared-other-list .del-item-btn{flex:0 0 auto}
+  #m-budget #shared-other-list .so-row{flex-wrap:wrap}
+  #m-budget #shared-other-list .so-name-wrap{flex:1 1 calc(100% - 138px)}
+  #m-budget #shared-other-list .mo-sel-wrap{order:2;flex:1 1 calc(33% - 4px)}
+  #m-budget #shared-other-list .mo-sel-trigger{padding:0 4px;font-size:11px}
 }
+#m-budget .so-head-btns{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:580px){#m-budget .so-head-btns{flex:1 1 100%}#m-budget .so-head-btns .add-btn{flex:1 1 0}}
+#m-budget .so-acc-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:220px;overflow:auto}
+#m-budget .so-acc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border:1px solid var(--amber-line);border-radius:10px;background:var(--card2);font-size:13px}
+#m-budget #shared-other-breakdown:not(:empty){margin-top:8px;display:flex;flex-direction:column;gap:6px}
+#m-budget .so-bd-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--ink2)}
+#m-budget .so-bd-lbl{font-weight:600;min-width:56px}
+#m-budget .so-chip{background:var(--amber-bg);border:1px solid var(--amber-line);color:var(--ink2);border-radius:10px;padding:2px 8px}
+#m-budget .so-chip strong{color:var(--amber)}

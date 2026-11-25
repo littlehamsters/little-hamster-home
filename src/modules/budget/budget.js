@@ -30,6 +30,8 @@ let cfg={
   p1:'โฟม',p2:'เข่ง',
   ccCards:[...DEFAULT_CC_CARDS],
   ccCategories:[...CC_CATEGORIES],
+  // รายจ่ายอื่นๆ (กองกลาง): บัญชีที่จ่ายออก (ผู้ใช้เพิ่มเอง ผ่าน "＋ เพิ่มบัญชี…")
+  soAccounts:[],
   fixedIncome:{p1:[
     {id:'fi_1',name:'เงินเดือน',salaryLinked:true},{id:'fi_2',name:'โบนัส'},{id:'fi_3',name:'รายได้อื่น'}
   ],p2:[
@@ -133,6 +135,7 @@ function _bpLoad(){
       });
     }
     if(s.estimate&&Array.isArray(s.estimate.items)) cfg.estimate={month:s.estimate.month||'',items:s.estimate.items};
+    if(Array.isArray(s.soAccounts)) cfg.soAccounts=s.soAccounts.slice();
   }catch(e){}
 }
 // เดือนนี้มีข้อมูลงบประมาณจริงหรือยัง (ไม่นับ "ประมาณการ")
@@ -245,7 +248,7 @@ function getSharedOtherPerPerson(){return getSharedOtherTotal()/2;}
 function addSharedOther(){
   const md=getMD();
   if(!Array.isArray(md.sharedOther)) md.sharedOther=[];
-  md.sharedOther.push({id:Date.now(),name:'',amt:0,owner:'common'});
+  md.sharedOther.push({id:Date.now(),name:'',amt:0,owner:'common',acc:'',category:''});
   persist();renderSharedOther();
   const rows=document.querySelectorAll('#shared-other-list .so-name');
   if(rows.length) rows[rows.length-1].focus();
@@ -258,6 +261,76 @@ function setSharedOtherOwner(id,v){
   const o=(getMD().sharedOther||[]).find(x=>x.id===id);
   if(o){o.owner=v;persist();}
   renderSummaryCommon();   // owner กระทบเฉพาะการหารคืน (ใครจ่ายใคร) ไม่กระทบยอด ÷2
+}
+// acc: 'a:<ชื่อบัญชี>' (cfg.soAccounts) | '' = ไม่ระบุ
+function setSharedOtherAcc(id,v){
+  const o=(getMD().sharedOther||[]).find(x=>x.id===id);
+  if(o) o.acc=v;
+  persist();renderSharedOther();
+}
+function setSharedOtherCat(id,v){
+  if(v==='__add'){ renderSharedOther(); soAddOpen('cat',id); return; }
+  const o=(getMD().sharedOther||[]).find(x=>x.id===id);
+  if(o) o.category=v;
+  persist();renderSharedOther();
+}
+// popup เพิ่มบัญชี (จัดการรายชื่อบัญชี) / เพิ่มหมวด (จาก dropdown หมวด → ตั้งให้รายการนั้นเลย)
+let _soAdd={mode:'acc',itemId:null};
+function soAccOpen(){ soAddOpen('acc',null); }
+function soAddOpen(mode,itemId){
+  _soAdd={mode,itemId};
+  const isAcc=mode==='acc';
+  document.getElementById('so-add-title').innerHTML=isAcc
+    ?'<i class="ti ti-building-bank" style="color:var(--amber)"></i> บัญชีที่จ่าย'
+    :'<i class="ti ti-tag" style="color:var(--amber)"></i> เพิ่มหมวด';
+  document.getElementById('so-add-label').textContent=isAcc?'ชื่อบัญชีใหม่':'ชื่อหมวดใหม่';
+  const inp=document.getElementById('so-add-name');
+  inp.value='';inp.placeholder=isAcc?'เช่น KBank กองกลาง, เงินสด':'เช่น ของใช้ในบ้าน';
+  _soRenderAccList();
+  document.getElementById('so-add-modal').classList.add('open');
+  setTimeout(()=>inp.focus(),50);
+}
+function soAddClose(){ document.getElementById('so-add-modal').classList.remove('open'); }
+function _soRenderAccList(){
+  const el=document.getElementById('so-add-list');
+  if(_soAdd.mode!=='acc'){el.innerHTML='';return;}
+  const accs=cfg.soAccounts||[];
+  el.innerHTML=accs.length
+    ?`<div class="so-acc-list">${accs.map((a,i)=>`<div class="so-acc-row"><span>🏦 ${_bpEsc(a)}</span>
+        <button class="del-item-btn del-icon" onclick="soAccDel(${i})" title="ลบ"><i class="ti ti-trash" style="font-size:14px"></i></button></div>`).join('')}</div>`
+    :'<div class="empty-state" style="padding:10px 0"><i class="ti ti-inbox"></i>ยังไม่มีบัญชี</div>';
+}
+function soAddSave(){
+  const name=document.getElementById('so-add-name').value.trim();
+  if(!name){ _bpToast(_soAdd.mode==='acc'?'ใส่ชื่อบัญชีก่อนนะ':'ใส่ชื่อหมวดก่อนนะ'); return; }
+  if(_soAdd.mode==='acc'){
+    if(!Array.isArray(cfg.soAccounts)) cfg.soAccounts=[];
+    if(cfg.soAccounts.includes(name)){ _bpToast('มีบัญชีนี้แล้ว'); return; }
+    cfg.soAccounts.push(name);
+    persist();renderSharedOther();_soRenderAccList();
+    document.getElementById('so-add-name').value='';
+    _bpToast('เพิ่มบัญชี "'+name+'" แล้ว ✓');
+    return;
+  }
+  if(!cfg.ccCategories||!cfg.ccCategories.length) cfg.ccCategories=[...CC_CATEGORIES];
+  if(!cfg.ccCategories.includes(name)){
+    const i=cfg.ccCategories.indexOf('อื่นๆ'); // keep อื่นๆ last
+    if(i>=0) cfg.ccCategories.splice(i,0,name); else cfg.ccCategories.push(name);
+  }
+  const o=(getMD().sharedOther||[]).find(x=>x.id===_soAdd.itemId);
+  if(o) o.category=name;
+  persist();renderSharedOther();soAddClose();
+  _bpToast('เพิ่มหมวด "'+name+'" แล้ว ✓');
+}
+function soAccDel(i){
+  const accs=cfg.soAccounts||[];
+  if(!accs[i]) return;
+  accs.splice(i,1);   // รายการที่เคยเลือกบัญชีนี้ยังคงแสดงชื่อเดิม (orphan) ไม่หาย
+  persist();renderSharedOther();_soRenderAccList();
+}
+function _soAccLabel(acc){
+  if(!acc) return '';
+  return '🏦 '+acc.slice(2);
 }
 function setSharedOtherAmt(id,v){
   const o=(getMD().sharedOther||[]).find(x=>x.id===id);
@@ -287,25 +360,61 @@ function renderSharedOther(){
       style="height:32px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);font-size:12px;font-family:inherit;cursor:pointer">
       ${opt('common','🤝 จ่ายร่วม')}${opt('p1',cfg.p1)}${opt('p2',cfg.p2)}</select>`;
   };
+  const selStyle='height:32px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);font-size:12px;font-family:inherit;cursor:pointer';
+  const accOpt=(o)=>{
+    const v=o.acc||'';
+    const opt=(val,label)=>`<option value="${_bpEsc(val)}" ${v===val?'selected':''}>${_bpEsc(label)}</option>`;
+    const accs=cfg.soAccounts||[];
+    // บัญชีที่เคยเลือกแต่ถูกลบไปแล้ว → ยังแสดงไว้ ไม่ให้หาย
+    const orphan=v.startsWith('a:')&&!accs.includes(v.slice(2))?opt(v,v.slice(2)):'';
+    return `<select class="so-acc mo-sel" onchange="setSharedOtherAcc(${o.id},this.value)" title="จ่ายจากบัญชีไหน" style="${selStyle}">
+      ${opt('','— จากบัญชี —')}${accs.map(a=>opt('a:'+a,'🏦 '+a)).join('')}${orphan}</select>`;
+  };
+  const catOpt=(o)=>{
+    const v=o.category||'';
+    const cats=(cfg.ccCategories&&cfg.ccCategories.length)?cfg.ccCategories:CC_CATEGORIES;
+    const opt=(val,label)=>`<option value="${_bpEsc(val)}" ${v===val?'selected':''}>${_bpEsc(label)}</option>`;
+    const orphan=v&&!cats.includes(v)?opt(v,v):'';
+    return `<select class="so-cat mo-sel" onchange="setSharedOtherCat(${o.id},this.value)" title="หมวด" style="${selStyle}">
+      ${opt('','— หมวด —')}${cats.map(c=>opt(c,c)).join('')}${orphan}
+      <option value="__add">＋ เพิ่มหมวด…</option></select>`;
+  };
   list.innerHTML=items.length?items.map(o=>`
-    <div class="fixed-item" style="border-color:var(--amber-line);flex-wrap:wrap;gap:6px">
-      <div style="flex:1;min-width:120px">
+    <div class="fixed-item so-row" style="border-color:var(--amber-line)">
+      <div class="so-name-wrap">
         <input class="so-name" type="text" value="${(o.name||'').replace(/"/g,'&quot;')}" placeholder="ชื่อรายการ เช่น ค่าส่วนกลาง, ค่าขยะ"
           style="width:100%;height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--ink);font-size:13px;font-family:inherit"
           onchange="setSharedOtherName(${o.id},this.value)">
       </div>
-      <div class="fixed-item-inputs" style="gap:6px">
-        ${ownerOpt(o)}
+      <div class="fixed-item-inputs so-inputs" style="gap:6px">
+        ${accOpt(o)}${catOpt(o)}${ownerOpt(o)}
         <input class="amt-input" type="text" inputmode="decimal" placeholder="0.00" style="width:110px;text-align:right"
           onfocus="amtFocus(this)" onblur="amtBlur(this,v=>setSharedOtherAmt(${o.id},v))" onpaste="amtPaste(this,v=>setSharedOtherAmt(${o.id},v))"
           data-raw="${o.amt||''}" value="${o.amt?f(o.amt).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):''}">
         <button class="del-item-btn del-icon" onclick="delSharedOther(${o.id})" title="ลบ"><i class="ti ti-trash" style="font-size:14px"></i></button>
       </div>
     </div>`).join(''):'<div class="empty-state"><i class="ti ti-inbox"></i>ยังไม่มีรายการ — กด “＋ เพิ่มรายการ”</div>';
+  const fmt=v=>'฿'+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const tot=document.getElementById('shared-other-total-disp');
-  if(tot) tot.textContent='฿'+total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(tot) tot.textContent=fmt(total);
   const perEl=document.getElementById('shared-other-per-person');
-  if(perEl) perEl.textContent='฿'+per.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(perEl) perEl.textContent=fmt(per);
+  // สรุปแยกตามบัญชี / หมวด
+  const bd=document.getElementById('shared-other-breakdown');
+  if(bd){
+    const group=(keyFn)=>{
+      const m=new Map();
+      items.forEach(o=>{if(!f(o.amt))return;const k=keyFn(o);m.set(k,(m.get(k)||0)+f(o.amt));});
+      return [...m.entries()].sort((a,b)=>b[1]-a[1]);
+    };
+    const chips=(rows)=>rows.map(([k,v])=>`<span class="so-chip">${_bpEsc(k)} <strong>${fmt(v)}</strong></span>`).join('');
+    const byAcc=group(o=>_soAccLabel(o.acc)||'ไม่ระบุบัญชี');
+    const byCat=group(o=>o.category||'ไม่ระบุหมวด');
+    bd.innerHTML=total>0
+      ?`<div class="so-bd-row"><span class="so-bd-lbl">ตามบัญชี</span>${chips(byAcc)}</div>
+        <div class="so-bd-row"><span class="so-bd-lbl">ตามหมวด</span>${chips(byCat)}</div>`
+      :'';
+  }
 }
 // ── ประมาณการ: เหมือนรายจ่ายอื่นๆ (กองกลาง) แต่ใช้ประมาณการเท่านั้น ไม่ดึงเข้ายอดงบประมาณ ──
 // รายการของเดือนที่กำลังดู (เดือนอื่น = ว่าง)
@@ -2817,7 +2926,7 @@ function ccImportSave() {
 Object.assign(window, { ccImportOpen, ccImportClose, ccImportAddRow, ccImportDelRow, ccImportField, ccImportSummary, ccImportRenderRows, ccImportSave, ccImportPhoto, ccAddCategory, ccImportSetFilter, ccViewOpen, ccViewClose, ccViewEdit, ccViewSetFilter, ccViewSearch, ccViewClearFilter, ccvColFilter, ccvColSet, _cciParseOCR });
 
 /* --- expose to global scope (inline handlers + cross-module glue) --- */
-Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, delSharedOther, getEstimateTotal, renderEstimate, addEstimate, setEstimateName, setEstimateAmt, setEstimateOwner, delEstimate, toggleEstimate,getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, setDiffItem, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
+Object.assign(window, { mkey, getMD, _bpLoad, persist, _bpFmt, f, amtFocus, amtBlur, amtPaste, amtInit, getCC, cardColor, calcStatus, statusBadge, getIncomeTotal, getSharedUtilityPerPerson, getSharedFoodPerPerson, setSharedFood, setSharedWater, setSharedElectric, setSharedInternet, renderUtility, getSharedOtherTotal, getSharedOtherPerPerson, renderSharedOther, addSharedOther, setSharedOtherName, setSharedOtherAmt, setSharedOtherOwner, setSharedOtherAcc, setSharedOtherCat, soAccOpen, soAddOpen, soAddClose, soAddSave, soAccDel, delSharedOther, getEstimateTotal, renderEstimate, addEstimate, setEstimateName, setEstimateAmt, setEstimateOwner, delEstimate, toggleEstimate,getCCPersonTotal, getExpenseTotal, getExpenseDisplayTotal, getGoal, resetPerson, resetMonth, changeMonth, _bpRerenderChart, switchPerson, _bpRender, renderBanner, renderIncomeCard, renderExpenseCard, renderCC, renderSummaryPerson, renderSummaryCommon, renderSettlement, _bpShowMain, setFixedIncome, setFixedExpense, setExtraExpense, setSavingsLink, setSalaryLink, syncExpenseToSavings, addExtraIncome, delExtraIncome, addExtraExpense, delExtraExpense, delFixed, delFixedTemplate, addFixedExpense, addCC, ccAddOpen, ccAddClose, ccBreakdownOpen, ccBreakdownClose, delCC, _bpOpenSettings, closeSettings, renderCardChips, renderFixedListsInModal, addCCCard, setCCOwner, removeCCCard, setGoalInSettings, _bpSaveSettings, clearAll, populateCCSelect, updateLabels, toggleTheme, backupJSON, restoreJSON, exportCSV, toggleChart, setChartTab, setChartPerson, populateCompareSelect, getCCPersonTotalForKey, getItemActual, getItemGoal, renderCompareChart, getAllMonthKeys, getMonthLabel, getMonthStats, makeLegend, _bpRenderCharts, setMainDiffPerson, renderMainDiffTable, setDiffPerson, setDiffItem, renderDiffTable, renderCCCategory, renderGroupTable, renderGroupDetail, _groupPrefix, ccCatPopup, ccCatPopupFilter, ccCatPopupClose, ccCatSearch, ccCatClear, ccCatColFilter, ccCatColSet, hamsterClick, _bpToast, numOnly, bindDecimalInputs, deriveCC, ccCategoryTotals });
 // CC import helpers/constants exposed for the review UI (Phase 1) + tests
 window.CC_CATEGORIES = CC_CATEGORIES;
 window.CC_OWNERS = CC_OWNERS;

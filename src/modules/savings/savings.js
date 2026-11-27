@@ -41,6 +41,9 @@ function _svLoad(){
     // migrate: flags used to live in a separate field → now merged into the icon
     if(f.flag){f.emoji=f.flag;delete f.flag;}
     f.tx.forEach(t=>{if(t.who&&!state.people.includes(t.who))state.people.push(t.who);});
+    // migrate: รายการฝากที่ดึงจากงบประมาณ (มี src) เคยลงวันที่ 1 → ย้ายเป็นวันที่ 28 ของเดือนเดียวกัน
+    f.tx.forEach(t=>{if(t.src&&t.ts){const d=new Date(t.ts);if(d.getDate()===1){d.setDate(28);t.ts=d.getTime();}}});
+    f.tx.sort((a,b)=>a.ts-b.ts);
   });
   applyTheme('island');
 }

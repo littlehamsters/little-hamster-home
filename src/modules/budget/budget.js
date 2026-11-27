@@ -1294,7 +1294,8 @@ function setExtraExpense(p,id,field,v){
 // srcKey ผูกรายการฝากในกองออมกับ (เดือน + คน + รายการ) เพื่อให้แก้ยอดแล้ว update
 // รายการเดิม ไม่สร้างซ้ำ, ตั้ง 0 → ลบทิ้ง
 function _svSrcKey(p,fid){ return `bp:${mkey()}:${p}:${fid}`; }
-function _svMonthDate(){ return `${curYear}-${String(curMonth+1).padStart(2,'0')}-01`; }
+// วันที่ของรายการฝากที่สร้างจากงบประมาณ = วันที่ 28 ของเดือนนั้น (ทุกเดือนมีวันที่ 28)
+function _svMonthDate(){ return `${curYear}-${String(curMonth+1).padStart(2,'0')}-28`; }
 // เมื่อกรอกยอดจริงของรายการที่ผูกไว้กับกองออม → ฝากเข้ากองนั้นอัตโนมัติ
 function syncExpenseToSavings(fe,p,fid,val){
   if(!fe||!fe.savingsFundId) return;
